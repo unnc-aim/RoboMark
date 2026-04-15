@@ -48,9 +48,12 @@ export_tasks = {}
 def get_export_formats():
     """获取支持的导出格式列表"""
     return [
-        {"id": "yolov8", "name": "YOLOv5/v7/v8 (Ultralytics)", "description": "适用于 Ultralytics YOLO 系列，使用 data.yaml 配置"},
-        {"id": "darknet", "name": "YOLO Darknet (v3/v4)", "description": "适用于原版 Darknet YOLO，使用 .names 和 .data 配置"},
-        {"id": "coco", "name": "COCO JSON", "description": "通用格式，适用于多种框架（Detectron2, MMDetection 等）"},
+        {"id": "yolov8", "name": "YOLOv5/v7/v8 (Ultralytics)",
+         "description": "适用于 Ultralytics YOLO 系列，使用 data.yaml 配置"},
+        {"id": "darknet",
+            "name": "YOLO Darknet (v3/v4)", "description": "适用于原版 Darknet YOLO，使用 .names 和 .data 配置"},
+        {"id": "coco", "name": "COCO JSON",
+            "description": "通用格式，适用于多种框架（Detectron2, MMDetection 等）"},
     ]
 
 
@@ -63,8 +66,8 @@ async def list_export_formats():
 @router.post("", response_model=ExportResponse)
 async def export_dataset(
     request: ExportRequest,
-    conn = Depends(get_db_dependency),
-    current_admin = Depends(get_current_admin)
+    conn=Depends(get_db_dependency),
+    current_admin=Depends(get_current_admin)
 ):
     """导出数据集（支持多种格式）"""
     # 验证比例
@@ -74,7 +77,8 @@ async def export_dataset(
 
     with conn.cursor() as cursor:
         # 获取数据集
-        cursor.execute("SELECT * FROM datasets WHERE id = %s", (request.dataset_id,))
+        cursor.execute("SELECT * FROM datasets WHERE id = %s",
+                       (request.dataset_id,))
         dataset = cursor.fetchone()
         if not dataset:
             raise HTTPException(status_code=404, detail="数据集不存在")
@@ -89,9 +93,11 @@ async def export_dataset(
 
         # 获取图片
         if request.include_unlabeled:
-            cursor.execute("SELECT * FROM images WHERE dataset_id = %s", (request.dataset_id,))
+            cursor.execute(
+                "SELECT * FROM images WHERE dataset_id = %s", (request.dataset_id,))
         else:
-            cursor.execute("SELECT * FROM images WHERE dataset_id = %s AND status = 'labeled'", (request.dataset_id,))
+            cursor.execute(
+                "SELECT * FROM images WHERE dataset_id = %s AND status = 'labeled'", (request.dataset_id,))
         images = cursor.fetchall()
 
         total = len(images)
@@ -117,7 +123,9 @@ async def export_dataset(
                                    train_end, val_end, cursor)
         elif request.format == ExportFormat.COCO:
             stats = export_coco(output_path, images, categories, category_map,
-                               train_end, val_end, cursor, dataset['name'])
+                                train_end, val_end, cursor, dataset['name'])
+        else:
+            raise HTTPException(status_code=400, detail="不支持的导出格式")
 
         # 创建ZIP文件
         zip_path = os.path.join(export_dir, f"{output_name}.zip")
@@ -171,26 +179,34 @@ names: {names}
     stats = {"train": 0, "val": 0, "test": 0, "annotations": 0}
 
     for idx, image in enumerate(images):
-        split = "train" if idx < train_end else ("val" if idx < val_end else "test")
+        split = "train" if idx < train_end else (
+            "val" if idx < val_end else "test")
 
         # 复制图片
         src_path = image['file_path']
         if os.path.exists(src_path):
-            shutil.copy2(src_path, os.path.join(output_path, "images", split, image['filename']))
+            dst_image_path = os.path.join(
+                output_path, "images", split, image['filename'])
+            os.makedirs(os.path.dirname(dst_image_path), exist_ok=True)
+            shutil.copy2(src_path, dst_image_path)
             stats[split] += 1
 
         # 创建标签文件
-        cursor.execute("SELECT * FROM annotations WHERE image_id = %s", (image['id'],))
+        cursor.execute(
+            "SELECT * FROM annotations WHERE image_id = %s", (image['id'],))
         annotations = cursor.fetchall()
 
         label_filename = os.path.splitext(image['filename'])[0] + ".txt"
         label_path = os.path.join(output_path, "labels", split, label_filename)
 
+        os.makedirs(os.path.dirname(label_path), exist_ok=True)
+
         with open(label_path, "w") as f:
             for ann in annotations:
                 if ann['category_id'] in category_map:
                     class_id = category_map[ann['category_id']]
-                    f.write(f"{class_id} {ann['x_center']:.6f} {ann['y_center']:.6f} {ann['width']:.6f} {ann['height']:.6f}\n")
+                    f.write(
+                        f"{class_id} {ann['x_center']:.6f} {ann['y_center']:.6f} {ann['width']:.6f} {ann['height']:.6f}\n")
                     stats["annotations"] += 1
 
     return stats
@@ -217,12 +233,14 @@ def export_darknet(output_path, images, categories, category_map, train_end, val
     stats = {"train": 0, "val": 0, "test": 0, "annotations": 0}
 
     for idx, image in enumerate(images):
-        split = "train" if idx < train_end else ("val" if idx < val_end else "test")
+        split = "train" if idx < train_end else (
+            "val" if idx < val_end else "test")
 
         # 复制图片
         src_path = image['file_path']
         dst_image_path = os.path.join(images_dir, image['filename'])
         if os.path.exists(src_path):
+            os.makedirs(os.path.dirname(dst_image_path), exist_ok=True)
             shutil.copy2(src_path, dst_image_path)
             stats[split] += 1
 
@@ -236,17 +254,21 @@ def export_darknet(output_path, images, categories, category_map, train_end, val
                 test_list.append(rel_path)
 
         # 创建标签文件
-        cursor.execute("SELECT * FROM annotations WHERE image_id = %s", (image['id'],))
+        cursor.execute(
+            "SELECT * FROM annotations WHERE image_id = %s", (image['id'],))
         annotations = cursor.fetchall()
 
         label_filename = os.path.splitext(image['filename'])[0] + ".txt"
         label_path = os.path.join(labels_dir, label_filename)
 
+        os.makedirs(os.path.dirname(label_path), exist_ok=True)
+
         with open(label_path, "w") as f:
             for ann in annotations:
                 if ann['category_id'] in category_map:
                     class_id = category_map[ann['category_id']]
-                    f.write(f"{class_id} {ann['x_center']:.6f} {ann['y_center']:.6f} {ann['width']:.6f} {ann['height']:.6f}\n")
+                    f.write(
+                        f"{class_id} {ann['x_center']:.6f} {ann['y_center']:.6f} {ann['width']:.6f} {ann['height']:.6f}\n")
                     stats["annotations"] += 1
 
     # 创建路径列表文件
@@ -297,12 +319,14 @@ def export_coco(output_path, images, categories, category_map, train_end, val_en
     annotation_id = 1
 
     for idx, image in enumerate(images):
-        split = "train" if idx < train_end else ("val" if idx < val_end else "test")
+        split = "train" if idx < train_end else (
+            "val" if idx < val_end else "test")
 
         # 复制图片
         src_path = image['file_path']
         dst_image_path = os.path.join(output_path, split, image['filename'])
         if os.path.exists(src_path):
+            os.makedirs(os.path.dirname(dst_image_path), exist_ok=True)
             shutil.copy2(src_path, dst_image_path)
             stats[split] += 1
 
@@ -319,7 +343,8 @@ def export_coco(output_path, images, categories, category_map, train_end, val_en
             splits_data[split]["images"].append(coco_image)
 
             # 获取标注
-            cursor.execute("SELECT * FROM annotations WHERE image_id = %s", (image['id'],))
+            cursor.execute(
+                "SELECT * FROM annotations WHERE image_id = %s", (image['id'],))
             annotations = cursor.fetchall()
 
             for ann in annotations:
@@ -337,7 +362,8 @@ def export_coco(output_path, images, categories, category_map, train_end, val_en
                     coco_ann = {
                         "id": annotation_id,
                         "image_id": image['id'],
-                        "category_id": category_map[ann['category_id']] + 1,  # COCO ID 从 1 开始
+                        # COCO ID 从 1 开始
+                        "category_id": category_map[ann['category_id']] + 1,
                         "bbox": [round(x, 2), round(y, 2), round(width, 2), round(height, 2)],
                         "area": round(width * height, 2),
                         "iscrowd": 0
@@ -372,8 +398,8 @@ def export_coco(output_path, images, categories, category_map, train_end, val_en
 @router.post("/yolo", response_model=ExportResponse)
 async def export_yolo_legacy(
     request: ExportRequest,
-    conn = Depends(get_db_dependency),
-    current_admin = Depends(get_current_admin)
+    conn=Depends(get_db_dependency),
+    current_admin=Depends(get_current_admin)
 ):
     """导出数据集为YOLO格式（兼容旧接口）"""
     request.format = ExportFormat.YOLOV8
@@ -384,7 +410,7 @@ async def export_yolo_legacy(
 async def download_export(
     task_id: str,
     background_tasks: BackgroundTasks,
-    current_admin = Depends(get_current_admin)
+    current_admin=Depends(get_current_admin)
 ):
     """下载导出的文件"""
     if task_id not in export_tasks:

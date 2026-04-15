@@ -43,10 +43,38 @@ class ScanResult(BaseModel):
     skipped_images: int
 
 
+def iter_image_files(root_dir: str, recursive: bool):
+    """Yield (stored_filename, absolute_path) for image files under root_dir."""
+    if not recursive:
+        for filename in os.listdir(root_dir):
+            file_path = os.path.join(root_dir, filename)
+            if not os.path.isfile(file_path):
+                continue
+            ext = os.path.splitext(filename)[1].lower()
+            if ext not in settings.ALLOWED_IMAGE_EXTENSIONS:
+                continue
+            yield filename, file_path
+        return
+
+    for dirpath, _, filenames in os.walk(root_dir):
+        for filename in filenames:
+            ext = os.path.splitext(filename)[1].lower()
+            if ext not in settings.ALLOWED_IMAGE_EXTENSIONS:
+                continue
+
+            file_path = os.path.join(dirpath, filename)
+            if not os.path.isfile(file_path):
+                continue
+
+            rel = os.path.relpath(file_path, root_dir)
+            stored_filename = rel.replace(os.sep, "/")
+            yield stored_filename, file_path
+
+
 @router.get("", response_model=List[DatasetResponse])
 async def list_datasets(
-    conn = Depends(get_db_dependency),
-    current_user = Depends(get_current_user)
+    conn=Depends(get_db_dependency),
+    current_user=Depends(get_current_user)
 ):
     """获取数据集列表"""
     with conn.cursor() as cursor:
@@ -62,8 +90,8 @@ async def list_datasets(
 @router.get("/{dataset_id}", response_model=DatasetResponse)
 async def get_dataset(
     dataset_id: int,
-    conn = Depends(get_db_dependency),
-    current_user = Depends(get_current_user)
+    conn=Depends(get_db_dependency),
+    current_user=Depends(get_current_user)
 ):
     """获取单个数据集详情"""
     with conn.cursor() as cursor:
@@ -81,8 +109,8 @@ async def get_dataset(
 @router.post("", response_model=DatasetResponse)
 async def create_dataset(
     dataset_data: DatasetCreate,
-    conn = Depends(get_db_dependency),
-    current_admin = Depends(get_current_admin)
+    conn=Depends(get_db_dependency),
+    current_admin=Depends(get_current_admin)
 ):
     """创建数据集"""
     # 检查路径是否存在
@@ -98,7 +126,8 @@ async def create_dataset(
     with conn.cursor() as cursor:
         cursor.execute(
             "INSERT INTO datasets (name, description, image_path, label_path) VALUES (%s, %s, %s, %s)",
-            (dataset_data.name, dataset_data.description, dataset_data.image_path, dataset_data.label_path)
+            (dataset_data.name, dataset_data.description,
+             dataset_data.image_path, dataset_data.label_path)
         )
         dataset_id = cursor.lastrowid
 
@@ -112,8 +141,8 @@ async def create_dataset(
 async def update_dataset(
     dataset_id: int,
     dataset_data: DatasetUpdate,
-    conn = Depends(get_db_dependency),
-    current_admin = Depends(get_current_admin)
+    conn=Depends(get_db_dependency),
+    current_admin=Depends(get_current_admin)
 ):
     """更新数据集"""
     with conn.cursor() as cursor:
@@ -144,7 +173,8 @@ async def update_dataset(
 
         if updates:
             params.append(dataset_id)
-            cursor.execute(f"UPDATE datasets SET {', '.join(updates)} WHERE id = %s", params)
+            cursor.execute(
+                f"UPDATE datasets SET {', '.join(updates)} WHERE id = %s", params)
 
         cursor.execute("SELECT * FROM datasets WHERE id = %s", (dataset_id,))
         dataset = cursor.fetchone()
@@ -155,8 +185,8 @@ async def update_dataset(
 @router.delete("/{dataset_id}")
 async def delete_dataset(
     dataset_id: int,
-    conn = Depends(get_db_dependency),
-    current_admin = Depends(get_current_admin)
+    conn=Depends(get_db_dependency),
+    current_admin=Depends(get_current_admin)
 ):
     """删除数据集"""
     with conn.cursor() as cursor:
@@ -172,8 +202,9 @@ async def delete_dataset(
 @router.post("/{dataset_id}/scan", response_model=ScanResult)
 async def scan_dataset(
     dataset_id: int,
-    conn = Depends(get_db_dependency),
-    current_admin = Depends(get_current_admin)
+    recursive: bool = False,
+    conn=Depends(get_db_dependency),
+    current_admin=Depends(get_current_admin)
 ):
     """扫描并导入图片"""
     from PIL import Image as PILImage
@@ -189,7 +220,8 @@ async def scan_dataset(
             raise HTTPException(status_code=400, detail="图片路径不存在")
 
         # 获取已存在的图片文件名
-        cursor.execute("SELECT filename FROM images WHERE dataset_id = %s", (dataset_id,))
+        cursor.execute(
+            "SELECT filename FROM images WHERE dataset_id = %s", (dataset_id,))
         existing_files = set(row['filename'] for row in cursor.fetchall())
 
         found = 0
@@ -197,18 +229,12 @@ async def scan_dataset(
         skipped = 0
 
         # 扫描目录
-        for filename in os.listdir(dataset['image_path']):
-            ext = os.path.splitext(filename)[1].lower()
-            if ext not in settings.ALLOWED_IMAGE_EXTENSIONS:
-                continue
-
+        for stored_filename, file_path in iter_image_files(dataset['image_path'], recursive=recursive):
             found += 1
 
-            if filename in existing_files:
+            if stored_filename in existing_files:
                 skipped += 1
                 continue
-
-            file_path = os.path.join(dataset['image_path'], filename)
 
             # 获取图片尺寸
             try:
@@ -220,18 +246,21 @@ async def scan_dataset(
             # 创建图片记录
             cursor.execute(
                 "INSERT INTO images (dataset_id, filename, file_path, width, height, status) VALUES (%s, %s, %s, %s, %s, %s)",
-                (dataset_id, filename, file_path, width, height, 'pending')
+                (dataset_id, stored_filename, file_path, width, height, 'pending')
             )
             imported += 1
 
         # 更新数据集统计
-        cursor.execute("SELECT COUNT(*) as count FROM images WHERE dataset_id = %s", (dataset_id,))
+        cursor.execute(
+            "SELECT COUNT(*) as count FROM images WHERE dataset_id = %s", (dataset_id,))
         total = cursor.fetchone()['count']
 
-        cursor.execute("SELECT COUNT(*) as count FROM images WHERE dataset_id = %s AND status = 'labeled'", (dataset_id,))
+        cursor.execute(
+            "SELECT COUNT(*) as count FROM images WHERE dataset_id = %s AND status = 'labeled'", (dataset_id,))
         labeled = cursor.fetchone()['count']
 
-        cursor.execute("UPDATE datasets SET total_images = %s, labeled_images = %s WHERE id = %s", (total, labeled, dataset_id))
+        cursor.execute(
+            "UPDATE datasets SET total_images = %s, labeled_images = %s WHERE id = %s", (total, labeled, dataset_id))
 
     return ScanResult(
         found_images=found,
@@ -242,6 +271,7 @@ async def scan_dataset(
 
 class BatchImportRequest(BaseModel):
     root_path: str
+    recursive_images: bool = False
 
 
 class BatchImportProgress(BaseModel):
@@ -276,7 +306,7 @@ def find_image_folders(root_path: str) -> List[tuple]:
 @router.post("/batch-import")
 async def batch_import_datasets(
     request: BatchImportRequest,
-    current_admin = Depends(get_current_admin)
+    current_admin=Depends(get_current_admin)
 ):
     """批量导入数据集 - 递归扫描所有 image/images 文件夹"""
     from PIL import Image as PILImage
@@ -299,16 +329,15 @@ async def batch_import_datasets(
             for dataset_name, image_path, label_path in image_folders:
                 has_images = False
                 try:
-                    for filename in os.listdir(image_path):
-                        ext = os.path.splitext(filename)[1].lower()
-                        if ext in settings.ALLOWED_IMAGE_EXTENSIONS:
-                            has_images = True
-                            break
+                    for _, _ in iter_image_files(image_path, recursive=request.recursive_images):
+                        has_images = True
+                        break
                 except Exception:
                     continue
 
                 if has_images:
-                    folders_with_images.append((dataset_name, image_path, label_path))
+                    folders_with_images.append(
+                        (dataset_name, image_path, label_path))
 
             total_folders = len(folders_with_images)
 
@@ -325,7 +354,8 @@ async def batch_import_datasets(
             with conn.cursor() as cursor:
                 for idx, (dataset_name, image_path, label_path) in enumerate(folders_with_images):
                     # 检查数据集是否已存在（用 image_path 判断更准确）
-                    cursor.execute("SELECT id FROM datasets WHERE image_path = %s", (image_path,))
+                    cursor.execute(
+                        "SELECT id FROM datasets WHERE image_path = %s", (image_path,))
                     existing = cursor.fetchone()
 
                     if existing:
@@ -338,7 +368,8 @@ async def batch_import_datasets(
                     # 创建数据集
                     cursor.execute(
                         "INSERT INTO datasets (name, description, image_path, label_path) VALUES (%s, %s, %s, %s)",
-                        (dataset_name, f"从 {root_path} 批量导入", image_path, label_path)
+                        (dataset_name, f"从 {root_path} 批量导入",
+                         image_path, label_path)
                     )
                     dataset_id = cursor.lastrowid
                     datasets_created += 1
@@ -347,12 +378,7 @@ async def batch_import_datasets(
 
                     # 扫描并导入图片
                     images_imported = 0
-                    for filename in os.listdir(image_path):
-                        ext = os.path.splitext(filename)[1].lower()
-                        if ext not in settings.ALLOWED_IMAGE_EXTENSIONS:
-                            continue
-
-                        file_path = os.path.join(image_path, filename)
+                    for stored_filename, file_path in iter_image_files(image_path, recursive=request.recursive_images):
 
                         # 获取图片尺寸
                         try:
@@ -363,7 +389,8 @@ async def batch_import_datasets(
 
                         cursor.execute(
                             "INSERT INTO images (dataset_id, filename, file_path, width, height, status) VALUES (%s, %s, %s, %s, %s, %s)",
-                            (dataset_id, filename, file_path, width, height, 'pending')
+                            (dataset_id, stored_filename,
+                             file_path, width, height, 'pending')
                         )
                         images_imported += 1
 

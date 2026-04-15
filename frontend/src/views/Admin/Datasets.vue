@@ -41,6 +41,13 @@ const batchImportProgress = ref({
 })
 const isImporting = ref(false)
 
+// 扫描导入相关（单个数据集）
+const scanDialogVisible = ref(false)
+const scanTargetDataset = ref(null)
+const scanOptions = ref({
+  recursive: false
+})
+
 onMounted(() => {
   loadDatasets()
 })
@@ -96,10 +103,25 @@ async function handleSubmit() {
   }
 }
 
-async function handleScan(dataset) {
+function showScanDialog(dataset) {
+  scanTargetDataset.value = dataset
+  scanOptions.value = { recursive: false }
+  scanDialogVisible.value = true
+}
+
+async function startScan() {
+  if (!scanTargetDataset.value) return
+
   try {
-    const response = await api.post(`/datasets/${dataset.id}/scan`)
-    ElMessage.success(`扫描完成: 发现${response.data.found_images}张图片, 导入${response.data.imported_images}张, 跳过${response.data.skipped_images}张`)
+    const response = await api.post(
+      `/datasets/${scanTargetDataset.value.id}/scan`,
+      null,
+      { params: { recursive: scanOptions.value.recursive } }
+    )
+    ElMessage.success(
+      `扫描完成: 发现${response.data.found_images}张图片, 导入${response.data.imported_images}张, 跳过${response.data.skipped_images}张`
+    )
+    scanDialogVisible.value = false
     loadDatasets()
   } catch (error) {
     // 错误已在拦截器中处理
@@ -135,7 +157,8 @@ function showConfigDialog(dataset) {
 
 function showBatchImportDialog() {
   batchImportForm.value = {
-    root_path: ''
+    root_path: '',
+    recursive_images: false
   }
   batchImportProgress.value = {
     status: '',
@@ -267,12 +290,31 @@ function closeBatchImportDialog() {
         <template #default="{ row }">
           <el-button size="small" @click="goToCategories(row.id)">类别</el-button>
           <el-button size="small" @click="showConfigDialog(row)">配置</el-button>
-          <el-button size="small" type="primary" @click="handleScan(row)">扫描</el-button>
+          <el-button size="small" type="primary" @click="showScanDialog(row)">扫描</el-button>
           <el-button size="small" @click="showEditDialog(row)">编辑</el-button>
           <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 扫描导入对话框 -->
+    <el-dialog v-model="scanDialogVisible" title="扫描导入图片" width="420px">
+      <div style="margin-bottom: 12px; color: #606266; font-size: 13px;">
+        数据集：{{ scanTargetDataset?.name }}
+      </div>
+
+      <el-form label-width="140px">
+        <el-form-item label="递归扫描子目录">
+          <el-switch v-model="scanOptions.recursive" />
+          <div class="form-tip">开启后会把子目录下的图片也导入（文件名将保存为相对路径）</div>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="scanDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="startScan">开始扫描</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 创建/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
@@ -312,6 +354,11 @@ function closeBatchImportDialog() {
         <el-form-item label="根目录" required>
           <el-input v-model="batchImportForm.root_path" placeholder="/path/to/datasets" />
           <div class="form-tip">递归扫描所有 image/images 文件夹，labels 自动创建在同级目录</div>
+        </el-form-item>
+
+        <el-form-item label="递归导入图片">
+          <el-switch v-model="batchImportForm.recursive_images" />
+          <div class="form-tip">开启后会把 image/images 文件夹下的子目录图片一并导入</div>
         </el-form-item>
       </el-form>
 

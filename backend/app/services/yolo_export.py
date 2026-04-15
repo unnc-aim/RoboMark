@@ -33,7 +33,8 @@ class YOLOExporter:
         Returns:
             导出统计信息
         """
-        dataset = self.db.query(Dataset).filter(Dataset.id == dataset_id).first()
+        dataset = self.db.query(Dataset).filter(
+            Dataset.id == dataset_id).first()
         if not dataset:
             raise ValueError("数据集不存在")
 
@@ -86,11 +87,14 @@ class YOLOExporter:
                 split = "test"
 
             # 复制图片
-            src_path = image.file_path
-            dst_image_path = os.path.join(dirs[f"images/{split}"], image.filename)
+            src_path = image.file_path if isinstance(
+                image.file_path, str) else getattr(image, "file_path")
+            dst_image_path = os.path.join(
+                dirs[f"images/{split}"], str(image.filename))
 
             if os.path.exists(src_path):
-                shutil.copy2(src_path, dst_image_path)
+                os.makedirs(os.path.dirname(dst_image_path), exist_ok=True)
+                shutil.copy2(str(src_path), str(dst_image_path))
                 stats[split] += 1
 
             # 创建标签文件
@@ -98,8 +102,10 @@ class YOLOExporter:
                 Annotation.image_id == image.id
             ).all()
 
-            label_filename = os.path.splitext(image.filename)[0] + ".txt"
+            label_filename = os.path.splitext(str(image.filename))[0] + ".txt"
             label_path = os.path.join(dirs[f"labels/{split}"], label_filename)
+
+            os.makedirs(os.path.dirname(label_path), exist_ok=True)
 
             with open(label_path, "w") as f:
                 for ann in annotations:
