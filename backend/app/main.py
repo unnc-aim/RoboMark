@@ -5,6 +5,10 @@ from app.core.config import settings
 from app.routers import auth_router, admin_router, images_router, datasets_router, categories_router
 from app.routers.export import router as export_router
 from app.routers.dataset_configs import router as dataset_configs_router
+import os
+
+# 确保上传目录存在
+os.makedirs("uploads/category_templates", exist_ok=True)
 
 app = FastAPI(
     title=settings.APP_NAME,

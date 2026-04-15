@@ -14,6 +14,14 @@ export const useAnnotationStore = defineStore('annotation', () => {
   const historyIndex = ref(-1)
   const isLoading = ref(false)
 
+  // 数据集配置（用于检测标注模式）
+  const datasetConfig = ref(null)
+
+  // 是否为"画后选类别"模式（RC2026-wulin）
+  const isPostDrawCategoryMode = computed(() => {
+    return datasetConfig.value?.format_type === 'rc2026_wulin'
+  })
+
   // 预加载相关
   const imageQueue = ref([])           // 预加载队列
   const prefetchProgress = ref(0)      // 预加载进度 0-100
@@ -37,13 +45,25 @@ export const useAnnotationStore = defineStore('annotation', () => {
   })
   const canGoNext = computed(() => isInHistory.value && historyPosition.value < processedHistory.value.length - 1)
 
+  // 加载数据集配置
+  async function loadDatasetConfig(datasetId) {
+    try {
+      const response = await api.get(`/dataset-configs/${datasetId}`)
+      datasetConfig.value = response.data
+    } catch (error) {
+      console.error('加载配置失败', error)
+      datasetConfig.value = null
+    }
+    return datasetConfig.value
+  }
+
   // 加载类别
   async function loadCategories(datasetId) {
     const response = await api.get(`/categories/dataset/${datasetId}`)
     categories.value = response.data
 
-    // 如果只有一个类别，自动选中
-    if (categories.value.length === 1) {
+    // 如果只有一个类别且不是画后选类别模式，自动选中
+    if (categories.value.length === 1 && !isPostDrawCategoryMode.value) {
       selectedCategory.value = categories.value[0]
     }
 
@@ -213,6 +233,22 @@ export const useAnnotationStore = defineStore('annotation', () => {
       id: Date.now(), // 临时ID
       category_id: selectedCategory.value?.id || annotation.category_id
     }
+    if (!newAnnotation.category_id) {
+      // 画后选类别模式下，返回未分配类别的标注让调用者处理
+      return newAnnotation
+    }
+    annotations.value.push(newAnnotation)
+    saveHistory()
+    return newAnnotation
+  }
+
+  // 画后选类别模式：用指定类别添加标注
+  function addAnnotationWithCategory(annotationData, categoryId) {
+    const newAnnotation = {
+      ...annotationData,
+      id: Date.now(),
+      category_id: categoryId
+    }
     annotations.value.push(newAnnotation)
     saveHistory()
     return newAnnotation
@@ -367,13 +403,28 @@ export const useAnnotationStore = defineStore('annotation', () => {
   async function saveAnnotations(skip = false) {
     if (!currentImage.value) return
 
-    const annotationsData = annotations.value.map(a => ({
-      category_id: a.category_id,
-      x_center: a.x_center,
-      y_center: a.y_center,
-      width: a.width,
-      height: a.height
-    }))
+    const annotationsData = annotations.value.map(a => {
+      const data = {
+        category_id: a.category_id,
+        annotation_type: a.annotation_type || 'bbox',
+        x_center: a.x_center,
+        y_center: a.y_center,
+        width: a.width,
+        height: a.height
+      }
+      // 平行四边形额外字段
+      if (a.annotation_type === 'parallelogram') {
+        data.p1_x = a.p1_x
+        data.p1_y = a.p1_y
+        data.p2_x = a.p2_x
+        data.p2_y = a.p2_y
+        data.p3_x = a.p3_x
+        data.p3_y = a.p3_y
+        data.p4_x = a.p4_x
+        data.p4_y = a.p4_y
+      }
+      return data
+    })
 
     console.log('Saving annotations:', {
       imageId: currentImage.value.id,
@@ -419,6 +470,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     processedHistory.value = []
     historyPosition.value = -1
     isInHistory.value = false
+    datasetConfig.value = null
     clearPrefetchCache()
   }
 
@@ -428,6 +480,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     categories,
     selectedCategory,
     isLoading,
+    datasetConfig,
+    isPostDrawCategoryMode,
     canUndo,
     canRedo,
     // 预加载相关
@@ -442,10 +496,12 @@ export const useAnnotationStore = defineStore('annotation', () => {
     canGoPrevious,
     canGoNext,
     // 方法
+    loadDatasetConfig,
     loadCategories,
     fetchNextImage,
     fetchImage,
     addAnnotation,
+    addAnnotationWithCategory,
     updateAnnotation,
     removeAnnotation,
     undo,

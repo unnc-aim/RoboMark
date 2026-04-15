@@ -12,20 +12,38 @@ router = APIRouter(prefix="/api/images", tags=["图片标注"])
 
 class AnnotationCreate(BaseModel):
     category_id: int
+    annotation_type: Optional[str] = 'bbox'  # 'bbox' | 'parallelogram'
     x_center: float
     y_center: float
     width: float
     height: float
+    p1_x: Optional[float] = None
+    p1_y: Optional[float] = None
+    p2_x: Optional[float] = None
+    p2_y: Optional[float] = None
+    p3_x: Optional[float] = None
+    p3_y: Optional[float] = None
+    p4_x: Optional[float] = None
+    p4_y: Optional[float] = None
 
 
 class AnnotationResponse(BaseModel):
     id: int
     image_id: int
     category_id: int
+    annotation_type: Optional[str] = 'bbox'
     x_center: float
     y_center: float
     width: float
     height: float
+    p1_x: Optional[float] = None
+    p1_y: Optional[float] = None
+    p2_x: Optional[float] = None
+    p2_y: Optional[float] = None
+    p3_x: Optional[float] = None
+    p3_y: Optional[float] = None
+    p4_x: Optional[float] = None
+    p4_y: Optional[float] = None
     created_at: datetime
 
 
@@ -217,23 +235,39 @@ async def create_annotation(
             raise HTTPException(status_code=400, detail="无效的类别")
 
         cursor.execute(
-            """INSERT INTO annotations (image_id, category_id, x_center, y_center, width, height, created_by)
-               VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-            (image_id, annotation_data.category_id, annotation_data.x_center, annotation_data.y_center,
-             annotation_data.width, annotation_data.height, current_user['id'])
+            """INSERT INTO annotations (image_id, category_id, annotation_type, x_center, y_center, width, height,
+               p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, created_by)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+            (image_id, annotation_data.category_id, annotation_data.annotation_type,
+             annotation_data.x_center, annotation_data.y_center,
+             annotation_data.width, annotation_data.height,
+             annotation_data.p1_x, annotation_data.p1_y,
+             annotation_data.p2_x, annotation_data.p2_y,
+             annotation_data.p3_x, annotation_data.p3_y,
+             annotation_data.p4_x, annotation_data.p4_y,
+             current_user['id'])
         )
         annotation_id = cursor.lastrowid
 
         # 记录历史
+        history_data = {
+            "category_id": annotation_data.category_id,
+            "annotation_type": annotation_data.annotation_type,
+            "x_center": annotation_data.x_center,
+            "y_center": annotation_data.y_center,
+            "width": annotation_data.width,
+            "height": annotation_data.height
+        }
+        if annotation_data.annotation_type == 'parallelogram':
+            history_data.update({
+                "p1_x": annotation_data.p1_x, "p1_y": annotation_data.p1_y,
+                "p2_x": annotation_data.p2_x, "p2_y": annotation_data.p2_y,
+                "p3_x": annotation_data.p3_x, "p3_y": annotation_data.p3_y,
+                "p4_x": annotation_data.p4_x, "p4_y": annotation_data.p4_y,
+            })
         cursor.execute(
             "INSERT INTO annotation_history (image_id, user_id, action, annotation_data) VALUES (%s, %s, %s, %s)",
-            (image_id, current_user['id'], 'create', json.dumps({
-                "category_id": annotation_data.category_id,
-                "x_center": annotation_data.x_center,
-                "y_center": annotation_data.y_center,
-                "width": annotation_data.width,
-                "height": annotation_data.height
-            }))
+            (image_id, current_user['id'], 'create', json.dumps(history_data))
         )
 
         cursor.execute("SELECT * FROM annotations WHERE id = %s", (annotation_id,))
@@ -294,11 +328,19 @@ async def save_annotations(
         if not data.skip:
             # 创建新标注
             for ann_data in data.annotations:
+                ann_type = ann_data.annotation_type if hasattr(ann_data, 'annotation_type') else 'bbox'
                 cursor.execute(
-                    """INSERT INTO annotations (image_id, category_id, x_center, y_center, width, height, created_by)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                    (image_id, ann_data.category_id, ann_data.x_center, ann_data.y_center,
-                     ann_data.width, ann_data.height, current_user['id'])
+                    """INSERT INTO annotations (image_id, category_id, annotation_type, x_center, y_center, width, height,
+                       p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, created_by)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (image_id, ann_data.category_id, ann_type,
+                     ann_data.x_center, ann_data.y_center,
+                     ann_data.width, ann_data.height,
+                     ann_data.p1_x, ann_data.p1_y,
+                     ann_data.p2_x, ann_data.p2_y,
+                     ann_data.p3_x, ann_data.p3_y,
+                     ann_data.p4_x, ann_data.p4_y,
+                     current_user['id'])
                 )
                 annotation_count += 1
 

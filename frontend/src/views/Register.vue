@@ -48,7 +48,7 @@ async function handleRegister() {
   <div class="register-container">
     <div class="register-box">
       <h1 class="title">注册账号</h1>
-      <p class="subtitle">加入 Torch-Markup</p>
+      <p class="subtitle">加入 AIM-Markup</p>
 
       <el-form :model="form" @submit.prevent="handleRegister" class="register-form">
         <el-form-item>

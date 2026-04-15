@@ -79,7 +79,7 @@ function goToAnnotation() {
   <div class="tutorial-container">
     <header class="header">
       <div class="logo">
-        <h1>Torch-Markup 使用教程</h1>
+        <h1>AIM-Markup 使用教程</h1>
       </div>
       <el-button @click="router.push('/')" type="primary" link>
         返回首页
