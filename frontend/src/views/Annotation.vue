@@ -5,6 +5,7 @@ import { useAnnotationStore } from '../stores/annotation'
 import { useShortcutsStore } from '../stores/shortcuts'
 import { ElMessage } from 'element-plus'
 import AnnotationCanvas from '../components/AnnotationCanvas.vue'
+import CategorySelectionPopup from '../components/CategorySelectionPopup.vue'
 import api from '../utils/api'
 
 const route = useRoute()
@@ -24,6 +25,11 @@ const canvasMode = ref('pan')  // 'annotate' | 'pan'
 const zoomLevel = ref(1)
 const canvasRef = ref(null)
 
+// RC2026-wulin 模式相关
+const pendingAnnotation = ref(null)       // 等待类别选择的标注
+const showCategoryPopup = ref(false)      // 类别选择弹窗
+const shapeMode = ref('bbox')              // 'bbox' | '4point' | '8point'
+
 onMounted(async () => {
   await loadData()
   window.addEventListener('keydown', handleKeydown)
@@ -37,6 +43,7 @@ onUnmounted(() => {
 async function loadData() {
   try {
     await store.loadCategories(datasetId.value)
+    await store.loadDatasetConfig(datasetId.value)
     await store.fetchNextImage(datasetId.value)
     await loadProgress()
     // 加载新图片后重置为拖动模式
@@ -131,6 +138,9 @@ async function handleSaveAndNext() {
 }
 
 function handleKeydown(e) {
+  // 如果类别选择弹窗打开，不处理全局快捷键
+  if (showCategoryPopup.value) return
+
   // 忽略输入框中的按键
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
     return
@@ -191,9 +201,35 @@ function handleKeydown(e) {
   // 数字或字母快捷键选择类别
   const selected = store.selectCategoryByKey(key)
   if (selected) {
-    // 选择类别后切换到标注模式
     canvasMode.value = 'annotate'
   }
+}
+
+// 处理标注添加事件
+function handleAnnotationAdd(annotation) {
+  if (!annotation.category_id) {
+    // 未选择类别：暂存标注，弹出类别选择弹窗
+    pendingAnnotation.value = annotation
+    showCategoryPopup.value = true
+  } else {
+    // 已选择类别：直接添加
+    store.addAnnotation(annotation)
+  }
+}
+
+// 类别选择弹窗：选中类别
+function handleCategorySelected(category) {
+  if (pendingAnnotation.value) {
+    store.addAnnotationWithCategory(pendingAnnotation.value, category.id)
+    pendingAnnotation.value = null
+  }
+  showCategoryPopup.value = false
+}
+
+// 类别选择弹窗：取消
+function handleCategoryPopupCancel() {
+  pendingAnnotation.value = null
+  showCategoryPopup.value = false
 }
 
 // 快捷键设置相关
@@ -229,7 +265,6 @@ function selectCategory(category) {
   // 如果正在编辑快捷键，不选择类别
   if (editingCategoryShortcut.value) return
   store.selectedCategory = category
-  // 选择类别后切换到标注模式
   canvasMode.value = 'annotate'
 }
 
@@ -342,6 +377,17 @@ function handleZoomChange(zoom) {
             </el-radio-button>
           </el-radio-group>
 
+          <!-- 形状模式切换 -->
+          <el-radio-group
+            v-model="shapeMode"
+            size="small"
+            class="shape-mode-group"
+          >
+            <el-radio-button value="bbox">矩形</el-radio-button>
+            <el-radio-button value="4point">4点</el-radio-button>
+            <el-radio-button value="8point">8点</el-radio-button>
+          </el-radio-group>
+
           <span class="zoom-info">{{ Math.round(zoomLevel * 100) }}%</span>
           <el-button size="small" @click="fitToView">适应</el-button>
         </div>
@@ -368,6 +414,9 @@ function handleZoomChange(zoom) {
       <!-- 左侧类别面板 -->
       <aside class="category-panel">
         <h3>类别选择</h3>
+        <div class="mode-hint">
+          画框后选择类别
+        </div>
         <div class="category-list">
           <div
             v-for="category in store.categories"
@@ -378,6 +427,12 @@ function handleZoomChange(zoom) {
           >
             <span class="color-dot" :style="{ background: category.color }"></span>
             <span class="name">{{ category.name }}</span>
+            <img
+              v-if="category.template_image_path"
+              :src="`/api/categories/${category.id}/template-image`"
+              class="category-thumb"
+              alt=""
+            />
             <span
               class="shortcut"
               :class="{ editing: editingCategoryShortcut === category.id }"
@@ -405,6 +460,9 @@ function handleZoomChange(zoom) {
             <span class="index">#{{ index + 1 }}</span>
             <span class="category">
               {{ store.categories.find(c => c.id === ann.category_id)?.name || '未知' }}
+            </span>
+            <span class="annotation-type-badge" v-if="ann.annotation_type === 'parallelogram'">
+              ⬡
             </span>
             <el-button
               type="danger"
@@ -437,7 +495,9 @@ function handleZoomChange(zoom) {
           :categories="store.categories"
           :selected-category="store.selectedCategory"
           :mode="canvasMode"
-          @add="store.addAnnotation"
+          :allow-draw-without-category="true"
+          :shape-mode="shapeMode"
+          @add="handleAnnotationAdd"
           @update="store.updateAnnotation"
           @delete="store.removeAnnotation"
           @zoom-change="handleZoomChange"
@@ -491,6 +551,16 @@ function handleZoomChange(zoom) {
       <span class="queue-info">队列: {{ store.queueLength }}</span>
     </div>
 
+    <!-- 类别选择弹窗 -->
+    <CategorySelectionPopup
+      :visible="showCategoryPopup"
+      :categories="store.categories"
+      :current-image-url="store.currentImage ? `/api/images/${store.currentImage.id}/file` : ''"
+      :pending-annotation="pendingAnnotation"
+      @select="handleCategorySelected"
+      @cancel="handleCategoryPopupCancel"
+    />
+
     <!-- 快捷键帮助弹窗 -->
     <el-dialog v-model="showHelp" title="快捷键帮助" width="500px">
       <div class="help-content">
@@ -513,7 +583,7 @@ function handleZoomChange(zoom) {
           </tr>
           <tr>
             <td><kbd>Delete</kbd> / <kbd>Backspace</kbd></td>
-            <td>删除选中的标注框</td>
+            <td>删除选中的标注框 / 删除最后一个点</td>
           </tr>
           <tr>
             <td><kbd>鼠标滚轮</kbd></td>
@@ -534,6 +604,10 @@ function handleZoomChange(zoom) {
           <tr>
             <td><kbd>类别快捷键</kbd></td>
             <td>快速切换类别并进入标注模式</td>
+          </tr>
+          <tr>
+            <td><kbd>Escape</kbd></td>
+            <td>取消当前点标注（4点/8点模式）</td>
           </tr>
           <tr>
             <td><kbd>{{ shortcutsStore.getShortcutText('help') }}</kbd></td>
@@ -614,6 +688,10 @@ function handleZoomChange(zoom) {
   border-left: 1px solid #0f3460;
 }
 
+.shape-mode-group {
+  margin-left: 4px;
+}
+
 .mode-btn {
   font-size: 12px;
 }
@@ -663,6 +741,16 @@ function handleZoomChange(zoom) {
   font-size: 14px;
 }
 
+.mode-hint {
+  color: #409EFF;
+  font-size: 12px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 4px;
+  text-align: center;
+}
+
 .category-list {
   display: flex;
   flex-direction: column;
@@ -692,11 +780,25 @@ function handleZoomChange(zoom) {
   height: 12px;
   border-radius: 50%;
   margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .category-item .name {
   flex: 1;
   color: white;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 3px;
+  margin-left: 6px;
+  flex-shrink: 0;
 }
 
 .category-item .shortcut {
@@ -709,6 +811,8 @@ function handleZoomChange(zoom) {
   min-width: 20px;
   text-align: center;
   transition: all 0.2s;
+  margin-left: 6px;
+  flex-shrink: 0;
 }
 
 .category-item .shortcut:hover {
@@ -747,6 +851,13 @@ function handleZoomChange(zoom) {
 .annotation-item .category {
   flex: 1;
   color: white;
+  font-size: 13px;
+}
+
+.annotation-type-badge {
+  color: #409EFF;
+  margin-right: 4px;
+  font-size: 14px;
 }
 
 .canvas-container {

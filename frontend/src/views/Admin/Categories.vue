@@ -16,6 +16,15 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const importDialogVisible = ref(false)
 const selectedSourceDataset = ref(null)
+const batchTextDialogVisible = ref(false)
+const batchText = ref('')
+const batchImageDialogVisible = ref(false)
+const batchImageFiles = ref([])
+const batchImageUploading = ref(false)
+
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${localStorage.getItem('torch-markup-token')}`
+}))
 
 const colorOptions = [
   '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
@@ -148,6 +157,83 @@ function handleImportCommand(command) {
     showImportDialog()
   } else if (command === 'config') {
     handleImportFromConfig()
+  } else if (command === 'text') {
+    batchText.value = ''
+    batchTextDialogVisible.value = true
+  } else if (command === 'images') {
+    batchImageFiles.value = []
+    batchImageDialogVisible.value = true
+  }
+}
+
+async function handleBatchTextImport() {
+  if (!batchText.value.trim()) {
+    ElMessage.warning('请输入类别名称')
+    return
+  }
+  try {
+    const response = await api.post(`/categories/batch-text/${datasetId.value}`, {
+      text: batchText.value
+    })
+    ElMessage.success(`成功导入 ${response.data.length} 个类别`)
+    batchTextDialogVisible.value = false
+    batchText.value = ''
+    loadData()
+  } catch (error) {
+    ElMessage.error(error.response?.data?.detail || '导入失败')
+  }
+}
+
+function handleUploadSuccess() {
+  ElMessage.success('模板图片上传成功')
+  loadData()
+}
+
+function handleUploadError() {
+  ElMessage.error('模板图片上传失败')
+}
+
+async function handleDeleteTemplateImage(category) {
+  try {
+    await api.delete(`/categories/${category.id}/template-image`)
+    ElMessage.success('模板图片已删除')
+    loadData()
+  } catch (error) {
+    ElMessage.error(error.response?.data?.detail || '删除失败')
+  }
+}
+
+function handleBatchImageChange(uploadFile, uploadFiles) {
+  batchImageFiles.value = uploadFiles
+}
+
+function handleBatchImageRemove(uploadFile, uploadFiles) {
+  batchImageFiles.value = uploadFiles
+}
+
+async function handleBatchImageImport() {
+  if (batchImageFiles.value.length === 0) {
+    ElMessage.warning('请选择图片文件')
+    return
+  }
+
+  batchImageUploading.value = true
+  try {
+    const formData = new FormData()
+    batchImageFiles.value.forEach(file => {
+      formData.append('files', file.raw)
+    })
+    const response = await api.post(`/categories/batch-images/${datasetId.value}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    ElMessage.success(response.data.message)
+    batchImageDialogVisible.value = false
+    batchImageFiles.value = []
+    loadData()
+  } catch (error) {
+    ElMessage.error(error.response?.data?.detail || '导入失败')
+  } finally {
+    batchImageUploading.value = false
   }
 }
 </script>
@@ -168,6 +254,8 @@ function handleImportCommand(command) {
             <el-dropdown-menu>
               <el-dropdown-item command="dataset">从其他数据集导入</el-dropdown-item>
               <el-dropdown-item command="config">从格式配置导入</el-dropdown-item>
+              <el-dropdown-item command="text">批量文本导入</el-dropdown-item>
+              <el-dropdown-item command="images">批量图片导入</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -186,6 +274,31 @@ function handleImportCommand(command) {
         <div class="color-bar" :style="{ background: category.color }"></div>
         <div class="card-content">
           <h3>{{ category.name }}</h3>
+          <div class="template-section">
+            <div v-if="category.template_image_path" class="template-preview">
+              <img :src="`/api/categories/${category.id}/template-image`" alt="模板图片" />
+            </div>
+            <div class="template-actions">
+              <el-upload
+                :action="`/api/categories/${category.id}/template-image`"
+                :headers="uploadHeaders"
+                :show-file-list="false"
+                :on-success="handleUploadSuccess"
+                :on-error="handleUploadError"
+                accept="image/*"
+              >
+                <el-button size="small">
+                  {{ category.template_image_path ? '更换模板' : '上传模板' }}
+                </el-button>
+              </el-upload>
+              <el-button
+                v-if="category.template_image_path"
+                size="small"
+                type="danger"
+                @click="handleDeleteTemplateImage(category)"
+              >删除模板</el-button>
+            </div>
+          </div>
           <div class="meta">
             <span v-if="category.shortcut_key" class="shortcut">
               快捷键: <kbd>{{ category.shortcut_key }}</kbd>
@@ -237,7 +350,7 @@ function handleImportCommand(command) {
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible.value = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
@@ -262,6 +375,59 @@ function handleImportCommand(command) {
       <template #footer>
         <el-button @click="importDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleImportFromDataset">导入</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量文本导入对话框 -->
+    <el-dialog v-model="batchTextDialogVisible" title="批量导入类别" width="450px">
+      <el-form label-width="100px">
+        <el-form-item label="类别列表">
+          <el-input
+            v-model="batchText"
+            type="textarea"
+            :rows="12"
+            placeholder="每行一个类别名称，例如：&#10;hero&#10;infantry&#10;engineer&#10;sentry&#10;drone"
+          />
+        </el-form-item>
+        <div class="form-tip" style="margin-left: 100px">
+          每行一个类别名称，颜色自动分配，重复名称自动跳过
+        </div>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchTextDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleBatchTextImport">导入</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量图片导入对话框 -->
+    <el-dialog v-model="batchImageDialogVisible" title="批量图片导入类别" width="500px">
+      <div class="batch-image-tip">
+        图片文件名（不含扩展名）将作为类别名称，图片自动设为类别模板。
+      </div>
+      <el-upload
+        v-model:file-list="batchImageFiles"
+        :auto-upload="false"
+        accept="image/*"
+        multiple
+        :on-change="handleBatchImageChange"
+        :on-remove="handleBatchImageRemove"
+        list-type="picture"
+      >
+        <el-button type="primary">选择图片</el-button>
+        <template #tip>
+          <div class="form-tip">支持 jpg/png/bmp/webp，可多选。重复名称自动跳过。</div>
+        </template>
+      </el-upload>
+      <template #footer>
+        <el-button @click="batchImageDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="batchImageUploading"
+          :disabled="batchImageFiles.length === 0"
+          @click="handleBatchImageImport"
+        >
+          导入 ({{ batchImageFiles.length }} 张)
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -298,7 +464,7 @@ function handleImportCommand(command) {
 
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
@@ -318,6 +484,31 @@ function handleImportCommand(command) {
 
 .card-content h3 {
   margin: 0 0 12px 0;
+}
+
+.template-section {
+  margin-bottom: 12px;
+}
+
+.template-preview {
+  margin-bottom: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f5f5f5;
+  max-width: 200px;
+}
+
+.template-preview img {
+  width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  display: block;
+}
+
+.template-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .meta {
@@ -387,5 +578,14 @@ function handleImportCommand(command) {
 
 .color-option.active {
   border-color: #333;
+}
+
+.batch-image-tip {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
 }
 </style>

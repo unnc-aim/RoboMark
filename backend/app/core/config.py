@@ -4,7 +4,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # 应用配置
-    APP_NAME: str = "Torch-Markup"
+    APP_NAME: str = "AIM-Markup"
     DEBUG: bool = True
 
     # 数据库配置

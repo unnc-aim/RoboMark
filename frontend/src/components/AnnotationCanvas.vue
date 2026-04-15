@@ -9,6 +9,14 @@ const props = defineProps({
   mode: {
     type: String,
     default: 'annotate'  // 'annotate' | 'pan'
+  },
+  allowDrawWithoutCategory: {
+    type: Boolean,
+    default: false
+  },
+  shapeMode: {
+    type: String,
+    default: 'bbox'  // 'bbox' | '4point' | '8point'
   }
 })
 
@@ -38,6 +46,16 @@ const dragHandle = ref(null)
 
 // 拖动调整时的临时边界框（用于实时预览）
 const dragBox = ref(null)
+
+// 平行四边形点标注状态
+const currentPoints = ref([])
+const maxPoints = computed(() => {
+  if (props.shapeMode === '4point') return 4
+  if (props.shapeMode === '8point') return 8
+  return 0
+})
+const isPointMode = computed(() => props.shapeMode === '4point' || props.shapeMode === '8point')
+const isAdjustingPoint = ref(false)  // 长按拖动调整刚放置的点
 
 // 图片URL
 const imageUrl = computed(() => `/api/images/${props.imageId}/file`)
@@ -74,6 +92,11 @@ watch(() => props.mode, () => {
       canvasRef.value.style.cursor = 'crosshair'
     }
   }
+})
+
+// 切换图片时清除正在标注的点
+watch(() => props.imageId, () => {
+  currentPoints.value = []
 })
 
 function loadImage() {
@@ -119,6 +142,7 @@ function resetView() {
   offsetX.value = 0
   offsetY.value = 0
   selectedAnnotation.value = null
+  currentPoints.value = []
 }
 
 function draw() {
@@ -139,7 +163,6 @@ function draw() {
   // 绘制已有标注
   props.annotations.forEach((ann, index) => {
     const isSelected = ann.id === selectedAnnotation.value?.id
-    // 如果正在拖动调整或移动这个标注，使用 dragBox 绘制
     if (isSelected && (isDragging.value || isMoving.value) && dragBox.value) {
       drawAnnotationWithBox(ann, dragBox.value, index, true)
     } else {
@@ -147,38 +170,113 @@ function draw() {
     }
   })
 
-  // 绘制当前正在绘制的框
-  if (currentBox.value) {
-    drawBox(currentBox.value, props.selectedCategory?.color || '#FF0000', true)
+  // 绘制当前正在绘制的框（bbox模式）
+  if (currentBox.value && !isPointMode.value) {
+    drawBox(currentBox.value, props.selectedCategory?.color || '#409EFF', true)
+  }
+
+  // 绘制当前正在标注的点（点模式）
+  if (currentPoints.value.length > 0 && isPointMode.value) {
+    drawCurrentPoints()
+  }
+}
+
+// 绘制当前正在标注的点
+function drawCurrentPoints() {
+  const color = props.selectedCategory?.color || '#409EFF'
+  const points = currentPoints.value
+
+  // 在 4 点模式下：相邻点连线（1→2, 2→3, 3→4, 4→1 闭合）
+  // 在 8 点模式下：每 2 个点连线（1→2, 3→4, 5→6, 7→8）
+  if (props.shapeMode === '4point' && points.length >= 2) {
+    ctx.value.beginPath()
+    ctx.value.strokeStyle = color
+    ctx.value.lineWidth = 2
+    const first = imageToScreen(points[0].x, points[0].y)
+    ctx.value.moveTo(first.x, first.y)
+    for (let i = 1; i < points.length; i++) {
+      const p = imageToScreen(points[i].x, points[i].y)
+      ctx.value.lineTo(p.x, p.y)
+    }
+    // 如果满了4个点，闭合
+    if (points.length === 4) {
+      ctx.value.lineTo(first.x, first.y)
+    }
+    ctx.value.stroke()
+    // 半透明填充
+    if (points.length === 4) {
+      ctx.value.fillStyle = color + '20'
+      ctx.value.fill()
+    }
+  } else if (props.shapeMode === '8point') {
+    ctx.value.beginPath()
+    ctx.value.strokeStyle = color
+    ctx.value.lineWidth = 2
+    for (let i = 0; i < points.length; i += 2) {
+      if (i + 1 < points.length) {
+        const p1 = imageToScreen(points[i].x, points[i].y)
+        const p2 = imageToScreen(points[i + 1].x, points[i + 1].y)
+        ctx.value.beginPath()
+        ctx.value.moveTo(p1.x, p1.y)
+        ctx.value.lineTo(p2.x, p2.y)
+        ctx.value.stroke()
+      }
+    }
+  }
+
+  // 绘制所有点
+  points.forEach((p, i) => {
+    const sp = imageToScreen(p.x, p.y)
+    ctx.value.beginPath()
+    ctx.value.arc(sp.x, sp.y, 5, 0, Math.PI * 2)
+    ctx.value.fillStyle = color
+    ctx.value.fill()
+    ctx.value.strokeStyle = '#fff'
+    ctx.value.lineWidth = 1.5
+    ctx.value.stroke()
+    // 显示点序号
+    ctx.value.fillStyle = '#fff'
+    ctx.value.font = '10px Arial'
+    ctx.value.textAlign = 'center'
+    ctx.value.fillText(i + 1, sp.x, sp.y - 8)
+  })
+}
+
+function imageToScreen(imgX, imgY) {
+  return {
+    x: imgX * scale.value + offsetX.value,
+    y: imgY * scale.value + offsetY.value
   }
 }
 
 function drawAnnotation(ann, index, isSelected) {
   const category = props.categories.find(c => c.id === ann.category_id)
   const color = category?.color || '#FF0000'
+  const annType = ann.annotation_type || 'bbox'
 
-  // 将YOLO格式转换为像素坐标
-  const imgW = image.value.width
-  const imgH = image.value.height
+  if (annType === 'parallelogram' && ann.p1_x != null) {
+    drawParallelogramAnnotation(ann, index, isSelected, color)
+  } else {
+    // 原有 bbox 绘制
+    const imgW = image.value.width
+    const imgH = image.value.height
+    const x = (ann.x_center - ann.width / 2) * imgW
+    const y = (ann.y_center - ann.height / 2) * imgH
+    const w = ann.width * imgW
+    const h = ann.height * imgH
+    const box = { x, y, w, h }
+    drawBox(box, color, isSelected)
 
-  const x = (ann.x_center - ann.width / 2) * imgW
-  const y = (ann.y_center - ann.height / 2) * imgH
-  const w = ann.width * imgW
-  const h = ann.height * imgH
-
-  const box = { x, y, w, h }
-  drawBox(box, color, isSelected)
-
-  // 绘制类别标签和编号
-  const screenX = x * scale.value + offsetX.value
-  const screenY = y * scale.value + offsetY.value
-
-  const labelText = `#${index + 1} ${category?.name || ''}`
-  ctx.value.font = '12px Arial'
-  ctx.value.fillStyle = color
-  ctx.value.fillRect(screenX, screenY - 18, ctx.value.measureText(labelText).width + 8, 18)
-  ctx.value.fillStyle = 'white'
-  ctx.value.fillText(labelText, screenX + 4, screenY - 5)
+    // 绘制类别标签
+    const screenX = x * scale.value + offsetX.value
+    const screenY = y * scale.value + offsetY.value
+    const labelText = `#${index + 1} ${category?.name || ''}`
+    ctx.value.font = '12px Arial'
+    ctx.value.fillStyle = color
+    ctx.value.fillRect(screenX, screenY - 18, ctx.value.measureText(labelText).width + 8, 18)
+    ctx.value.fillStyle = 'white'
+    ctx.value.fillText(labelText, screenX + 4, screenY - 5)
+  }
 }
 
 function drawAnnotationWithBox(ann, box, index, isSelected) {
@@ -187,16 +285,61 @@ function drawAnnotationWithBox(ann, box, index, isSelected) {
 
   drawBox(box, color, isSelected)
 
-  // 绘制类别标签和编号
   const screenX = box.x * scale.value + offsetX.value
   const screenY = box.y * scale.value + offsetY.value
-
   const labelText = `#${index + 1} ${category?.name || ''}`
   ctx.value.font = '12px Arial'
   ctx.value.fillStyle = color
   ctx.value.fillRect(screenX, screenY - 18, ctx.value.measureText(labelText).width + 8, 18)
   ctx.value.fillStyle = 'white'
   ctx.value.fillText(labelText, screenX + 4, screenY - 5)
+}
+
+// 绘制平行四边形标注
+function drawParallelogramAnnotation(ann, index, isSelected, color) {
+  const corners = [
+    { x: ann.p1_x, y: ann.p1_y },
+    { x: ann.p2_x, y: ann.p2_y },
+    { x: ann.p3_x, y: ann.p3_y },
+    { x: ann.p4_x, y: ann.p4_y },
+  ]
+
+  // 绘制填充
+  ctx.value.beginPath()
+  const first = imageToScreen(corners[0].x * image.value.width, corners[0].y * image.value.height)
+  ctx.value.moveTo(first.x, first.y)
+  for (let i = 1; i < corners.length; i++) {
+    const p = imageToScreen(corners[i].x * image.value.width, corners[i].y * image.value.height)
+    ctx.value.lineTo(p.x, p.y)
+  }
+  ctx.value.closePath()
+  ctx.value.fillStyle = color + '20'
+  ctx.value.fill()
+  ctx.value.strokeStyle = color
+  ctx.value.lineWidth = isSelected ? 3 : 2
+  ctx.value.stroke()
+
+  // 选中时绘制角点手柄
+  if (isSelected) {
+    corners.forEach(c => {
+      const sp = imageToScreen(c.x * image.value.width, c.y * image.value.height)
+      ctx.value.fillStyle = color
+      ctx.value.fillRect(sp.x - 5, sp.y - 5, 10, 10)
+    })
+  }
+
+  // 标签
+  const screenP = imageToScreen(
+    Math.min(corners[0].x, corners[3].x) * image.value.width,
+    Math.min(corners[0].y, corners[1].y) * image.value.height
+  )
+  const category = props.categories.find(c => c.id === ann.category_id)
+  const labelText = `#${index + 1} ${category?.name || ''}`
+  ctx.value.font = '12px Arial'
+  ctx.value.fillStyle = color
+  ctx.value.fillRect(screenP.x, screenP.y - 18, ctx.value.measureText(labelText).width + 8, 18)
+  ctx.value.fillStyle = 'white'
+  ctx.value.fillText(labelText, screenP.x + 4, screenP.y - 5)
 }
 
 function drawBox(box, color, isSelected) {
@@ -244,7 +387,6 @@ function screenToImage(screenX, screenY) {
 }
 
 function handleMouseDown(e) {
-  // 阻止默认行为（Safari 拖动兼容性）
   e.preventDefault()
 
   const rect = canvasRef.value.getBoundingClientRect()
@@ -259,15 +401,68 @@ function handleMouseDown(e) {
     return
   }
 
-  // 检查是否点击了调整手柄
+  // 点标注模式（4point / 8point）
+  if (isPointMode.value && (props.selectedCategory || props.allowDrawWithoutCategory)) {
+    const imgPoint = screenToImage(screenX, screenY)
+    currentPoints.value.push({ x: imgPoint.x, y: imgPoint.y })
+    isAdjustingPoint.value = true
+    draw()
+    return
+  }
+
+  // 检查是否点击了调整手柄（bbox模式）
   if (selectedAnnotation.value) {
-    const handle = getClickedHandle(screenX, screenY)
-    if (handle) {
-      dragHandle.value = handle
-      isDragging.value = true
-      startPoint.value = screenToImage(screenX, screenY)
-      // 初始化 dragBox 为当前标注的像素坐标
-      const ann = selectedAnnotation.value
+    const ann = selectedAnnotation.value
+    const annType = ann.annotation_type || 'bbox'
+
+    if (annType === 'parallelogram' && ann.p1_x != null) {
+      // 平行四边形角点拖拽
+      const handle = getClickedParallelogramHandle(screenX, screenY, ann)
+      if (handle) {
+        dragHandle.value = handle
+        isDragging.value = true
+        startPoint.value = screenToImage(screenX, screenY)
+        return
+      }
+    } else {
+      const handle = getClickedHandle(screenX, screenY)
+      if (handle) {
+        dragHandle.value = handle
+        isDragging.value = true
+        startPoint.value = screenToImage(screenX, screenY)
+        const imgW = image.value.width
+        const imgH = image.value.height
+        dragBox.value = {
+          x: (ann.x_center - ann.width / 2) * imgW,
+          y: (ann.y_center - ann.height / 2) * imgH,
+          w: ann.width * imgW,
+          h: ann.height * imgH
+        }
+        return
+      }
+    }
+  }
+
+  // 检查是否点击了已有标注（开始拖动移动）
+  const clickedAnn = getAnnotationAt(screenX, screenY)
+  if (clickedAnn) {
+    selectedAnnotation.value = clickedAnn
+    isMoving.value = true
+    startPoint.value = screenToImage(screenX, screenY)
+    const ann = clickedAnn
+    const annType = ann.annotation_type || 'bbox'
+
+    if (annType === 'parallelogram' && ann.p1_x != null) {
+      // 平行四边形移动 - 存储所有角点
+      dragBox.value = {
+        corners: [
+          { x: ann.p1_x, y: ann.p1_y },
+          { x: ann.p2_x, y: ann.p2_y },
+          { x: ann.p3_x, y: ann.p3_y },
+          { x: ann.p4_x, y: ann.p4_y },
+        ]
+      }
+    } else {
       const imgW = image.value.width
       const imgH = image.value.height
       dragBox.value = {
@@ -276,32 +471,13 @@ function handleMouseDown(e) {
         w: ann.width * imgW,
         h: ann.height * imgH
       }
-      return
-    }
-  }
-
-  // 检查是否点击了已有标注（开始拖动移动）
-  const clickedAnn = getAnnotationAt(screenX, screenY)
-  if (clickedAnn) {
-    selectedAnnotation.value = clickedAnn
-    // 开始拖动移动
-    isMoving.value = true
-    startPoint.value = screenToImage(screenX, screenY)
-    // 初始化 dragBox
-    const imgW = image.value.width
-    const imgH = image.value.height
-    dragBox.value = {
-      x: (clickedAnn.x_center - clickedAnn.width / 2) * imgW,
-      y: (clickedAnn.y_center - clickedAnn.height / 2) * imgH,
-      w: clickedAnn.width * imgW,
-      h: clickedAnn.height * imgH
     }
     draw()
     return
   }
 
-  // 开始绘制新框
-  if (props.selectedCategory) {
+  // 开始绘制新框（bbox模式）
+  if (props.selectedCategory || props.allowDrawWithoutCategory) {
     selectedAnnotation.value = null
     isDrawing.value = true
     const imgPoint = screenToImage(screenX, screenY)
@@ -315,6 +491,14 @@ function handleMouseMove(e) {
   const screenX = e.clientX - rect.left
   const screenY = e.clientY - rect.top
 
+  // 拖动调整刚放置的点
+  if (isAdjustingPoint.value && currentPoints.value.length > 0) {
+    const imgPoint = screenToImage(screenX, screenY)
+    currentPoints.value[currentPoints.value.length - 1] = { x: imgPoint.x, y: imgPoint.y }
+    draw()
+    return
+  }
+
   // 平移
   if (isPanning.value) {
     offsetX.value += e.clientX - startPoint.value.x
@@ -324,7 +508,29 @@ function handleMouseMove(e) {
     return
   }
 
-  // 调整大小
+  // 平行四边形角点拖拽
+  if (isDragging.value && selectedAnnotation.value && dragHandle.value) {
+    const ann = selectedAnnotation.value
+    const annType = ann.annotation_type || 'bbox'
+    if (annType === 'parallelogram' && dragHandle.value.cornerIndex != null) {
+      const imgPoint = screenToImage(screenX, screenY)
+      const imgW = image.value.width
+      const imgH = image.value.height
+      // 直接更新角点（实时预览）
+      const cornerFields = ['p1', 'p2', 'p3', 'p4']
+      const ci = dragHandle.value.cornerIndex
+      const field = cornerFields[ci]
+      selectedAnnotation.value = {
+        ...selectedAnnotation.value,
+        [field + '_x']: imgPoint.x / imgW,
+        [field + '_y']: imgPoint.y / imgH,
+      }
+      draw()
+      return
+    }
+  }
+
+  // bbox 调整大小
   if (isDragging.value && selectedAnnotation.value && dragHandle.value && dragBox.value) {
     const imgPoint = screenToImage(screenX, screenY)
     updateDragBox(dragHandle.value.type, imgPoint)
@@ -334,24 +540,56 @@ function handleMouseMove(e) {
 
   // 整体移动
   if (isMoving.value && selectedAnnotation.value && dragBox.value) {
-    const imgPoint = screenToImage(screenX, screenY)
-    const dx = imgPoint.x - startPoint.value.x
-    const dy = imgPoint.y - startPoint.value.y
-
-    // 计算原始位置
     const ann = selectedAnnotation.value
-    const imgW = image.value.width
-    const imgH = image.value.height
-    const origX = (ann.x_center - ann.width / 2) * imgW
-    const origY = (ann.y_center - ann.height / 2) * imgH
+    const annType = ann.annotation_type || 'bbox'
 
-    dragBox.value = {
-      x: origX + dx,
-      y: origY + dy,
-      w: dragBox.value.w,
-      h: dragBox.value.h
+    if (annType === 'parallelogram' && dragBox.value.corners) {
+      // 平行四边形移动
+      const imgPoint = screenToImage(screenX, screenY)
+      const dx = imgPoint.x - startPoint.value.x
+      const dy = imgPoint.y - startPoint.value.y
+      const imgW = image.value.width
+      const imgH = image.value.height
+      const origCorners = dragBox.value.corners
+      const newCorners = origCorners.map(c => ({
+        x: c.x * imgW + dx,
+        y: c.y * imgH + dy
+      }))
+      // 计算新的 bbox 和角点
+      const cornerFields = ['p1', 'p2', 'p3', 'p4']
+      const updates = {}
+      newCorners.forEach((c, i) => {
+        updates[cornerFields[i] + '_x'] = c.x / imgW
+        updates[cornerFields[i] + '_y'] = c.y / imgH
+      })
+      // 也更新外接矩形
+      const xs = newCorners.map(c => c.x)
+      const ys = newCorners.map(c => c.y)
+      updates.x_center = (Math.min(...xs) + Math.max(...xs)) / 2 / imgW
+      updates.y_center = (Math.min(...ys) + Math.max(...ys)) / 2 / imgH
+      updates.width = (Math.max(...xs) - Math.min(...xs)) / imgW
+      updates.height = (Math.max(...ys) - Math.min(...ys)) / imgH
+      selectedAnnotation.value = { ...selectedAnnotation.value, ...updates }
+      draw()
+    } else {
+      // bbox 移动
+      const imgPoint = screenToImage(screenX, screenY)
+      const dx = imgPoint.x - startPoint.value.x
+      const dy = imgPoint.y - startPoint.value.y
+
+      const imgW = image.value.width
+      const imgH = image.value.height
+      const origX = (ann.x_center - ann.width / 2) * imgW
+      const origY = (ann.y_center - ann.height / 2) * imgH
+
+      dragBox.value = {
+        x: origX + dx,
+        y: origY + dy,
+        w: dragBox.value.w,
+        h: dragBox.value.h
+      }
+      draw()
     }
-    draw()
     return
   }
 
@@ -368,9 +606,37 @@ function handleMouseMove(e) {
 }
 
 function handleMouseUp(e) {
+  // 松开确认点位置，并检查是否完成
+  if (isAdjustingPoint.value) {
+    isAdjustingPoint.value = false
+    if (currentPoints.value.length >= maxPoints.value) {
+      completePointAnnotation()
+    }
+    return
+  }
+
   if (isPanning.value) {
     isPanning.value = false
     return
+  }
+
+  // 平行四边形角点拖拽完成
+  if (isDragging.value && selectedAnnotation.value) {
+    const ann = selectedAnnotation.value
+    const annType = ann.annotation_type || 'bbox'
+    if (annType === 'parallelogram' && dragHandle.value?.cornerIndex != null) {
+      // emit update with new corner positions
+      const cornerFields = ['p1', 'p2', 'p3', 'p4']
+      const ci = dragHandle.value.cornerIndex
+      const field = cornerFields[ci]
+      emit('update', selectedAnnotation.value.id, {
+        [field + '_x']: selectedAnnotation.value[field + '_x'],
+        [field + '_y']: selectedAnnotation.value[field + '_y'],
+      })
+      isDragging.value = false
+      dragHandle.value = null
+      return
+    }
   }
 
   if (isDragging.value || isMoving.value) {
@@ -378,8 +644,25 @@ function handleMouseUp(e) {
     isDragging.value = false
     isMoving.value = false
     dragHandle.value = null
-    // 保存更新
-    if (selectedAnnotation.value && dragBox.value && image.value) {
+
+    const ann = selectedAnnotation.value
+    const annType = ann?.annotation_type || 'bbox'
+
+    if (ann && annType === 'parallelogram' && wasMoving && dragBox.value?.corners) {
+      // 平行四边形移动完成 - emit update
+      const cornerFields = ['p1', 'p2', 'p3', 'p4']
+      const updates = {}
+      cornerFields.forEach(f => {
+        updates[f + '_x'] = ann[f + '_x']
+        updates[f + '_y'] = ann[f + '_y']
+      })
+      updates.x_center = ann.x_center
+      updates.y_center = ann.y_center
+      updates.width = ann.width
+      updates.height = ann.height
+      emit('update', ann.id, updates)
+    } else if (selectedAnnotation.value && dragBox.value && image.value) {
+      // bbox update
       const imgW = image.value.width
       const imgH = image.value.height
       const box = dragBox.value
@@ -390,7 +673,6 @@ function handleMouseUp(e) {
         height: box.h / imgH
       }
       emit('update', selectedAnnotation.value.id, newData)
-      // 更新 selectedAnnotation 的引用，避免下次操作使用旧数据
       selectedAnnotation.value = {
         ...selectedAnnotation.value,
         ...newData
@@ -410,16 +692,19 @@ function handleMouseUp(e) {
 
     // 最小尺寸检查
     if (w > 5 && h > 5 && image.value) {
-      // 转换为YOLO格式
       const imgW = image.value.width
       const imgH = image.value.height
 
       const annotation = {
-        category_id: props.selectedCategory.id,
         x_center: (x + w / 2) / imgW,
         y_center: (y + h / 2) / imgH,
         width: w / imgW,
         height: h / imgH
+      }
+
+      // 只在预选类别模式下设置 category_id
+      if (props.selectedCategory) {
+        annotation.category_id = props.selectedCategory.id
       }
 
       emit('add', annotation)
@@ -427,6 +712,109 @@ function handleMouseUp(e) {
 
     currentBox.value = null
     draw()
+  }
+}
+
+// 完成点标注（4点/8点模式）
+function completePointAnnotation() {
+  const points = currentPoints.value
+  if (!image.value || points.length < maxPoints.value) return
+
+  const imgW = image.value.width
+  const imgH = image.value.height
+
+  let corners = []
+
+  if (props.shapeMode === '4point') {
+    // 4个点直接就是4个角
+    corners = points.map(p => ({
+      x: p.x / imgW,
+      y: p.y / imgH
+    }))
+  } else if (props.shapeMode === '8point') {
+    // 8个点：每2个点定义一条边，计算相邻边的交点得到4个角
+    // edges: (0,1), (2,3), (4,5), (6,7)
+    corners = [
+      lineIntersection(points[0], points[1], points[6], points[7], imgW, imgH),  // edge1 ∩ edge4
+      lineIntersection(points[0], points[1], points[2], points[3], imgW, imgH),  // edge1 ∩ edge2
+      lineIntersection(points[2], points[3], points[4], points[5], imgW, imgH),  // edge2 ∩ edge3
+      lineIntersection(points[4], points[5], points[6], points[7], imgW, imgH),  // edge3 ∩ edge4
+    ]
+  }
+
+  // 检查交点有效性
+  if (corners.some(c => c == null || isNaN(c.x) || isNaN(c.y))) {
+    // 无效交点（平行线等），直接用外接矩形作为 bbox
+    const xs = points.map(p => p.x)
+    const ys = points.map(p => p.y)
+    const minX = Math.min(...xs), maxX = Math.max(...xs)
+    const minY = Math.min(...ys), maxY = Math.max(...ys)
+    const annotation = {
+      annotation_type: 'bbox',
+      x_center: (minX + maxX) / 2 / imgW,
+      y_center: (minY + maxY) / 2 / imgH,
+      width: (maxX - minX) / imgW,
+      height: (maxY - minY) / imgH,
+    }
+    if (props.selectedCategory) {
+      annotation.category_id = props.selectedCategory.id
+    }
+    emit('add', annotation)
+    currentPoints.value = []
+    draw()
+    return
+  }
+
+  // 计算外接矩形
+  const xs = corners.map(c => c.x)
+  const ys = corners.map(c => c.y)
+  const bbox = {
+    x_center: (Math.min(...xs) + Math.max(...xs)) / 2,
+    y_center: (Math.min(...ys) + Math.max(...ys)) / 2,
+    width: Math.max(...xs) - Math.min(...xs),
+    height: Math.max(...ys) - Math.min(...ys),
+  }
+
+  const annotation = {
+    annotation_type: 'parallelogram',
+    x_center: bbox.x_center,
+    y_center: bbox.y_center,
+    width: bbox.width,
+    height: bbox.height,
+    p1_x: corners[0].x,
+    p1_y: corners[0].y,
+    p2_x: corners[1].x,
+    p2_y: corners[1].y,
+    p3_x: corners[2].x,
+    p3_y: corners[2].y,
+    p4_x: corners[3].x,
+    p4_y: corners[3].y,
+  }
+
+  if (props.selectedCategory) {
+    annotation.category_id = props.selectedCategory.id
+  }
+
+  emit('add', annotation)
+  currentPoints.value = []
+  draw()
+}
+
+// 计算两条直线的交点（归一化坐标）
+function lineIntersection(p1, p2, p3, p4, imgW, imgH) {
+  const x1 = p1.x, y1 = p1.y
+  const x2 = p2.x, y2 = p2.y
+  const x3 = p3.x, y3 = p3.y
+  const x4 = p4.x, y4 = p4.y
+
+  const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+  if (Math.abs(denom) < 1e-10) return null  // 平行线
+
+  const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+
+  return {
+    x: (x1 + t * (x2 - x1)) / imgW,
+    y: (y1 + t * (y2 - y1)) / imgH,
   }
 }
 
@@ -452,6 +840,7 @@ function handleWheel(e) {
 
 function handleKeyDown(e) {
   if (e.code === 'Space') {
+    e.preventDefault()
     spacePressed.value = true
     canvasRef.value.style.cursor = 'grab'
   }
@@ -461,7 +850,17 @@ function handleKeyDown(e) {
       emit('delete', selectedAnnotation.value.id)
       selectedAnnotation.value = null
       draw()
+    } else if (isPointMode.value && currentPoints.value.length > 0) {
+      // 删除最后一个点
+      currentPoints.value.pop()
+      draw()
     }
+  }
+
+  // Escape 取消当前点标注
+  if (e.key === 'Escape' && isPointMode.value && currentPoints.value.length > 0) {
+    currentPoints.value = []
+    draw()
   }
 }
 
@@ -481,14 +880,63 @@ function getAnnotationAt(screenX, screenY) {
 
   for (let i = props.annotations.length - 1; i >= 0; i--) {
     const ann = props.annotations[i]
-    const x = (ann.x_center - ann.width / 2) * imgW
-    const y = (ann.y_center - ann.height / 2) * imgH
-    const w = ann.width * imgW
-    const h = ann.height * imgH
+    const annType = ann.annotation_type || 'bbox'
 
-    if (imgPoint.x >= x && imgPoint.x <= x + w &&
-        imgPoint.y >= y && imgPoint.y <= y + h) {
-      return ann
+    if (annType === 'parallelogram' && ann.p1_x != null) {
+      // 点在平行四边形内判断（射线法）
+      const corners = [
+        { x: ann.p1_x * imgW, y: ann.p1_y * imgH },
+        { x: ann.p2_x * imgW, y: ann.p2_y * imgH },
+        { x: ann.p3_x * imgW, y: ann.p3_y * imgH },
+        { x: ann.p4_x * imgW, y: ann.p4_y * imgH },
+      ]
+      if (pointInPolygon(imgPoint, corners)) return ann
+    } else {
+      // bbox 检测
+      const x = (ann.x_center - ann.width / 2) * imgW
+      const y = (ann.y_center - ann.height / 2) * imgH
+      const w = ann.width * imgW
+      const h = ann.height * imgH
+      if (imgPoint.x >= x && imgPoint.x <= x + w &&
+          imgPoint.y >= y && imgPoint.y <= y + h) {
+        return ann
+      }
+    }
+  }
+  return null
+}
+
+// 射线法判断点是否在多边形内
+function pointInPolygon(point, polygon) {
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y
+    const xj = polygon[j].x, yj = polygon[j].y
+    if ((yi > point.y) !== (yj > point.y) &&
+        point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
+// 获取平行四边形的角点手柄
+function getClickedParallelogramHandle(screenX, screenY, ann) {
+  if (!image.value) return null
+
+  const imgW = image.value.width
+  const imgH = image.value.height
+  const corners = [
+    { x: ann.p1_x, y: ann.p1_y },
+    { x: ann.p2_x, y: ann.p2_y },
+    { x: ann.p3_x, y: ann.p3_y },
+    { x: ann.p4_x, y: ann.p4_y },
+  ]
+
+  for (let i = 0; i < corners.length; i++) {
+    const sp = imageToScreen(corners[i].x * imgW, corners[i].y * imgH)
+    if (Math.abs(screenX - sp.x) < 10 && Math.abs(screenY - sp.y) < 10) {
+      return { cornerIndex: i }
     }
   }
   return null
@@ -565,10 +1013,21 @@ function updateCursor(screenX, screenY) {
   }
 
   if (selectedAnnotation.value) {
-    const handle = getClickedHandle(screenX, screenY)
-    if (handle) {
-      canvasRef.value.style.cursor = handle.cursor
-      return
+    const ann = selectedAnnotation.value
+    const annType = ann.annotation_type || 'bbox'
+
+    if (annType === 'parallelogram' && ann.p1_x != null) {
+      const handle = getClickedParallelogramHandle(screenX, screenY, ann)
+      if (handle) {
+        canvasRef.value.style.cursor = 'move'
+        return
+      }
+    } else {
+      const handle = getClickedHandle(screenX, screenY)
+      if (handle) {
+        canvasRef.value.style.cursor = handle.cursor
+        return
+      }
     }
   }
 

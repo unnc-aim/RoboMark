@@ -55,3 +55,6 @@ htmlcov/
 
 # Local config
 *.local
+
+# Uploads
+backend/uploads/

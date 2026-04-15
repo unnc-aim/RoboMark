@@ -33,13 +33,17 @@ function handleLogout() {
   <div class="home-container">
     <header class="header">
       <div class="logo">
-        <h1>Torch-Markup</h1>
+        <h1>AIM-Markup</h1>
       </div>
       <div class="user-info">
         <span>{{ userStore.user?.username }}</span>
+        <el-button v-if="userStore.isAdmin" type="primary" link @click="router.push('/')">
+          首页
+        </el-button>
         <el-button v-if="userStore.isAdmin" type="primary" link @click="router.push('/admin')">
           管理后台
         </el-button>
+
         <el-button type="primary" link @click="router.push('/tutorial')">
           使用教程
         </el-button>

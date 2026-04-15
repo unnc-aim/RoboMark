@@ -28,7 +28,8 @@ const config = ref({
 
 const formatOptions = [
   { value: 'yolo', label: 'YOLO 格式' },
-  { value: 'dji_roco', label: 'DJI ROCO 格式' }
+  { value: 'dji_roco', label: 'DJI ROCO 格式' },
+  { value: 'rc2026_wulin', label: 'RC2026-wulin 格式' }
 ]
 
 watch(() => props.modelValue, async (val) => {

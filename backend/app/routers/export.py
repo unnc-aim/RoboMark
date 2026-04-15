@@ -190,6 +190,7 @@ names: {names}
             for ann in annotations:
                 if ann['category_id'] in category_map:
                     class_id = category_map[ann['category_id']]
+                    # 对平行四边形使用外接矩形（已经是 x_center, y_center, width, height）
                     f.write(f"{class_id} {ann['x_center']:.6f} {ann['y_center']:.6f} {ann['width']:.6f} {ann['height']:.6f}\n")
                     stats["annotations"] += 1
 
@@ -324,24 +325,65 @@ def export_coco(output_path, images, categories, category_map, train_end, val_en
 
             for ann in annotations:
                 if ann['category_id'] in category_map:
-                    # 转换归一化坐标为像素坐标
-                    x_center = ann['x_center'] * img_width
-                    y_center = ann['y_center'] * img_height
-                    width = ann['width'] * img_width
-                    height = ann['height'] * img_height
+                    ann_type = ann.get('annotation_type', 'bbox')
 
-                    # COCO 使用左上角坐标 [x, y, width, height]
-                    x = x_center - width / 2
-                    y = y_center - height / 2
+                    if ann_type == 'parallelogram' and ann.get('p1_x') is not None:
+                        # 平行四边形：使用 polygon 格式
+                        points = [
+                            (ann['p1_x'], ann['p1_y']),
+                            (ann['p2_x'], ann['p2_y']),
+                            (ann['p3_x'], ann['p3_y']),
+                            (ann['p4_x'], ann['p4_y']),
+                        ]
+                        # 转换为像素坐标
+                        flat_segmentation = []
+                        for px, py in points:
+                            flat_segmentation.extend([round(px * img_width, 2), round(py * img_height, 2)])
 
-                    coco_ann = {
-                        "id": annotation_id,
-                        "image_id": image['id'],
-                        "category_id": category_map[ann['category_id']] + 1,  # COCO ID 从 1 开始
-                        "bbox": [round(x, 2), round(y, 2), round(width, 2), round(height, 2)],
-                        "area": round(width * height, 2),
-                        "iscrowd": 0
-                    }
+                        # 计算外接矩形
+                        xs = [p[0] * img_width for p in points]
+                        ys = [p[1] * img_height for p in points]
+                        min_x, max_x = min(xs), max(xs)
+                        min_y, max_y = min(ys), max(ys)
+                        bbox_w = max_x - min_x
+                        bbox_h = max_y - min_y
+
+                        # 使用 Shoelace 公式计算面积
+                        area = 0
+                        for i in range(len(points)):
+                            j = (i + 1) % len(points)
+                            area += points[i][0] * points[j][1] * img_width * img_height
+                            area -= points[j][0] * points[i][1] * img_width * img_height
+                        area = abs(area) / 2
+
+                        coco_ann = {
+                            "id": annotation_id,
+                            "image_id": image['id'],
+                            "category_id": category_map[ann['category_id']] + 1,
+                            "bbox": [round(min_x, 2), round(min_y, 2), round(bbox_w, 2), round(bbox_h, 2)],
+                            "area": round(area, 2),
+                            "segmentation": [flat_segmentation],
+                            "iscrowd": 0
+                        }
+                    else:
+                        # 矩形框：原有逻辑
+                        x_center = ann['x_center'] * img_width
+                        y_center = ann['y_center'] * img_height
+                        width = ann['width'] * img_width
+                        height = ann['height'] * img_height
+
+                        x = x_center - width / 2
+                        y = y_center - height / 2
+
+                        coco_ann = {
+                            "id": annotation_id,
+                            "image_id": image['id'],
+                            "category_id": category_map[ann['category_id']] + 1,
+                            "bbox": [round(x, 2), round(y, 2), round(width, 2), round(height, 2)],
+                            "area": round(width * height, 2),
+                            "iscrowd": 0
+                        }
+
                     splits_data[split]["annotations"].append(coco_ann)
                     annotation_id += 1
                     stats["annotations"] += 1
