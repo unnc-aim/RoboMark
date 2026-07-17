@@ -49,7 +49,7 @@ async def create_user(
             raise HTTPException(status_code=400, detail="用户名已存在")
 
         # 如果邮箱为空，自动生成
-        email = user_data.email if user_data.email else f"{user_data.username}@torch-markup.local"
+        email = user_data.email if user_data.email else f"{user_data.username}@robomark.local"
 
         # 检查邮箱是否已存在
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))

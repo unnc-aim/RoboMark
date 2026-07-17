@@ -37,7 +37,7 @@ async function handleLogin() {
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h1 class="title">AIM-Markup</h1>
+      <h1 class="title">RoboMark</h1>
       <p class="subtitle">图像数据标注平台</p>
 
       <el-form :model="form" @submit.prevent="handleLogin" class="login-form">

@@ -1,8 +1,8 @@
-# Torch-Markup 开发规范
+# RoboMark 开发规范
 
 ## 项目概述
 
-Torch-Markup 是一个图像数据标注平台，支持 YOLO 格式数据集的管理和标注。
+RoboMark 是一个图像数据标注平台，支持 YOLO 格式数据集的管理和标注。
 
 ## 技术栈
 
@@ -14,7 +14,7 @@ Torch-Markup 是一个图像数据标注平台，支持 YOLO 格式数据集的�
 ## 项目结构
 
 ```
-torch-markup/
+robomark/
 ├── frontend/           # Vue 3 前端
 │   ├── src/
 │   │   ├── views/      # 页面组件
@@ -99,7 +99,7 @@ cd frontend && pnpm build     # 构建生产版本
 - 使用 Pinia Composition API 风格
 - 用户状态: `useUserStore`
 - 标注状态: `useAnnotationStore`
-- localStorage key 必须带项目前缀 `torch-markup-`
+- localStorage key 必须带项目前缀 `robomark-`
 
 ### API 调用
 

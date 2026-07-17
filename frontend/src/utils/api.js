@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
-const STORAGE_KEY = 'torch-markup-token'
+const STORAGE_KEY = 'robomark-token'
 
 const api = axios.create({
   baseURL: '/api',

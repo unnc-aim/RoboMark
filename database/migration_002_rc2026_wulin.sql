@@ -1,7 +1,7 @@
 -- Migration 002: RC2026-wulin 格式支持
 -- 添加平行四边形标注、类别模板图片、新格式类型
 
-USE torch_markup;
+USE robomark;
 
 -- 1. dataset_configs 表增加 rc2026_wulin 枚举值
 ALTER TABLE dataset_configs

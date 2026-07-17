@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '../utils/api'
 
-const STORAGE_KEY = 'torch-markup-token'
-const USER_STORAGE_KEY = 'torch-markup-user'
+const STORAGE_KEY = 'robomark-token'
+const USER_STORAGE_KEY = 'robomark-user'
 
 export const useUserStore = defineStore('user', () => {
   // 尝试从 localStorage 恢复用户信息

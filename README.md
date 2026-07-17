@@ -1,7 +1,7 @@
-# Torch-Markup
+# RoboMark
 
 <p align="center">
-  <img src="docs/images/logo.png" alt="Torch-Markup Logo" width="200">
+  <img src="docs/images/logo.png" alt="RoboMark Logo" width="200">
 </p>
 
 <p align="center">
@@ -132,7 +132,7 @@
 ## 项目结构
 
 ```
-torch-markup/
+robomark/
 ├── frontend/                # Vue 3 前端
 │   ├── src/
 │   │   ├── views/          # 页面组件
@@ -248,7 +248,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: your_password
-      MYSQL_DATABASE: torch_markup
+      MYSQL_DATABASE: robomark
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -258,7 +258,7 @@ services:
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: mysql+pymysql://root:your_password@mysql:3306/torch_markup
+      DATABASE_URL: mysql+pymysql://root:your_password@mysql:3306/robomark
       SECRET_KEY: your-production-secret-key
     ports:
       - "8000:8000"
@@ -306,7 +306,7 @@ server {
 
     # 前端静态文件
     location / {
-        root /var/www/torch-markup/dist;
+        root /var/www/robomark/dist;
         try_files $uri $uri/ /index.html;
     }
 
@@ -325,7 +325,7 @@ server {
 
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
-| `DATABASE_URL` | 数据库连接字符串 | `mysql+pymysql://root:123456@localhost:3306/torch_markup` |
+| `DATABASE_URL` | 数据库连接字符串 | `mysql+pymysql://root:123456@localhost:3306/robomark` |
 | `SECRET_KEY` | JWT 密钥（生产环境请更换） | `your-super-secret-key` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Token 过期时间(分钟) | `1440` |
 | `CORS_ORIGINS` | 允许的跨域来源 | `["http://localhost:5173"]` |

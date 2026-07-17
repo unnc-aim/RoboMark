@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-const STORAGE_KEY = 'torch-markup-shortcuts'
+const STORAGE_KEY = 'robomark-shortcuts'
 
 // 默认快捷键配置
 const DEFAULT_SHORTCUTS = {
