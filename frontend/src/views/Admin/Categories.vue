@@ -23,7 +23,7 @@ const batchImageFiles = ref([])
 const batchImageUploading = ref(false)
 
 const uploadHeaders = computed(() => ({
-  Authorization: `Bearer ${localStorage.getItem('torch-markup-token')}`
+  Authorization: `Bearer ${localStorage.getItem('robomark-token')}`
 }))
 
 const colorOptions = [

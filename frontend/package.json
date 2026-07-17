@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "vite build && cp -r ./dist/ ../sslly-nginx/static/torch-markup-frontend"
+    "deploy": "vite build && cp -r ./dist/ ../sslly-nginx/static/robomark-frontend"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

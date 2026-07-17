@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Torch-Markup 开发环境启动脚本
+# RoboMark 开发环境启动脚本
 
 set -e
 
@@ -17,7 +17,7 @@ BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}    Torch-Markup 开发环境${NC}"
+echo -e "${BLUE}    RoboMark 开发环境${NC}"
 echo -e "${BLUE}========================================${NC}"
 
 # Git 同步
@@ -207,7 +207,7 @@ trap cleanup_on_exit SIGINT SIGTERM
 # 显示状态
 show_status() {
     echo -e "\n${BLUE}========================================${NC}"
-    echo -e "${GREEN}Torch-Markup 已启动!${NC}"
+    echo -e "${GREEN}RoboMark 已启动!${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo -e ""
     echo -e "前端地址: ${BLUE}http://localhost:5173${NC}"

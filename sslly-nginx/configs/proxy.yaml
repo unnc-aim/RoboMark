@@ -69,7 +69,7 @@
 # /app/static/site1:
 #   - yourdomain.com/home
 
-/app/static/torch-markup-frontend/dist:11186:
+/app/static/robomark-frontend/dist:11186:
   - markup.radar.uonaim.hnrobert.space
   - localhost
 

@@ -24,7 +24,7 @@ function handleLogout() {
   <el-container class="admin-layout">
     <el-aside width="220px" class="sidebar">
       <div class="logo">
-        <h2>AIM-Markup</h2>
+        <h2>RoboMark</h2>
         <span>管理后台</span>
         <el-button v-if="userStore.isAdmin" type="primary" link @click="router.push('/')">
           首页

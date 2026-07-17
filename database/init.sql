@@ -1,9 +1,9 @@
--- Torch-Markup 数据库初始化脚本
+-- RoboMark 数据库初始化脚本
 -- MySQL 8.0+
 
-CREATE DATABASE IF NOT EXISTS torch_markup DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS robomark DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE torch_markup;
+USE robomark;
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS users (
@@ -132,5 +132,5 @@ CREATE TABLE IF NOT EXISTS work_statistics (
 -- 插入默认管理员账户
 -- 密码: 123456 (bcrypt哈希)
 INSERT INTO users (username, email, hashed_password, is_admin, is_active)
-VALUES ('admin', 'admin@torch-markup.local', '$2b$12$tXRiGDRzF8unBqUSRnIYMuf1AXkH5HEouLpAapns4fY7UngSVbBwW', TRUE, TRUE)
+VALUES ('admin', 'admin@robomark.local', '$2b$12$tXRiGDRzF8unBqUSRnIYMuf1AXkH5HEouLpAapns4fY7UngSVbBwW', TRUE, TRUE)
 ON DUPLICATE KEY UPDATE username = username;

@@ -4,11 +4,11 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # 应用配置
-    APP_NAME: str = "AIM-Markup"
+    APP_NAME: str = "RoboMark"
     DEBUG: bool = True
 
     # 数据库配置
-    DATABASE_URL: str = "mysql+pymysql://root:password@localhost:3306/torch_markup"
+    DATABASE_URL: str = "mysql+pymysql://root:password@localhost:3306/robomark"
 
     # JWT配置
     SECRET_KEY: str = "your-secret-key-change-in-production"

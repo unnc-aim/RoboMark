@@ -33,7 +33,7 @@ function handleLogout() {
   <div class="home-container">
     <header class="header">
       <div class="logo">
-        <h1>AIM-Markup</h1>
+        <h1>RoboMark</h1>
       </div>
       <div class="user-info">
         <span>{{ userStore.user?.username }}</span>

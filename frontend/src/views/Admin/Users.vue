@@ -232,7 +232,7 @@ async function handleCreateUser() {
         </el-form-item>
         <el-form-item label="邮箱">
           <el-input v-model="newUser.email" placeholder="留空则自动生成" />
-          <div class="form-tip">留空将自动生成为：用户名@aim-markup.local</div>
+          <div class="form-tip">留空将自动生成为：用户名@robomark.local</div>
         </el-form-item>
         <el-form-item label="管理员">
           <el-switch v-model="newUser.is_admin" />
