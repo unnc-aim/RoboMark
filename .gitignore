@@ -47,6 +47,9 @@ frontend.log
 # PID files
 .backend.pid
 .frontend.pid
+.preannotation-worker.pid
+output/playwright/
+.playwright-cli/
 
 # Test
 .coverage

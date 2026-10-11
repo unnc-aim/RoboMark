@@ -24,7 +24,7 @@ echo -e "${BLUE}========================================${NC}"
 git_pull() {
     echo -e "\n${YELLOW}[0/4] 同步代码...${NC}"
     cd "$ROOT_DIR"
-    if git rev-parse --git-dir > /dev/null 2>&1; then
+    if [ "$(git rev-parse --show-toplevel 2>/dev/null)" = "$ROOT_DIR" ]; then
         git pull --rebase 2>/dev/null && echo -e "${GREEN}✓ 代码已同步${NC}" || echo -e "${YELLOW}⚠ Git 同步跳过（可能有本地修改）${NC}"
     fi
 }
@@ -60,12 +60,15 @@ update_secret_key() {
 
 # 检查Python
 check_python() {
-    if command -v python3 &> /dev/null; then
-        PYTHON_CMD="python3"
-    elif command -v python &> /dev/null; then
-        PYTHON_CMD="python"
-    else
-        echo -e "${RED}错误: 未找到Python，请先安装Python 3.10+${NC}"
+    PYTHON_CMD=""
+    for candidate in python3.12 python3.11 python3.10 python3.13 python3; do
+        if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 10))'; then
+            PYTHON_CMD="$candidate"
+            break
+        fi
+    done
+    if [ -z "$PYTHON_CMD" ]; then
+        echo -e "${RED}错误: 未找到 Python 3.10+${NC}"
         exit 1
     fi
     echo -e "${GREEN}✓ Python: $($PYTHON_CMD --version)${NC}"
@@ -95,7 +98,7 @@ setup_backend() {
     cd "$BACKEND_DIR"
 
     # 创建虚拟环境（如果不存在）
-    if [ ! -d "venv" ]; then
+    if [ ! -x "venv/bin/python" ]; then
         echo "创建Python虚拟环境..."
         $PYTHON_CMD -m venv venv
     fi
@@ -113,6 +116,20 @@ setup_backend() {
         echo -e "${YELLOW}已创建 .env 文件，请根据需要修改数据库配置${NC}"
     fi
 
+    # 只首次生成，凭据加密密钥不随 SECRET_KEY 变化。
+    python - <<'KEYGEN'
+from pathlib import Path
+from cryptography.fernet import Fernet
+p = Path('.env')
+lines = p.read_text().splitlines()
+current = next((line.partition('=')[2].strip() for line in lines if line.startswith('PREANNOTATION_ENCRYPTION_KEY=')), '')
+if not current:
+    lines = [line for line in lines if not line.startswith('PREANNOTATION_ENCRYPTION_KEY=')]
+    lines.append('PREANNOTATION_ENCRYPTION_KEY=' + Fernet.generate_key().decode())
+    p.write_text('\n'.join(lines) + '\n')
+    p.chmod(0o600)
+KEYGEN
+    python -m app.migrate
     echo -e "${GREEN}✓ 后端环境准备完成${NC}"
 }
 
@@ -144,6 +161,19 @@ start_backend() {
     echo -e "${GREEN}✓ 后端已启动 (PID: $BACKEND_PID)${NC}"
     echo -e "  API地址: ${BLUE}http://localhost:8000${NC}"
     echo -e "  API文档: ${BLUE}http://localhost:8000/docs${NC}"
+}
+
+# 启动独立预标注 worker
+start_worker() {
+    cd "$BACKEND_DIR"
+    source venv/bin/activate
+    if [ -f "$ROOT_DIR/.preannotation-worker.pid" ] && kill -0 "$(cat "$ROOT_DIR/.preannotation-worker.pid")" 2>/dev/null; then
+        echo -e "${GREEN}✓ 预标注 worker 已运行${NC}"
+        return
+    fi
+    nohup python -m app.preannotation_worker > "$ROOT_DIR/preannotation-worker.log" 2>&1 &
+    echo $! > "$ROOT_DIR/.preannotation-worker.pid"
+    echo -e "${GREEN}✓ 预标注 worker 已启动${NC}"
 }
 
 # 启动前端
@@ -185,6 +215,12 @@ stop_services() {
         rm -f "$ROOT_DIR/.frontend.pid"
     fi
 
+    if [ -f "$ROOT_DIR/.preannotation-worker.pid" ]; then
+        worker_pid=$(cat "$ROOT_DIR/.preannotation-worker.pid")
+        kill "$worker_pid" 2>/dev/null || true
+        rm -f "$ROOT_DIR/.preannotation-worker.pid"
+    fi
+
     # 清理可能残留的进程
     pkill -f "uvicorn app.main:app" 2>/dev/null || true
     pkill -f "vite" 2>/dev/null || true
@@ -219,6 +255,7 @@ show_status() {
     echo -e "日志文件:"
     echo -e "  后端: $ROOT_DIR/backend.log"
     echo -e "  前端: $ROOT_DIR/frontend.log"
+    echo -e "  预标注: $ROOT_DIR/preannotation-worker.log"
     echo -e ""
     echo -e "停止服务: ${YELLOW}$0 stop${NC} 或 ${YELLOW}Ctrl+C${NC}"
     echo -e "${BLUE}========================================${NC}"
@@ -254,6 +291,7 @@ main() {
             setup_backend
             setup_frontend
             start_backend
+            start_worker
             start_frontend
             run_foreground
             ;;
@@ -266,6 +304,7 @@ main() {
             setup_backend
             setup_frontend
             start_backend
+            start_worker
             start_frontend
             run_background
             ;;
@@ -283,8 +322,19 @@ main() {
             setup_backend
             setup_frontend
             start_backend
+            start_worker
             start_frontend
             run_foreground
+            ;;
+        worker)
+            check_python
+            setup_backend
+            start_worker
+            ;;
+        migrate)
+            cd "$BACKEND_DIR"
+            source venv/bin/activate
+            python -m app.migrate
             ;;
         status)
             echo -e "${YELLOW}检查服务状态...${NC}"
@@ -298,12 +348,18 @@ main() {
             else
                 echo -e "${RED}✗ 前端未运行${NC}"
             fi
+            if [ -f "$ROOT_DIR/.preannotation-worker.pid" ] && kill -0 "$(cat "$ROOT_DIR/.preannotation-worker.pid")" 2>/dev/null; then
+                echo -e "${GREEN}✓ 预标注 worker 运行中${NC}"
+            else
+                echo -e "${RED}✗ 预标注 worker 未运行${NC}"
+            fi
             ;;
         logs)
             echo -e "${YELLOW}=== 后端日志 (最后20行) ===${NC}"
             tail -20 "$ROOT_DIR/backend.log" 2>/dev/null || echo "无日志"
             echo -e "\n${YELLOW}=== 前端日志 (最后20行) ===${NC}"
             tail -20 "$ROOT_DIR/frontend.log" 2>/dev/null || echo "无日志"
+            tail -20 "$ROOT_DIR/preannotation-worker.log" 2>/dev/null || echo "无 worker 日志"
             ;;
         *)
             echo "用法: $0 [命令]"
@@ -315,6 +371,8 @@ main() {
             echo "  restart - 重启所有服务（前台运行）"
             echo "  status  - 查看服务状态"
             echo "  logs    - 查看日志"
+            echo "  worker  - 升级数据库并启动独立预标注 worker"
+            echo "  migrate - 升级已有数据库"
             echo ""
             echo "别名:"
             echo "  fg      - 同 (无参数)，前台运行"
