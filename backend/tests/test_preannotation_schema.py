@@ -4,6 +4,7 @@ from pydantic import ValidationError
 from app.schemas.preannotation import Annotation, ProfileInput
 from app.services.preannotation_inference import (
     normalize_output, render_template, extract, validate_profile, encrypt_credentials, decrypt_credentials,
+    output_schema,
 )
 
 CATEGORIES = [{"id": 12, "name": "无人机"}]
@@ -60,3 +61,14 @@ def test_profile_validation_and_credentials_roundtrip():
     ciphertext = encrypt_credentials(secret)
     assert "private-key" not in ciphertext
     assert decrypt_credentials(ciphertext) == secret
+
+
+def test_requested_schema_matches_configured_response_paths_and_mapping():
+    config = {'annotations_path':'result.objects','box_format':'xyxy',
+              'field_mapping':{'bbox':'bbox_2d','label':'class_name'}}
+    schema = output_schema(config,CATEGORIES,'bbox')
+    item = schema['properties']['result']['properties']['objects']['items']
+    assert set(item['required']) == {'class_name','annotation_type','bbox_2d'}
+    assert 'category_id' not in item['properties']
+    assert item['properties']['class_name']['enum'] == ['无人机']
+    assert output_schema({'annotations_path':''},CATEGORIES,'bbox')['type'] == 'array'

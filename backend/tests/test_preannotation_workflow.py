@@ -321,3 +321,33 @@ def test_retry_limits_endpoint_quota_and_filtered_navigation(system):
     response = system['client'].get(f"/api/datasets/{system['dataset']}/images",params={
         'task_id':first['id'],'execution_status':'succeeded','before_id':succeeded['item']['image_id'],'page_size':1})
     assert response.json()['items'][0]['id'] == system['images'][1]
+
+
+def test_export_only_includes_formal_annotations(system):
+    from app.services.preannotation_store import insert_annotation, finish_image
+    image_id = system['images'][0]
+    with database.get_db() as conn, conn.cursor() as c:
+        c.execute('SELECT * FROM images WHERE id=%s FOR UPDATE',(image_id,))
+        image = c.fetchone()
+        insert_annotation(c,image_id,box(system),1)
+        finish_image(c,image,'labeled',1,1)
+    job = task(system,sample_size=1)
+    succeed(system)
+    def export():
+        response = system['client'].post('/api/export',json={'dataset_id':system['dataset']})
+        assert response.status_code == 200,response.text
+        downloaded = system['client'].get(response.json()['download_url'])
+        assert downloaded.status_code == 200
+        return response.json(),downloaded.content
+    before,_ = export()
+    assert before['total_annotations'] == 1
+    state = detail(system,job,image_id)
+    reviewed = system['client'].post(f"/api/preannotation/tasks/{job['id']}/images/{image_id}/review",json={
+        'revision':state['task_image']['revision'],'image_revision':state['image']['annotation_revision'],'action':'approve'})
+    assert reviewed.status_code == 200
+    after,data = export()
+    assert after['total_annotations'] == 2
+    import io,zipfile
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        labels = [n for n in z.namelist() if '/labels/' in n and n.endswith('.txt')]
+        assert len(labels) == 1 and len(z.read(labels[0]).decode().strip().splitlines()) == 2

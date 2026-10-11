@@ -99,14 +99,61 @@ def validate_profile(profile: ProfileInput):
             raise ValueError("不能覆盖 HTTP 传输控制头")
     if len(json.dumps(profile.request_template)) > 65536:
         raise ValueError("请求模板过大")
+    config = profile.model_dump()
+    for shape in ("bbox", "parallelogram"):
+        output_schema(config, [{"id": 1, "name": "类别"}], shape)
+
+
+def schema_at_path(path, value):
+    """将模型字段路径转换成 JSON Schema，支持嵌套对象与固定数组位置。"""
+    tokens = re.findall(r"[A-Za-z_][\w-]*|\d+", path)
+    for token in reversed(tokens):
+        if token.isdigit():
+            index = int(token)
+            if index > 500:
+                raise ValueError("字段路径数组索引过大")
+            value = {"type": "array", "prefixItems": [{}]*index + [value], "minItems": index+1}
+        else:
+            value = {"type": "object", "properties": {token: value}, "required": [token], "additionalProperties": False}
+    return value
+
+
+def merge_schema(left, right):
+    if not left:
+        return right
+    if left.get("type") != right.get("type"):
+        raise ValueError("字段映射路径类型冲突")
+    if left["type"] == "object":
+        for key, value in right["properties"].items():
+            left["properties"][key] = merge_schema(left["properties"].get(key, {}), value)
+        left["required"] = list(dict.fromkeys(left["required"] + right["required"]))
+    elif left["type"] == "array" and "prefixItems" in right and "prefixItems" in left:
+        size = max(len(left["prefixItems"]), len(right["prefixItems"]))
+        left["prefixItems"] += [{} for _ in range(size-len(left["prefixItems"]))]
+        for index, value in enumerate(right["prefixItems"]):
+            if value:
+                left["prefixItems"][index] = merge_schema(left["prefixItems"][index], value)
+        left["minItems"] = max(left["minItems"], right["minItems"])
+    elif left != right:
+        raise ValueError("字段映射包含重叠的标注字段")
+    return left
 
 
 def output_schema(config, categories, shape):
+    mapping = config.get("field_mapping", {})
     props = {"category_id": {"type": "integer", "enum": [c["id"] for c in categories]},
              "annotation_type": {"type": "string", "enum": [shape]}}
     fields = ["category_id", "annotation_type"]
+    if "label" in mapping:
+        fields[0] = "label"
+        props["label"] = {"type": "string", "enum": [c["name"] for c in categories]}
     if shape == "parallelogram":
-        fields += POINT_FIELDS
+        if "points" in mapping:
+            fields += ["points"]
+            props["points"] = {"type": "array", "minItems": 4, "maxItems": 4,
+                "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}}
+        else:
+            fields += POINT_FIELDS
     elif config.get("box_format") == "xyxy":
         fields += ["bbox"]
         props["bbox"] = {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4}
@@ -115,9 +162,11 @@ def output_schema(config, categories, shape):
     for name in fields:
         if name not in props:
             props[name] = {"type": "number"}
-    return {"type": "object", "properties": {"annotations": {"type": "array", "maxItems": 500,
-            "items": {"type": "object", "properties": props, "required": fields, "additionalProperties": False}}},
-            "required": ["annotations"], "additionalProperties": False}
+    item_schema = {}
+    for field in fields:
+        item_schema = merge_schema(item_schema, schema_at_path(mapping.get(field, field), props[field]))
+    return schema_at_path(config.get("annotations_path", "annotations"),
+                          {"type": "array", "maxItems": 500, "items": item_schema})
 
 
 def normalize_output(output, config, categories, shape, width, height):
@@ -197,7 +246,7 @@ async def infer(config, credentials, image_path, prompt, categories, shape):
     schema = output_schema(config, categories, shape)
     contract = (f"只返回符合以下 JSON Schema 的 JSON，不使用 Markdown。类别必须来自提供的集合。"
                 f"坐标体系：{config['coordinate_system']}，矩形格式：{config['box_format']}。"
-                f"四点按边界顺序排列。没有目标时返回 {{\"annotations\":[]}}。\n"
+                f"四点按边界顺序排列。没有目标时返回符合该 Schema 的空标注数组。\n"
                 f"类别：{json.dumps(categories, ensure_ascii=False)}\nSchema：{json.dumps(schema, ensure_ascii=False)}")
     context = {"image": {"data_url": f"data:{mime};base64,{encoded}", "base64": encoded,
                          "mime": mime, "width": width, "height": height},
