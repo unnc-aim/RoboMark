@@ -104,6 +104,7 @@ def test_profile_secrets_permissions_and_task_snapshots(system):
     p = profile(system, api_key="do-not-return", headers={"X-Token":"private-header"})
     assert p["headers"] == {"X-Token":"[已保存]"}
     assert "do-not-return" not in json.dumps(p)
+    assert system['client'].get(f"/api/preannotation/profiles/{p['id']}").json()['has_api_key']
     job = task(system, profile=p, sample_size=2)
     response = system["client"].put(f"/api/preannotation/profiles/{p['id']}", json={"name":"changed","endpoint":"http://127.0.0.1:9998/other"})
     assert response.status_code == 200
@@ -112,6 +113,7 @@ def test_profile_secrets_permissions_and_task_snapshots(system):
     assert job["total_images"] == 2
     system["user"]["id"] = 999
     system["user"]["is_admin"] = False
+    assert system['client'].get(f"/api/preannotation/profiles/{p['id']}").status_code == 403
     assert system["client"].put(f"/api/preannotation/profiles/{p['id']}", json={"name":"x","endpoint":"http://localhost/x"}).status_code == 403
     assert system["client"].post(f"/api/preannotation/tasks/{job['id']}/cancel").status_code == 403
 

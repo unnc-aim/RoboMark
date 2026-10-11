@@ -77,6 +77,12 @@ def create_profile(data: ProfileInput, conn=Depends(get_db_dependency), user=Dep
         return public_profile(c.fetchone())
 
 
+@router.get("/preannotation/profiles/{profile_id}")
+def read_profile(profile_id: int, conn=Depends(get_db_dependency), user=Depends(get_current_user)):
+    with conn.cursor() as c:
+        return public_profile(get_profile(c, profile_id, user))
+
+
 @router.put("/preannotation/profiles/{profile_id}")
 def update_profile(profile_id: int, data: ProfileInput, conn=Depends(get_db_dependency), user=Depends(get_current_user)):
     with conn.cursor() as c:
