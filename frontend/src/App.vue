@@ -1,12 +1,16 @@
 <script setup>
 import { useUserStore } from './stores/user'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
+const route = useRoute()
+const workspaceFooter = computed(() => ['Preannotation', 'PreannotationReview'].includes(route.name))
 </script>
 
 <template>
   <router-view />
-  <div class="footer-records">
+  <div class="footer-records" :class="{ 'workspace-footer': workspaceFooter }">
     <a href="https://beian.mps.gov.cn/#/query/webSearch?code=33021202003929" target="_blank" rel="noopener noreferrer" class="footer-link">
       <img alt="浙公网安备图标" loading="lazy" width="16" height="16" src="/beian.png">浙公网安备33021202003929号
     </a>
@@ -50,5 +54,10 @@ const userStore = useUserStore()
 
 .footer-records .footer-link:hover {
   color: #409eff;
+}
+
+.footer-records.workspace-footer {
+  position: static;
+  flex-wrap: wrap;
 }
 </style>
