@@ -388,3 +388,15 @@ def test_new_draft_connection_test_does_not_save_profile(system,monkeypatch):
     with database.get_db() as conn,conn.cursor() as c:
         c.execute('SELECT COUNT(*) AS n FROM preannotation_profiles')
         assert c.fetchone()['n']==0
+
+
+def test_pending_review_queue_includes_drafts_but_excludes_final_reviews(system):
+    job=task(system)
+    for _ in range(3):succeed(system)
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute("UPDATE preannotation_task_images SET review_status='draft' WHERE task_id=%s AND image_id=%s",(job['id'],system['images'][1]))
+        c.execute("UPDATE preannotation_task_images SET review_status='approved' WHERE task_id=%s AND image_id=%s",(job['id'],system['images'][2]))
+    response=system['client'].get(f"/api/datasets/{system['dataset']}/images",params={
+        'task_id':job['id'],'review_status':'pending','execution_status':'succeeded'})
+    assert response.status_code==200
+    assert [row['id'] for row in response.json()['items']]==system['images'][:2]

@@ -225,13 +225,16 @@ def list_images(dataset_id: int, task_id: int | None = None, has_candidates: boo
             raise HTTPException(422, "任务不属于该数据集")
         if execution_status and execution_status not in ("queued", "running", "succeeded", "failed", "cancelled"):
             raise HTTPException(422, "执行状态不合法")
-        if review_status and review_status not in ("unreviewed", "draft", "approved", "rejected"):
+        if review_status and review_status not in ("pending", "unreviewed", "draft", "approved", "rejected"):
             raise HTTPException(422, "审核状态不合法")
         clauses, args = ["i.dataset_id=%s", "ti.task_id=%s"], [dataset_id, task_id]
         if has_candidates is not None:
             clauses.append("EXISTS(SELECT 1 FROM preannotations p WHERE p.task_image_id=ti.id AND p.is_deleted=FALSE)" if has_candidates else "NOT EXISTS(SELECT 1 FROM preannotations p WHERE p.task_image_id=ti.id AND p.is_deleted=FALSE)")
         for name, value in (("execution_status", execution_status), ("review_status", review_status)):
             if value:
+                if name == 'review_status' and value == 'pending':
+                    clauses.append("ti.review_status IN ('unreviewed','draft')")
+                    continue
                 clauses.append(f"ti.{name}=%s")
                 args.append(value)
         if after_id is not None and before_id is not None:
