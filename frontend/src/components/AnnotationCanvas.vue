@@ -85,8 +85,8 @@ watch(() => props.imageId, () => {
 })
 
 watch(() => props.annotations, () => {
-  if (selectedAnnotation.value && !props.annotations.some(a => a.id === selectedAnnotation.value.id && !a.is_readonly)) {
-    selectedAnnotation.value = null
+  if (selectedAnnotation.value) {
+    selectedAnnotation.value = props.annotations.find(a => a.id === selectedAnnotation.value.id && !a.is_readonly) || null
   }
   draw()
 }, { deep: true })
@@ -1049,8 +1049,13 @@ function updateCursor(screenX, screenY) {
 }
 
 // 暴露方法供外部调用
+function selectAnnotation(id) {
+  const ann = props.annotations.find(a => a.id === id && !a.is_readonly)
+  if (ann) { selectedAnnotation.value = ann; draw() }
+}
 defineExpose({
   fitToContainer,
+  selectAnnotation,
   scale
 })
 </script>

@@ -40,7 +40,7 @@ const routes = [
       {
         path: ':taskId/images/:imageId',
         name: 'PreannotationReview',
-        component: () => import('../views/PreannotationReview.vue'),
+        redirect: to => ({ name:'Annotation', params:{datasetId:to.params.datasetId}, query:{...to.query,source:'preannotation',task:to.params.taskId,image:to.params.imageId,review_status:to.query.review_status || 'all'} }),
         meta: { title: '预标注审核', activeMenu: '/admin/datasets' }
       }
     ]

@@ -16,14 +16,14 @@ const profileDialog = ref(false), editingProfile = ref(null)
 const profileId = ref(null), prompt = ref(''), categoryIds = ref([]), shape = ref('bbox'), sampleSize = ref(3)
 const testingConnection = ref(false), connectionResult = ref(null)
 const selectedTaskId = ref(Number(route.query.task) || null), taskTotal = ref(0), taskPage = ref(1)
-const page = ref(1), total = ref(0), overlay = ref(true)
-const filters = ref({ has_candidates: '', execution_status: '', review_status: '' })
+const page = ref(Math.max(1,Number(route.query.page)||1)), total = ref(0), overlay = ref(true)
+const filters = ref({ has_candidates: route.query.has_candidates || '', execution_status: route.query.execution_status || '', review_status: route.query.review_status || '' })
 const selectedTask = computed(() => tasks.value.find(t => t.id === selectedTaskId.value))
 const selectedProfile = computed(() => profiles.value.find(p => p.id === profileId.value))
 const canEditProfile = computed(() => selectedProfile.value && !selectedProfile.value.environment_key && (user.isAdmin || selectedProfile.value.owner_id === user.user?.id))
 const taskLabels = { queued: '排队中', running: '执行中', cancelling: '取消中', cancelled: '已取消', completed: '已完成', completed_with_errors: '部分失败', failed: '失败' }
 const executionLabels = { queued: '未处理', running: '处理中', succeeded: '成功', failed: '失败', cancelled: '已取消' }
-const reviewLabels = { unreviewed: '待审核', draft: '审核草稿', approved: '已通过', rejected: '已驳回' }
+const reviewLabels = { pending: '待审核（含草稿）', unreviewed: '待审核', draft: '审核草稿', approved: '已通过', rejected: '已驳回' }
 let timer, imageRequest = 0, refreshing = false
 
 function imageParams() {
@@ -119,10 +119,12 @@ async function taskAction(task, action) {
   await refresh()
 }
 
+function startReview(task) { router.push({name:'Annotation',params:{datasetId},query:{source:'preannotation',task:task.id,review_status:'pending'}}) }
+
 function openImage(image) {
-  if (!selectedTaskId.value) return router.push(`/annotate/${datasetId}`)
+  if (!selectedTaskId.value) return router.push({name:'Annotation',params:{datasetId},query:{source:'manual',image:image.id}})
   const query = Object.fromEntries(Object.entries(filters.value).filter(([,value]) => value !== ''))
-  router.push({ name: 'PreannotationReview', params: { datasetId, taskId: selectedTaskId.value, imageId: image.id }, query })
+  router.push({ name:'Annotation',params:{datasetId},query:{...query,source:'preannotation',task:selectedTaskId.value,image:image.id,review_status:filters.value.review_status || 'all',returnPage:page.value} })
 }
 
 onMounted(async () => {
@@ -142,7 +144,7 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
   <div class="preannotation-page" v-loading="loading">
     <header class="page-header">
       <div><el-button link @click="router.push(user.isAdmin ? '/admin/datasets' : '/')">← {{ user.isAdmin ? '数据集管理' : '数据集' }}</el-button><h1>{{ dataset?.name || '数据集' }} · 预标注</h1><p>输入识别要求，后台批量生成候选框，再由你审核。</p></div>
-      <el-button @click="router.push(`/annotate/${datasetId}`)">人工标注</el-button>
+      <el-button @click="router.push(`/annotate/${datasetId}`)">打开标注工作台</el-button>
     </header>
     <el-alert v-if="!polling" title="自动刷新已暂停，请检查服务后点击刷新。" type="warning" :closable="false" show-icon />
     <section class="generation-panel">
@@ -168,7 +170,7 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
         <el-table-column label="进度" min-width="155"><template #default="{row}"><el-progress :percentage="Math.round(row.processed_images / row.total_images * 100)" :stroke-width="5" /><small>{{ row.processed_images }} / {{ row.total_images }} 张</small></template></el-table-column>
         <el-table-column label="状态" width="115"><template #default="{row}">{{ taskLabels[row.status] }}</template></el-table-column>
         <el-table-column label="结果 / 空 / 失败" width="145"><template #default="{row}">{{ row.with_results }} / {{ row.empty_results }} / {{ row.counts.failed || 0 }}</template></el-table-column>
-        <el-table-column label="操作" width="180"><template #default="{row}"><el-button link type="primary" @click.stop="chooseTask(row.id)">查看结果</el-button><el-button v-if="(user.isAdmin || row.created_by === user.user?.id) && ['queued','running'].includes(row.status)" link type="danger" @click.stop="taskAction(row,'cancel')">取消</el-button><el-button v-if="(user.isAdmin || row.created_by === user.user?.id) && row.counts.failed && row.status !== 'cancelled'" link @click.stop="taskAction(row,'retry-failed')">重试失败</el-button></template></el-table-column>
+        <el-table-column label="操作" width="250"><template #default="{row}"><el-button link type="primary" @click.stop="chooseTask(row.id)">查看结果</el-button><el-button v-if="row.counts.succeeded" link type="primary" @click.stop="startReview(row)">工作台审核</el-button><el-button v-if="(user.isAdmin || row.created_by === user.user?.id) && ['queued','running'].includes(row.status)" link type="danger" @click.stop="taskAction(row,'cancel')">取消</el-button><el-button v-if="(user.isAdmin || row.created_by === user.user?.id) && row.counts.failed && row.status !== 'cancelled'" link @click.stop="taskAction(row,'retry-failed')">重试失败</el-button></template></el-table-column>
       </el-table>
       <el-pagination v-if="taskTotal > 20" v-model:current-page="taskPage" :total="taskTotal" :page-size="20" layout="prev,pager,next" @current-change="loadTasks" />
     </section>

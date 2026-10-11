@@ -132,6 +132,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     const nextImage = imageQueue.value.shift()
     currentImage.value = nextImage
     annotations.value = nextImage.annotations || []
+    history.value = []; historyIndex.value = -1
     saveHistory()
 
     return nextImage
@@ -186,6 +187,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
         if (response.data) {
           currentImage.value = response.data
           annotations.value = response.data.annotations || []
+          history.value = []; historyIndex.value = -1
           saveHistory()
         } else {
           currentImage.value = null
@@ -219,6 +221,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
       const response = await api.get(`/images/${imageId}`)
       currentImage.value = response.data
       annotations.value = response.data.annotations || []
+      history.value = []; historyIndex.value = -1
       saveHistory()
       return currentImage.value
     } finally {
@@ -474,6 +477,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     historyPosition.value = -1
     isInHistory.value = false
     datasetConfig.value = null
+    categories.value = []
+    selectedCategory.value = null
     clearPrefetchCache()
   }
 
