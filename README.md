@@ -96,7 +96,7 @@
 - [ ] 数据增强导出选项
 
 #### AI 辅助
-- [ ] 预标注功能（接入 YOLO 模型）
+- [x] 数据集批量预标注（可配置 vLLM / HTTP 接口、后台任务、候选框编辑与审核）
 - [ ] 智能标注建议
 - [ ] 自动标注审核
 
@@ -156,6 +156,16 @@ robomark/
 ├── CLAUDE.md               # 开发规范
 └── README.md
 ```
+
+---
+
+## 数据集预标注与审核
+
+在数据集上输入 Prompt，由独立后台 worker 批量生成候选框。支持抽样验证、任务进度、取消 / 失败重试、图片叠加和状态筛选；候选框可修改、删除和补画，审核通过后追加到正式标注。
+
+推理 endpoint、模型、认证和请求格式统一保存在后端 MySQL，支持多个数据集复用。也可通过 `backend/.env` 的 `PREANNOTATION_DEFAULT_PROFILE` JSON 设置共享默认接口。已有数据库先执行 `python -m app.migrate`；`./dev.sh` 包含独立 worker 启停。
+
+详细配置、请求模板、迁移、验证和运行方式见 [预标注文档](docs/preannotation.md)。
 
 ---
 
