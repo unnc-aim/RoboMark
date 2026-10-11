@@ -353,3 +353,38 @@ def test_export_only_includes_formal_annotations(system):
     with zipfile.ZipFile(io.BytesIO(data)) as z:
         labels = [n for n in z.namelist() if '/labels/' in n and n.endswith('.txt')]
         assert len(labels) == 1 and len(z.read(labels[0]).decode().strip().splitlines()) == 2
+
+
+def test_saved_and_draft_connection_tests_preserve_credentials_and_permissions(system,monkeypatch):
+    calls=[]
+    async def fake_probe(config,credentials):
+        calls.append((config,credentials))
+        return {'ok':True,'reachable':True,'status':'ready','message':'连接成功','latency_ms':1}
+    monkeypatch.setattr('app.routers.preannotation.probe_connection',fake_probe)
+    p=profile(system,api_key='saved-key',headers={'X-Token':'saved-header'},is_shared=True)
+    response=system['client'].post(f"/api/preannotation/profiles/{p['id']}/test")
+    assert response.status_code==200 and response.json()['ok']
+    assert calls[-1][1]=={'api_key':'saved-key','headers':{'X-Token':'saved-header'}}
+    draft={'profile':{'name':'draft','endpoint':p['endpoint'],'api_key':None,'headers':{'X-Token':'[已保存]'}},'existing_profile_id':p['id']}
+    response=system['client'].post('/api/preannotation/profiles/test',json=draft)
+    assert response.status_code==200 and calls[-1][1]=={'api_key':'saved-key','headers':{'X-Token':'saved-header'}}
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute('SELECT version FROM preannotation_profiles WHERE id=%s',(p['id'],))
+        assert c.fetchone()['version']==1
+    system['user'].update(id=999,is_admin=False)
+    assert system['client'].post(f"/api/preannotation/profiles/{p['id']}/test").status_code==200
+    draft['profile']['endpoint']='http://different-server/capture'
+    n=len(calls)
+    assert system['client'].post('/api/preannotation/profiles/test',json=draft).status_code==403
+    assert len(calls)==n
+
+
+def test_new_draft_connection_test_does_not_save_profile(system,monkeypatch):
+    async def fake_probe(config,credentials):
+        return {'ok':False,'reachable':True,'status':'authentication_failed','message':'认证失败','latency_ms':1}
+    monkeypatch.setattr('app.routers.preannotation.probe_connection',fake_probe)
+    response=system['client'].post('/api/preannotation/profiles/test',json={'profile':{'name':'temporary','endpoint':'http://localhost:8001/v1/chat/completions'}})
+    assert response.status_code==200 and response.json()['status']=='authentication_failed'
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute('SELECT COUNT(*) AS n FROM preannotation_profiles')
+        assert c.fetchone()['n']==0

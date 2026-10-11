@@ -82,6 +82,11 @@ class TaskInput(BaseModel):
     sample_size: Optional[int] = Field(default=None, ge=1, le=20)
 
 
+class ProfileTestInput(BaseModel):
+    profile: ProfileInput
+    existing_profile_id: Optional[int] = Field(default=None, gt=0)
+
+
 class CandidateInput(Annotation):
     id: Optional[int] = Field(default=None, gt=0)
     is_deleted: bool = False

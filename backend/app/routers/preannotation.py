@@ -3,8 +3,9 @@ import hashlib
 import json
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core import get_db_dependency, get_current_user
-from app.schemas.preannotation import ProfileInput, TaskInput, DraftInput, ReviewInput, Annotation
+from app.schemas.preannotation import ProfileInput, ProfileTestInput, TaskInput, DraftInput, ReviewInput, Annotation
 from app.services.preannotation_inference import validate_profile, encrypt_credentials, decrypt_credentials, json_value
+from app.services.preannotation_probe import probe_connection
 from app.services.preannotation_store import (
     require_dataset, require_task, require_operator, task_detail, reconcile_task,
     categories_for_image, validate_categories, insert_annotation, finish_image, candidate_rows,
@@ -34,11 +35,9 @@ def get_profile(c, profile_id, user, write=False, lock=False):
     return row
 
 
-def profile_values(data, user, previous=None):
+def profile_material(data, previous=None):
     try:
         validate_profile(data)
-        if data.is_shared and not user["is_admin"]:
-            raise HTTPException(403, "仅管理员可共享接口配置")
         old = decrypt_credentials(previous["credentials"]) if previous else {}
         headers = {}
         for key, value in data.headers.items():
@@ -49,10 +48,20 @@ def profile_values(data, user, previous=None):
             headers[key] = value
         credentials = {} if data.clear_credentials else {"headers": headers, "api_key": old.get("api_key", "") if data.api_key is None else data.api_key}
         config = data.model_dump(exclude={"api_key", "headers", "clear_credentials", "is_shared", "name"})
-        encrypted = encrypt_credentials(credentials) if credentials.get("api_key") or credentials.get("headers") else None
-        return json.dumps(config), encrypted
+        return config, credentials
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+def profile_values(data, user, previous=None):
+    if data.is_shared and not user["is_admin"]:
+        raise HTTPException(403, "仅管理员可共享接口配置")
+    config, credentials = profile_material(data, previous)
+    try:
+        encrypted = encrypt_credentials(credentials) if credentials.get("api_key") or credentials.get("headers") else None
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return json.dumps(config), encrypted
 
 
 @router.get("/preannotation/profiles")
@@ -81,6 +90,26 @@ def create_profile(data: ProfileInput, conn=Depends(get_db_dependency), user=Dep
 def read_profile(profile_id: int, conn=Depends(get_db_dependency), user=Depends(get_current_user)):
     with conn.cursor() as c:
         return public_profile(get_profile(c, profile_id, user))
+
+
+@router.post("/preannotation/profiles/test")
+async def test_draft_profile(data: ProfileTestInput, conn=Depends(get_db_dependency), user=Depends(get_current_user)):
+    previous = None
+    if data.existing_profile_id:
+        with conn.cursor() as c:
+            previous = get_profile(c, data.existing_profile_id, user)
+        # 不能将共享配置的隐藏凭据发送到一个被其他用户改写的测试地址。
+        if previous['owner_id'] != user['id'] and not user['is_admin']:
+            raise HTTPException(403, "共享配置请使用已保存接口的测试按钮")
+    config, credentials = profile_material(data.profile, previous)
+    return await probe_connection(config, credentials)
+
+
+@router.post("/preannotation/profiles/{profile_id}/test")
+async def test_saved_profile(profile_id: int, conn=Depends(get_db_dependency), user=Depends(get_current_user)):
+    with conn.cursor() as c:
+        profile = get_profile(c, profile_id, user)
+    return await probe_connection(json_value(profile['config']), decrypt_credentials(profile['credentials']))
 
 
 @router.put("/preannotation/profiles/{profile_id}")

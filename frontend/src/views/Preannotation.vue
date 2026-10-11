@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../stores/user'
 import api from '../utils/api'
 import PreannotationProfileDialog from '../components/PreannotationProfileDialog.vue'
 import PreannotationThumbnail from '../components/PreannotationThumbnail.vue'
+import ConnectionTestResult from '../components/ConnectionTestResult.vue'
 
 const route = useRoute(), router = useRouter(), user = useUserStore()
 const datasetId = Number(route.params.datasetId)
@@ -13,6 +14,7 @@ const dataset = ref(null), profiles = ref([]), categories = ref([]), tasks = ref
 const loading = ref(true), creating = ref(false), imageLoading = ref(false), polling = ref(true)
 const profileDialog = ref(false), editingProfile = ref(null)
 const profileId = ref(null), prompt = ref(''), categoryIds = ref([]), shape = ref('bbox'), sampleSize = ref(3)
+const testingConnection = ref(false), connectionResult = ref(null)
 const selectedTaskId = ref(Number(route.query.task) || null), taskTotal = ref(0), taskPage = ref(1)
 const page = ref(1), total = ref(0), overlay = ref(true)
 const filters = ref({ has_candidates: '', execution_status: '', review_status: '' })
@@ -74,7 +76,21 @@ async function filterChanged() { page.value = 1; await loadImages() }
 
 function configure(profile = null) { editingProfile.value = profile; profileDialog.value = true }
 
+watch(profileId, () => { connectionResult.value = null })
+async function testConnection() {
+  if (!profileId.value || testingConnection.value) return
+  const id = profileId.value
+  connectionResult.value = null
+  testingConnection.value = true
+  try {
+    const response = await api.post(`/preannotation/profiles/${id}/test`)
+    if (id === profileId.value) connectionResult.value = response.data
+  } catch { /* 错误统一由拦截器提示 */ }
+  finally { testingConnection.value = false }
+}
+
 async function profileSaved(profile) {
+  connectionResult.value = null
   profiles.value = (await api.get('/preannotation/profiles')).data
   profileId.value = profile?.id || profiles.value[0]?.id || null
 }
@@ -133,10 +149,11 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
       <div class="section-title"><h2>创建预标注任务</h2><span>关闭页面不影响后台任务</span></div>
       <el-form label-position="top" @submit.prevent>
         <div class="config-grid">
-          <el-form-item label="推理接口"><div class="interface-picker"><el-select v-model="profileId" placeholder="选择接口配置"><el-option v-for="p in profiles" :key="p.id" :value="p.id" :label="`${p.name}${p.is_shared ? '（共享）' : ''}`" /></el-select><el-button @click="configure()">添加</el-button><el-button :disabled="!canEditProfile" @click="configure(selectedProfile)">编辑</el-button></div></el-form-item>
+          <el-form-item label="推理接口"><div class="interface-picker"><el-select v-model="profileId" placeholder="选择接口配置"><el-option v-for="p in profiles" :key="p.id" :value="p.id" :label="`${p.name}${p.is_shared ? '（共享）' : ''}`" /></el-select><el-button @click="configure()">添加</el-button><el-button :disabled="!canEditProfile" @click="configure(selectedProfile)">编辑</el-button><el-button :disabled="!profileId" :loading="testingConnection" @click="testConnection">测试连接</el-button></div></el-form-item>
           <el-form-item label="输出形状"><el-select v-model="shape"><el-option value="bbox" label="矩形框" /><el-option value="parallelogram" label="四点框" /></el-select></el-form-item>
           <el-form-item label="目标类别"><el-select v-model="categoryIds" multiple collapse-tags collapse-tags-tooltip placeholder="选择当前数据集的类别"><el-option v-for="c in categories" :key="c.id" :value="c.id" :label="c.name" /></el-select></el-form-item>
         </div>
+        <ConnectionTestResult :result="connectionResult" />
         <el-alert v-if="!categories.length" title="该数据集尚无类别，请先配置类别。" type="warning" :closable="false"><el-button v-if="user.isAdmin" link @click="router.push(`/admin/categories/${datasetId}`)">配置类别</el-button></el-alert>
         <el-form-item label="Prompt"><el-input v-model="prompt" type="textarea" :rows="3" :maxlength="12000" placeholder="例如：标注图片中的所有无人机，框住完整机身；忽略鸟类和远处无法辨认的物体。" /></el-form-item>
         <div class="generation-actions"><span>抽样图片</span><el-input-number v-model="sampleSize" :min="1" :max="20" size="small" /><el-button :loading="creating" @click="createTask(true)">抽样验证</el-button><el-button type="primary" :loading="creating" @click="createTask(false)">对整个数据集运行</el-button><small>已有人工标注保留；每次运行产生一个新批次。</small></div>
@@ -167,5 +184,5 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
 </template>
 
 <style scoped>
-.preannotation-page{max-width:1360px;margin:auto;padding:28px;background:#f5f7fa;min-height:100vh;color:#263445}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.page-header h1{font-size:26px;margin:12px 0 8px}.page-header p{color:#64748b;margin:0}section{background:white;border:1px solid #e6eaf0;border-radius:12px;padding:22px;margin-top:20px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.section-title h2{font-size:18px;margin:0}.section-title>span{font-size:13px;color:#64748b}.config-grid{display:grid;grid-template-columns:1.4fr .7fr 1fr;gap:22px}.config-grid :deep(.el-select){width:100%}.interface-picker{display:flex;width:100%;gap:8px}.interface-picker .el-select{flex:1;min-width:0}.generation-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.generation-actions small{color:#64748b}.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}.filters .el-select{width:170px}.filters .el-select:first-child{width:250px}.filters>span{margin-left:auto;color:#64748b}.image-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.image-card{display:block;text-align:left;padding:0;border:1px solid #e3e8ee;border-radius:8px;overflow:hidden;background:white;cursor:pointer;color:inherit;transition:box-shadow .15s}.image-card:hover{box-shadow:0 3px 16px #21354718;border-color:#8cb4e8}.image-card-body{padding:13px;display:flex;flex-direction:column;gap:10px}.image-card strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.image-card-body>div{display:flex;gap:7px;flex-wrap:wrap}.image-card small{color:#64748b;line-height:1.5}.image-card .image-error{color:#c24141;max-height:40px;overflow:hidden}.el-pagination{justify-content:center;margin-top:24px}.tasks-panel :deep(.el-table__row){cursor:pointer}@media(max-width:1000px){.image-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.config-grid{grid-template-columns:1fr 1fr}.config-grid>div:first-child{grid-column:1/-1}}@media(max-width:650px){.preannotation-page{padding:12px}.image-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.config-grid{grid-template-columns:1fr}.config-grid>div:first-child{grid-column:auto}section{padding:14px}.filters .el-select,.filters .el-select:first-child{width:calc(50% - 6px)}.page-header h1{font-size:20px}.page-header{gap:10px}.section-title>span{display:none}}
+.preannotation-page{max-width:1360px;margin:auto;padding:28px;background:#f5f7fa;min-height:100vh;color:#263445}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.page-header h1{font-size:26px;margin:12px 0 8px}.page-header p{color:#64748b;margin:0}section{background:white;border:1px solid #e6eaf0;border-radius:12px;padding:22px;margin-top:20px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.section-title h2{font-size:18px;margin:0}.section-title>span{font-size:13px;color:#64748b}.config-grid{display:grid;grid-template-columns:1.4fr .7fr 1fr;gap:22px}.config-grid :deep(.el-select){width:100%}.interface-picker{display:flex;flex-wrap:wrap;width:100%;gap:8px}.interface-picker .el-select{flex:1 1 150px;min-width:0}.interface-picker .el-button+.el-button{margin-left:0}.generation-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.generation-actions small{color:#64748b}.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}.filters .el-select{width:170px}.filters .el-select:first-child{width:250px}.filters>span{margin-left:auto;color:#64748b}.image-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.image-card{display:block;text-align:left;padding:0;border:1px solid #e3e8ee;border-radius:8px;overflow:hidden;background:white;cursor:pointer;color:inherit;transition:box-shadow .15s}.image-card:hover{box-shadow:0 3px 16px #21354718;border-color:#8cb4e8}.image-card-body{padding:13px;display:flex;flex-direction:column;gap:10px}.image-card strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.image-card-body>div{display:flex;gap:7px;flex-wrap:wrap}.image-card small{color:#64748b;line-height:1.5}.image-card .image-error{color:#c24141;max-height:40px;overflow:hidden}.el-pagination{justify-content:center;margin-top:24px}.tasks-panel :deep(.el-table__row){cursor:pointer}@media(max-width:1000px){.image-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.config-grid{grid-template-columns:1fr 1fr}.config-grid>div:first-child{grid-column:1/-1}}@media(max-width:650px){.preannotation-page{padding:12px}.image-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.config-grid{grid-template-columns:1fr}.config-grid>div:first-child{grid-column:auto}section{padding:14px}.filters .el-select,.filters .el-select:first-child{width:calc(50% - 6px)}.page-header h1{font-size:20px}.page-header{gap:10px}.section-title>span{display:none}}
 </style>
