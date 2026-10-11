@@ -29,7 +29,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response,
   error => {
-    const message = error.response?.data?.detail || error.message || '请求失败'
+    const detail = error.response?.data?.detail
+    const message = Array.isArray(detail)
+      ? detail.map(item => item.msg || '输入格式不正确').join('；')
+      : (detail || error.message || '请求失败')
 
     if (error.response?.status === 401) {
       localStorage.removeItem(STORAGE_KEY)
