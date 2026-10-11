@@ -27,6 +27,7 @@ const canvasRef = ref(null)
 const containerRef = ref(null)
 const ctx = ref(null)
 const image = ref(null)
+let resizeObserver
 
 // 画布状态
 const scale = ref(1)
@@ -65,12 +66,15 @@ onMounted(() => {
   const canvas = canvasRef.value
   ctx.value = canvas.getContext('2d')
   loadImage()
+  resizeObserver = new ResizeObserver(() => fitToContainer())
+  resizeObserver.observe(containerRef.value)
 
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('keyup', handleKeyUp)
 })
 
 onUnmounted(() => {
+  resizeObserver?.disconnect()
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keyup', handleKeyUp)
 })
