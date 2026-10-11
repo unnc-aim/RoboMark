@@ -29,6 +29,8 @@ def get_profile(c, profile_id, user, write=False, lock=False):
         raise HTTPException(404, "接口配置不存在或已停用")
     if row["owner_id"] != user["id"] and not user["is_admin"] and (write or not row["is_shared"]):
         raise HTTPException(403, "无权操作该接口配置")
+    if write and row.get("environment_key"):
+        raise HTTPException(409, "此配置由 .env 管理，请修改 PREANNOTATION_DEFAULT_PROFILE 并重启服务")
     return row
 
 
@@ -171,6 +173,7 @@ def retry_failed(task_id: int, conn=Depends(get_db_dependency), user=Depends(get
 @router.get("/datasets/{dataset_id}/images")
 def list_images(dataset_id: int, task_id: int | None = None, has_candidates: bool | None = None,
                 execution_status: str | None = None, review_status: str | None = None,
+                after_id: int | None = Query(None, ge=1), before_id: int | None = Query(None, ge=1),
                 page: int = Query(1, ge=1), page_size: int = Query(24, ge=1, le=100),
                 conn=Depends(get_db_dependency), user=Depends(get_current_user)):
     with conn.cursor() as c:
@@ -196,10 +199,19 @@ def list_images(dataset_id: int, task_id: int | None = None, has_candidates: boo
             if value:
                 clauses.append(f"ti.{name}=%s")
                 args.append(value)
+        if after_id is not None and before_id is not None:
+            raise HTTPException(422, "前后导航条件不能同时指定")
+        if after_id is not None:
+            clauses.append("i.id>%s")
+            args.append(after_id)
+        if before_id is not None:
+            clauses.append("i.id<%s")
+            args.append(before_id)
         joins = " FROM images i JOIN preannotation_task_images ti ON ti.image_id=i.id WHERE " + " AND ".join(clauses)
         c.execute("SELECT COUNT(*) AS n" + joins, args)
         total = c.fetchone()["n"]
-        c.execute("SELECT i.id,i.filename,i.width,i.height,i.status,i.annotation_revision,ti.id AS task_image_id,ti.execution_status,ti.review_status,ti.original_count,ti.error_code,ti.error_message,ti.revision" + joins + " ORDER BY i.id LIMIT %s OFFSET %s", [*args, page_size, (page-1)*page_size])
+        ordering = " ORDER BY i.id DESC" if before_id is not None else " ORDER BY i.id"
+        c.execute("SELECT i.id,i.filename,i.width,i.height,i.status,i.annotation_revision,ti.id AS task_image_id,ti.execution_status,ti.review_status,ti.original_count,ti.error_code,ti.error_message,ti.revision" + joins + ordering + " LIMIT %s OFFSET %s", [*args, page_size, (page-1)*page_size])
         rows = c.fetchall()
         # 一次查询所有本页候选，避免缩略图列表的 N+1 查询。
         candidates = {}

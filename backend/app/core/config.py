@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     PREANNOTATION_ENDPOINT_CONCURRENCY: int = 1
     PREANNOTATION_MAX_IMAGE_BYTES: int = 20 * 1024 * 1024
     PREANNOTATION_MAX_RESPONSE_BYTES: int = 2 * 1024 * 1024
+    # 可选 JSON 默认配置；字段与 ProfileInput 一致，启动时同步到统一配置表
+    PREANNOTATION_DEFAULT_PROFILE: dict = {}
 
     class Config:
         env_file = ".env"

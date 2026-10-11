@@ -40,9 +40,12 @@ def migrate():
             for statement in sql.split(";"):
                 if statement.strip():
                     c.execute(statement)
+            add_column(c, "preannotation_profiles", "environment_key", "VARCHAR(100) NULL UNIQUE")
         finally:
             c.execute("SELECT RELEASE_LOCK(CONCAT(DATABASE(), ':robomark-migrate'))")
     print("数据库已升级：数据集配置、预标注任务、审核版本与标注来源")
+    from app.services.preannotation_config import sync_environment_profile
+    sync_environment_profile()
 
 
 if __name__ == "__main__":

@@ -155,6 +155,7 @@ CREATE TABLE IF NOT EXISTS dataset_configs (
 CREATE TABLE IF NOT EXISTS preannotation_profiles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     owner_id INT NULL,
+    environment_key VARCHAR(100) NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
     config JSON NOT NULL,
     credentials TEXT NULL,

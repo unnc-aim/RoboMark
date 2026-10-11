@@ -246,3 +246,26 @@ def test_real_http_adapters_use_same_background_pipeline(system):
             assert len(state['candidates']) == 1
     finally:
         server.shutdown();server.server_close();thread.join()
+
+
+def test_environment_config_sync_is_idempotent_and_managed(system, monkeypatch):
+    from app.core.config import settings
+    from app.services.preannotation_config import sync_environment_profile
+    monkeypatch.setattr(settings, 'PREANNOTATION_DEFAULT_PROFILE', {
+        'endpoint':'http://127.0.0.1:8001/v1/chat/completions', 'model':'vision-model', 'api_key':'env-secret'})
+    pid = sync_environment_profile()
+    assert sync_environment_profile() == pid
+    with database.get_db() as conn, conn.cursor() as c:
+        c.execute('SELECT version,credentials FROM preannotation_profiles WHERE id=%s', (pid,))
+        row = c.fetchone()
+        assert row['version'] == 2
+        assert 'env-secret' not in row['credentials']
+    response = system['client'].put(f'/api/preannotation/profiles/{pid}',json={'name':'changed','endpoint':'http://localhost/x'})
+    assert response.status_code == 409
+    monkeypatch.setattr(settings, 'PREANNOTATION_DEFAULT_PROFILE', {
+        'endpoint':'http://127.0.0.1:8001/v1/chat/completions', 'model':'changed-model', 'api_key':'env-secret'})
+    assert sync_environment_profile() == pid
+    with database.get_db() as conn, conn.cursor() as c:
+        c.execute('SELECT version,config FROM preannotation_profiles WHERE id=%s', (pid,))
+        row = c.fetchone()
+        assert row['version'] == 3 and json.loads(row['config'])['model'] == 'changed-model'

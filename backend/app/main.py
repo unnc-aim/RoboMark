@@ -37,6 +37,12 @@ app.include_router(dataset_configs_router)
 app.include_router(preannotation_router)
 
 
+@app.on_event("startup")
+def load_preannotation_defaults():
+    from app.services.preannotation_config import sync_environment_profile
+    sync_environment_profile()
+
+
 @app.get("/")
 async def root():
     return {
