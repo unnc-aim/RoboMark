@@ -2,29 +2,26 @@ import pymysql
 from pymysql.cursors import DictCursor
 from contextlib import contextmanager
 from .config import settings
+from urllib.parse import urlsplit, unquote
 
 # 解析数据库URL
 def parse_database_url(url: str) -> dict:
     """解析数据库连接URL"""
-    # mysql+pymysql://user:password@host:port/database
-    url = url.replace("mysql+pymysql://", "")
-    auth, rest = url.split("@")
-    user, password = auth.split(":")
-    host_port, database = rest.split("/")
-    if ":" in host_port:
-        host, port = host_port.split(":")
-        port = int(port)
-    else:
-        host = host_port
-        port = 3306
+    parsed = urlsplit(url.replace("mysql+pymysql://", "mysql://", 1))
+    if parsed.scheme != "mysql" or not parsed.hostname or not parsed.path.strip("/"):
+        raise ValueError("DATABASE_URL 必须是有效的 MySQL 连接地址")
 
     return {
-        "host": host,
-        "port": port,
-        "user": user,
-        "password": password,
-        "database": database,
+        "host": parsed.hostname,
+        "port": parsed.port or 3306,
+        "user": unquote(parsed.username or "root"),
+        "password": unquote(parsed.password or ""),
+        "database": unquote(parsed.path.strip("/")),
         "charset": "utf8mb4",
+        "connect_timeout": 5,
+        "read_timeout": 30,
+        "write_timeout": 30,
+        "init_command": "SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED",
         "cursorclass": DictCursor
     }
 

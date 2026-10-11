@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_IMAGE_EXTENSIONS: list = [".jpg", ".jpeg", ".png", ".bmp", ".webp"]
 
+    # 独立于 JWT 密钥（dev.sh 会轮换 SECRET_KEY），保护推理接口凭据
+    PREANNOTATION_ENCRYPTION_KEY: str = ""
+    PREANNOTATION_WORKER_CONCURRENCY: int = 2
+    PREANNOTATION_ENDPOINT_CONCURRENCY: int = 1
+    PREANNOTATION_MAX_IMAGE_BYTES: int = 20 * 1024 * 1024
+    PREANNOTATION_MAX_RESPONSE_BYTES: int = 2 * 1024 * 1024
+
     class Config:
         env_file = ".env"
 
