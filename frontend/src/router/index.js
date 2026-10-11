@@ -28,15 +28,22 @@ const routes = [
   },
   {
     path: '/datasets/:datasetId/preannotation',
-    name: 'Preannotation',
-    component: () => import('../views/Preannotation.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/datasets/:datasetId/preannotation/:taskId/images/:imageId',
-    name: 'PreannotationReview',
-    component: () => import('../views/PreannotationReview.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('../views/Admin/Layout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'Preannotation',
+        component: () => import('../views/Preannotation.vue'),
+        meta: { title: '预标注与审核', activeMenu: '/admin/datasets' }
+      },
+      {
+        path: ':taskId/images/:imageId',
+        name: 'PreannotationReview',
+        component: () => import('../views/PreannotationReview.vue'),
+        meta: { title: '预标注审核', activeMenu: '/admin/datasets' }
+      }
+    ]
   },
   {
     path: '/tutorial',
