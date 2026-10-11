@@ -105,6 +105,7 @@ function handleLogout() {
           </div>
           <div class="card-footer">
             <el-button type="primary" size="small">开始标注</el-button>
+            <el-button size="small" @click.stop="router.push(`/datasets/${dataset.id}/preannotation`)">预标注与审核</el-button>
           </div>
         </div>
       </div>

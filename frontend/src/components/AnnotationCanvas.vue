@@ -5,6 +5,7 @@ const props = defineProps({
   imageId: Number,
   annotations: Array,
   categories: Array,
+  readonly: { type: Boolean, default: false },
   selectedCategory: Object,
   mode: {
     type: String,
@@ -80,6 +81,9 @@ watch(() => props.imageId, () => {
 })
 
 watch(() => props.annotations, () => {
+  if (selectedAnnotation.value && !props.annotations.some(a => a.id === selectedAnnotation.value.id && !a.is_readonly)) {
+    selectedAnnotation.value = null
+  }
   draw()
 }, { deep: true })
 
@@ -162,12 +166,15 @@ function draw() {
 
   // 绘制已有标注
   props.annotations.forEach((ann, index) => {
+    ctx.value.save()
+    ctx.value.setLineDash(ann.is_candidate ? [6, 4] : [])
     const isSelected = ann.id === selectedAnnotation.value?.id
     if (isSelected && (isDragging.value || isMoving.value) && dragBox.value) {
       drawAnnotationWithBox(ann, dragBox.value, index, true)
     } else {
       drawAnnotation(ann, index, isSelected)
     }
+    ctx.value.restore()
   })
 
   // 绘制当前正在绘制的框（bbox模式）
@@ -394,7 +401,7 @@ function handleMouseDown(e) {
   const screenY = e.clientY - rect.top
 
   // 拖动模式或空格键按下时进入平移模式
-  if (props.mode === 'pan' || spacePressed.value) {
+  if (props.readonly || props.mode === 'pan' || spacePressed.value) {
     isPanning.value = true
     startPoint.value = { x: e.clientX, y: e.clientY }
     canvasRef.value.style.cursor = 'grabbing'
@@ -839,13 +846,14 @@ function handleWheel(e) {
 }
 
 function handleKeyDown(e) {
+  if (e.target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return
   if (e.code === 'Space') {
     e.preventDefault()
     spacePressed.value = true
     canvasRef.value.style.cursor = 'grab'
   }
 
-  if (e.key === 'Delete' || e.key === 'Backspace') {
+  if (!props.readonly && (e.key === 'Delete' || e.key === 'Backspace')) {
     if (selectedAnnotation.value) {
       emit('delete', selectedAnnotation.value.id)
       selectedAnnotation.value = null
@@ -880,6 +888,7 @@ function getAnnotationAt(screenX, screenY) {
 
   for (let i = props.annotations.length - 1; i >= 0; i--) {
     const ann = props.annotations[i]
+    if (ann.is_readonly) continue
     const annType = ann.annotation_type || 'bbox'
 
     if (annType === 'parallelogram' && ann.p1_x != null) {

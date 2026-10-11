@@ -27,6 +27,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/datasets/:datasetId/preannotation',
+    name: 'Preannotation',
+    component: () => import('../views/Preannotation.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/datasets/:datasetId/preannotation/:taskId/images/:imageId',
+    name: 'PreannotationReview',
+    component: () => import('../views/PreannotationReview.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/tutorial',
     name: 'Tutorial',
     component: () => import('../views/Tutorial.vue'),

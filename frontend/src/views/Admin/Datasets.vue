@@ -263,9 +263,10 @@ function closeBatchImportDialog() {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="340" fixed="right">
+      <el-table-column label="操作" width="460" fixed="right">
         <template #default="{ row }">
           <el-button size="small" @click="goToCategories(row.id)">类别</el-button>
+          <el-button size="small" @click="router.push(`/datasets/${row.id}/preannotation`)">预标注与审核</el-button>
           <el-button size="small" @click="showConfigDialog(row)">配置</el-button>
           <el-button size="small" type="primary" @click="handleScan(row)">扫描</el-button>
           <el-button size="small" @click="showEditDialog(row)">编辑</el-button>
