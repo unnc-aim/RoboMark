@@ -143,7 +143,7 @@ async def execute_claim(claim):
         lease_task = asyncio.create_task(keep_lease(claim, request))
         try:
             annotations, raw = await asyncio.wait_for(request, timeout=claim["config"]["timeout_seconds"])
-        except TimeoutError as exc:
+        except asyncio.TimeoutError as exc:
             raise InferenceError("timeout", "推理总耗时超过限制", True) from exc
         await asyncio.to_thread(save_result, claim, annotations, raw)
     except asyncio.CancelledError:
@@ -179,6 +179,8 @@ async def run_worker(once=False):
             try:
                 claim = await asyncio.to_thread(claim_image) if len(active) < slots else None
             except Exception:
+                if once:
+                    raise
                 logger.warning("数据库暂时不可用，稍后重试领取")
                 claim = None
             if claim:
@@ -192,7 +194,7 @@ async def run_worker(once=False):
                 return
             try:
                 await asyncio.wait_for(stop.wait(), timeout=1)
-            except TimeoutError:
+            except asyncio.TimeoutError:
                 pass
     finally:
         for task in active:
