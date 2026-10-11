@@ -85,9 +85,9 @@ def save_result(claim, annotations=None, raw=None, error=None):
         current_task = c.fetchone()
         if not current_task:
             return False
-        c.execute("SELECT * FROM preannotation_task_images WHERE id=%s FOR UPDATE", (item["id"],))
+        c.execute("SELECT *,lease_until>NOW(6) AS lease_active FROM preannotation_task_images WHERE id=%s FOR UPDATE", (item["id"],))
         current = c.fetchone()
-        if not current or current["claim_token"] != claim["token"] or current["execution_status"] != "running":
+        if not current or current["claim_token"] != claim["token"] or current["execution_status"] != "running" or not current["lease_active"]:
             return False
         if current_task["status"] in ("cancelled", "cancelling"):
             c.execute("UPDATE preannotation_task_images SET execution_status='cancelled',claim_token=NULL,lease_until=NULL WHERE id=%s", (item["id"],))
@@ -117,7 +117,12 @@ async def keep_lease(claim, inference_task):
         await asyncio.sleep(10)
         if inference_task.done():
             return
-        active = await asyncio.to_thread(heartbeat, claim["item"]["id"], claim["token"])
+        try:
+            active = await asyncio.to_thread(heartbeat, claim["item"]["id"], claim["token"])
+        except Exception:
+            logger.warning("worker 暂时无法续租，将由租约恢复机制接管")
+            inference_task.cancel()
+            return
         if not active:
             inference_task.cancel()
             return
@@ -166,8 +171,16 @@ async def run_worker(once=False):
     logger.info("worker 启动 concurrency=%s", slots)
     try:
         while not stop.is_set():
-            active = {task for task in active if not task.done()}
-            claim = await asyncio.to_thread(claim_image) if len(active) < slots else None
+            for task in list(active):
+                if task.done():
+                    active.remove(task)
+                    if not task.cancelled() and task.exception():
+                        logger.error("图片执行未提交；租约到期后恢复", exc_info=task.exception())
+            try:
+                claim = await asyncio.to_thread(claim_image) if len(active) < slots else None
+            except Exception:
+                logger.warning("数据库暂时不可用，稍后重试领取")
+                claim = None
             if claim:
                 task = asyncio.create_task(execute_claim(claim))
                 active.add(task)

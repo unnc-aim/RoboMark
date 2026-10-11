@@ -5,6 +5,9 @@ import asyncio
 import json
 import os
 import threading
+import subprocess
+import sys
+from urllib.parse import urlsplit
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -240,7 +243,16 @@ def test_real_http_adapters_use_same_background_pipeline(system):
                         "field_mapping":{"bbox":"bounds","label":"label"},
                         "request_template":{"image":"{{image.data_url}}","prompt":"{{prompt}}","schema":"{{output_schema}}"}}]:
             job = task(system,profile=profile(system,**config),sample_size=1)
-            claim = claim_image();asyncio.run(execute_claim(claim))
+            claim = claim_image()
+            # 新进程从 MySQL 中恢复过期领取，证明队列不依赖内存或 API 进程。
+            with database.get_db() as conn, conn.cursor() as c:
+                c.execute('UPDATE preannotation_task_images SET lease_until=DATE_SUB(NOW(6),INTERVAL 1 SECOND) WHERE id=%s', (claim['item']['id'],))
+            env = dict(os.environ)
+            address = urlsplit(os.environ['ROBOMARK_TEST_DATABASE_URL'])
+            env['DATABASE_URL'] = address._replace(path='/'+database.db_config['database']).geturl()
+            process = subprocess.run([sys.executable,'-m','app.preannotation_worker','--once'], cwd=Path(__file__).resolve().parents[1],env=env,capture_output=True,text=True,timeout=20)
+            assert process.returncode == 0, process.stderr
+            assert not save_result(claim,[box(system)],'late from previous process')
             state = detail(system,job,claim['item']['image_id'])
             assert state['task_image']['execution_status'] == 'succeeded', state
             assert len(state['candidates']) == 1
@@ -269,3 +281,43 @@ def test_environment_config_sync_is_idempotent_and_managed(system, monkeypatch):
         c.execute('SELECT version,config FROM preannotation_profiles WHERE id=%s', (pid,))
         row = c.fetchone()
         assert row['version'] == 3 and json.loads(row['config'])['model'] == 'changed-model'
+
+
+def test_existing_database_upgrade_preserves_annotations(system):
+    from app.services.preannotation_store import insert_annotation
+    with database.get_db() as conn, conn.cursor() as c:
+        annotation_id = insert_annotation(c,system['images'][0],box(system),1)
+        for table in ('preannotations','preannotation_task_images','preannotation_tasks','preannotation_profiles','dataset_configs'):
+            c.execute(f'DROP TABLE {table}')
+        c.execute('ALTER TABLE images DROP COLUMN annotation_revision')
+        c.execute('ALTER TABLE annotations DROP INDEX uk_annotation_source, DROP COLUMN source_preannotation_id, DROP COLUMN annotation_type')
+        for i in range(1,5):
+            for axis in ('x','y'):c.execute(f'ALTER TABLE annotations DROP COLUMN p{i}_{axis}')
+        c.execute('ALTER TABLE categories DROP COLUMN template_image_path')
+    migrate();migrate()
+    with database.get_db() as conn, conn.cursor() as c:
+        c.execute('SELECT id,x_center,annotation_type FROM annotations WHERE id=%s',(annotation_id,))
+        row = c.fetchone()
+        assert row['id'] == annotation_id and row['x_center'] == .5 and row['annotation_type'] == 'bbox'
+
+
+def test_retry_limits_endpoint_quota_and_filtered_navigation(system):
+    first = task(system)
+    task(system)
+    claim = claim_image()
+    assert claim_image() is None  # 同一 endpoint 的全局并发配额
+    save_result(claim,error=InferenceError('network','temporary',True))
+    with database.get_db() as conn, conn.cursor() as c:
+        c.execute('UPDATE preannotation_task_images SET retry_at=NULL,attempts=2 WHERE id=%s',(claim['item']['id'],))
+    claim = claim_image()
+    assert claim['item']['attempts'] == 3
+    save_result(claim,error=InferenceError('network','temporary',True))
+    succeed(system,0)
+    succeeded = succeed(system)
+    response = system['client'].get(f"/api/datasets/{system['dataset']}/images",params={
+        'task_id':first['id'],'has_candidates':'true','after_id':system['images'][0],'page_size':1})
+    assert response.status_code == 200
+    assert response.json()['items'][0]['id'] == succeeded['item']['image_id']
+    response = system['client'].get(f"/api/datasets/{system['dataset']}/images",params={
+        'task_id':first['id'],'execution_status':'succeeded','before_id':succeeded['item']['image_id'],'page_size':1})
+    assert response.json()['items'][0]['id'] == system['images'][1]

@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import httpx
+from pydantic import ValidationError
 from cryptography.fernet import Fernet, InvalidToken
 from PIL import Image
 from app.core.config import settings
@@ -214,8 +215,8 @@ async def infer(config, credentials, image_path, prompt, categories, shape):
     else:
         body = render_template(config["request_template"], context)
     headers = {"Content-Type": "application/json", **credentials.get("headers", {})}
-    if credentials.get("api_key"):
-        headers.setdefault("Authorization", "Bearer " + credentials["api_key"])
+    if credentials.get("api_key") and not any(key.lower() == "authorization" for key in headers):
+        headers["Authorization"] = "Bearer " + credentials["api_key"]
     raw = None
     try:
         # 总耗时同时由 worker 的 wait_for 限制，单独设置连接 / 读取超时。
@@ -239,6 +240,12 @@ async def infer(config, credentials, image_path, prompt, categories, shape):
         return annotations, redact(raw, credentials)
     except httpx.HTTPError as exc:
         raise InferenceError("network", "推理请求超时或网络不可用", True) from exc
+    except ValidationError as exc:
+        issue = exc.errors(include_url=False)[0]
+        field = '.'.join(str(part) for part in issue['loc']) or '几何'
+        raise InferenceError("validation", f"模型候选框的 {field} 不合法，请检查坐标范围、面积与顶点顺序", raw_response=redact(raw, credentials)) from exc
+    except json.JSONDecodeError as exc:
+        raise InferenceError("validation", "模型响应不是有效 JSON，请检查接口输出格式", raw_response=redact(raw, credentials)) from exc
     except (ValueError, KeyError, IndexError, TypeError) as exc:
         raise InferenceError("validation", f"模型结果验证失败：{str(exc)[:1000]}", raw_response=redact(raw, credentials)) from exc
 
