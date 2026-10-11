@@ -1,0 +1,669 @@
+{
+  "coordinate_convention": "xyxy pixels, right/bottom exclusive; normalized bbox uses nominal shape bounds",
+  "note": "Overlapping shapes use full object bounds. Allow 1–2 pixels for antialiasing.",
+  "images": [
+    {
+      "filename": "shapes_01_single_rectangle.png",
+      "scenario": "single_rectangle",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            220,
+            180,
+            740,
+            460
+          ],
+          "x_center": 0.5,
+          "y_center": 0.5,
+          "width": 0.5416666666666666,
+          "height": 0.4375
+        }
+      ]
+    },
+    {
+      "filename": "shapes_02_single_circle.png",
+      "scenario": "single_circle",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            320,
+            160,
+            640,
+            480
+          ],
+          "x_center": 0.5,
+          "y_center": 0.5,
+          "width": 0.3333333333333333,
+          "height": 0.5
+        }
+      ]
+    },
+    {
+      "filename": "shapes_03_two_shapes.png",
+      "scenario": "two_shapes",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            90,
+            180,
+            430,
+            430
+          ],
+          "x_center": 0.2708333333333333,
+          "y_center": 0.4765625,
+          "width": 0.3541666666666667,
+          "height": 0.390625
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            590,
+            180,
+            850,
+            440
+          ],
+          "x_center": 0.75,
+          "y_center": 0.484375,
+          "width": 0.2708333333333333,
+          "height": 0.40625
+        }
+      ]
+    },
+    {
+      "filename": "shapes_04_rectangles.png",
+      "scenario": "rectangles",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            60,
+            80,
+            390,
+            210
+          ],
+          "x_center": 0.234375,
+          "y_center": 0.2265625,
+          "width": 0.34375,
+          "height": 0.203125
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            530,
+            100,
+            850,
+            400
+          ],
+          "x_center": 0.71875,
+          "y_center": 0.390625,
+          "width": 0.3333333333333333,
+          "height": 0.46875
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            100,
+            350,
+            380,
+            550
+          ],
+          "x_center": 0.25,
+          "y_center": 0.703125,
+          "width": 0.2916666666666667,
+          "height": 0.3125
+        }
+      ]
+    },
+    {
+      "filename": "shapes_05_circles.png",
+      "scenario": "circles",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            90,
+            100,
+            310,
+            320
+          ],
+          "x_center": 0.20833333333333334,
+          "y_center": 0.328125,
+          "width": 0.22916666666666666,
+          "height": 0.34375
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            430,
+            300,
+            650,
+            520
+          ],
+          "x_center": 0.5625,
+          "y_center": 0.640625,
+          "width": 0.22916666666666666,
+          "height": 0.34375
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            720,
+            100,
+            870,
+            250
+          ],
+          "x_center": 0.828125,
+          "y_center": 0.2734375,
+          "width": 0.15625,
+          "height": 0.234375
+        }
+      ]
+    },
+    {
+      "filename": "shapes_06_mixed_colors.png",
+      "scenario": "mixed_colors",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            60,
+            80,
+            330,
+            230
+          ],
+          "x_center": 0.203125,
+          "y_center": 0.2421875,
+          "width": 0.28125,
+          "height": 0.234375
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            440,
+            60,
+            640,
+            260
+          ],
+          "x_center": 0.5625,
+          "y_center": 0.25,
+          "width": 0.20833333333333334,
+          "height": 0.3125
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            730,
+            80,
+            900,
+            340
+          ],
+          "x_center": 0.8489583333333334,
+          "y_center": 0.328125,
+          "width": 0.17708333333333334,
+          "height": 0.40625
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            75,
+            390,
+            255,
+            570
+          ],
+          "x_center": 0.171875,
+          "y_center": 0.75,
+          "width": 0.1875,
+          "height": 0.28125
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            360,
+            390,
+            610,
+            540
+          ],
+          "x_center": 0.5052083333333334,
+          "y_center": 0.7265625,
+          "width": 0.2604166666666667,
+          "height": 0.234375
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            730,
+            420,
+            870,
+            560
+          ],
+          "x_center": 0.8333333333333334,
+          "y_center": 0.765625,
+          "width": 0.14583333333333334,
+          "height": 0.21875
+        }
+      ]
+    },
+    {
+      "filename": "shapes_07_same_color.png",
+      "scenario": "same_color",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            70,
+            80,
+            420,
+            230
+          ],
+          "x_center": 0.2552083333333333,
+          "y_center": 0.2421875,
+          "width": 0.3645833333333333,
+          "height": 0.234375
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            630,
+            70,
+            840,
+            280
+          ],
+          "x_center": 0.765625,
+          "y_center": 0.2734375,
+          "width": 0.21875,
+          "height": 0.328125
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            90,
+            350,
+            290,
+            550
+          ],
+          "x_center": 0.19791666666666666,
+          "y_center": 0.703125,
+          "width": 0.20833333333333334,
+          "height": 0.3125
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            460,
+            370,
+            850,
+            550
+          ],
+          "x_center": 0.6822916666666666,
+          "y_center": 0.71875,
+          "width": 0.40625,
+          "height": 0.28125
+        }
+      ]
+    },
+    {
+      "filename": "shapes_08_small_targets.png",
+      "scenario": "small_targets",
+      "width": 1280,
+      "height": 720,
+      "annotations": [
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            75,
+            80,
+            111,
+            116
+          ],
+          "x_center": 0.07265625,
+          "y_center": 0.1361111111111111,
+          "width": 0.028125,
+          "height": 0.05
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            270,
+            120,
+            335,
+            150
+          ],
+          "x_center": 0.236328125,
+          "y_center": 0.1875,
+          "width": 0.05078125,
+          "height": 0.041666666666666664
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            450,
+            450,
+            500,
+            500
+          ],
+          "x_center": 0.37109375,
+          "y_center": 0.6597222222222222,
+          "width": 0.0390625,
+          "height": 0.06944444444444445
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            850,
+            280,
+            920,
+            325
+          ],
+          "x_center": 0.69140625,
+          "y_center": 0.4201388888888889,
+          "width": 0.0546875,
+          "height": 0.0625
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            1100,
+            560,
+            1126,
+            586
+          ],
+          "x_center": 0.86953125,
+          "y_center": 0.7958333333333333,
+          "width": 0.0203125,
+          "height": 0.03611111111111111
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            650,
+            610,
+            698,
+            632
+          ],
+          "x_center": 0.5265625,
+          "y_center": 0.8625,
+          "width": 0.0375,
+          "height": 0.030555555555555555
+        }
+      ]
+    },
+    {
+      "filename": "shapes_09_overlapping.png",
+      "scenario": "overlapping",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            150,
+            150,
+            570,
+            380
+          ],
+          "x_center": 0.375,
+          "y_center": 0.4140625,
+          "width": 0.4375,
+          "height": 0.359375
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            390,
+            260,
+            650,
+            520
+          ],
+          "x_center": 0.5416666666666666,
+          "y_center": 0.609375,
+          "width": 0.2708333333333333,
+          "height": 0.40625
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            690,
+            140,
+            900,
+            360
+          ],
+          "x_center": 0.828125,
+          "y_center": 0.390625,
+          "width": 0.21875,
+          "height": 0.34375
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            670,
+            310,
+            860,
+            500
+          ],
+          "x_center": 0.796875,
+          "y_center": 0.6328125,
+          "width": 0.19791666666666666,
+          "height": 0.296875
+        }
+      ]
+    },
+    {
+      "filename": "shapes_10_near_edges.png",
+      "scenario": "near_edges",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            5,
+            5,
+            185,
+            185
+          ],
+          "x_center": 0.09895833333333333,
+          "y_center": 0.1484375,
+          "width": 0.1875,
+          "height": 0.28125
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            750,
+            5,
+            955,
+            205
+          ],
+          "x_center": 0.8880208333333334,
+          "y_center": 0.1640625,
+          "width": 0.21354166666666666,
+          "height": 0.3125
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            5,
+            440,
+            330,
+            635
+          ],
+          "x_center": 0.17447916666666666,
+          "y_center": 0.83984375,
+          "width": 0.3385416666666667,
+          "height": 0.3046875
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            750,
+            430,
+            955,
+            635
+          ],
+          "x_center": 0.8880208333333334,
+          "y_center": 0.83203125,
+          "width": 0.21354166666666666,
+          "height": 0.3203125
+        }
+      ]
+    },
+    {
+      "filename": "shapes_11_outlines.png",
+      "scenario": "outlines",
+      "width": 960,
+      "height": 640,
+      "annotations": [
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            75,
+            100,
+            420,
+            400
+          ],
+          "x_center": 0.2578125,
+          "y_center": 0.390625,
+          "width": 0.359375,
+          "height": 0.46875
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            570,
+            180,
+            850,
+            460
+          ],
+          "x_center": 0.7395833333333334,
+          "y_center": 0.5,
+          "width": 0.2916666666666667,
+          "height": 0.4375
+        }
+      ]
+    },
+    {
+      "filename": "shapes_12_low_contrast_portrait.png",
+      "scenario": "low_contrast_portrait",
+      "width": 640,
+      "height": 960,
+      "annotations": [
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            80,
+            75,
+            300,
+            295
+          ],
+          "x_center": 0.296875,
+          "y_center": 0.19270833333333334,
+          "width": 0.34375,
+          "height": 0.22916666666666666
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            340,
+            90,
+            580,
+            360
+          ],
+          "x_center": 0.71875,
+          "y_center": 0.234375,
+          "width": 0.375,
+          "height": 0.28125
+        },
+        {
+          "category_name": "rectangle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            50,
+            490,
+            310,
+            710
+          ],
+          "x_center": 0.28125,
+          "y_center": 0.625,
+          "width": 0.40625,
+          "height": 0.22916666666666666
+        },
+        {
+          "category_name": "circle",
+          "annotation_type": "bbox",
+          "bbox_xyxy": [
+            370,
+            650,
+            570,
+            850
+          ],
+          "x_center": 0.734375,
+          "y_center": 0.78125,
+          "width": 0.3125,
+          "height": 0.20833333333333334
+        }
+      ]
+    },
+    {
+      "filename": "shapes_13_empty_control.png",
+      "scenario": "empty_control",
+      "width": 960,
+      "height": 640,
+      "annotations": []
+    }
+  ]
+}
