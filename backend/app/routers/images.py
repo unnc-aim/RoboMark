@@ -6,25 +6,14 @@ from datetime import datetime, date
 import os
 import json
 from app.core import get_db_dependency, get_current_user
+from app.schemas.preannotation import Annotation
+from app.services.preannotation_store import require_dataset, categories_for_image, validate_categories, insert_annotation, finish_image
 
 router = APIRouter(prefix="/api/images", tags=["图片标注"])
 
 
-class AnnotationCreate(BaseModel):
-    category_id: int
-    annotation_type: Optional[str] = 'bbox'  # 'bbox' | 'parallelogram'
-    x_center: float
-    y_center: float
-    width: float
-    height: float
-    p1_x: Optional[float] = None
-    p1_y: Optional[float] = None
-    p2_x: Optional[float] = None
-    p2_y: Optional[float] = None
-    p3_x: Optional[float] = None
-    p3_y: Optional[float] = None
-    p4_x: Optional[float] = None
-    p4_y: Optional[float] = None
+class AnnotationCreate(Annotation):
+    pass
 
 
 class AnnotationResponse(BaseModel):
@@ -60,6 +49,7 @@ class ImageResponse(BaseModel):
 class SaveAnnotationsRequest(BaseModel):
     annotations: List[AnnotationCreate]
     skip: bool = False
+    revision: int
 
 
 @router.get("/next/{dataset_id}")
@@ -221,11 +211,12 @@ async def create_annotation(
 ):
     """创建标注"""
     with conn.cursor() as cursor:
-        cursor.execute("SELECT dataset_id FROM images WHERE id = %s", (image_id,))
+        cursor.execute("SELECT * FROM images WHERE id = %s FOR UPDATE", (image_id,))
         image = cursor.fetchone()
         if not image:
             raise HTTPException(status_code=404, detail="图片不存在")
 
+        require_dataset(cursor, image['dataset_id'], current_user)
         # 验证类别
         cursor.execute(
             "SELECT id FROM categories WHERE id = %s AND dataset_id = %s",
@@ -248,6 +239,7 @@ async def create_annotation(
              current_user['id'])
         )
         annotation_id = cursor.lastrowid
+        cursor.execute("UPDATE images SET annotation_revision=annotation_revision+1 WHERE id=%s", (image_id,))
 
         # 记录历史
         history_data = {
@@ -289,6 +281,13 @@ async def delete_annotation(
         if not annotation:
             raise HTTPException(status_code=404, detail="标注不存在")
 
+        cursor.execute("SELECT * FROM images WHERE id=%s FOR UPDATE", (annotation['image_id'],))
+        image = cursor.fetchone()
+        require_dataset(cursor, image['dataset_id'], current_user)
+        cursor.execute("SELECT * FROM annotations WHERE id=%s", (annotation_id,))
+        annotation = cursor.fetchone()
+        if not annotation:
+            raise HTTPException(409, "标注已改变，请重新加载")
         # 记录历史
         cursor.execute(
             "INSERT INTO annotation_history (image_id, user_id, action, annotation_data) VALUES (%s, %s, %s, %s)",
@@ -303,6 +302,7 @@ async def delete_annotation(
         )
 
         cursor.execute("DELETE FROM annotations WHERE id = %s", (annotation_id,))
+        cursor.execute("UPDATE images SET annotation_revision=annotation_revision+1 WHERE id=%s", (annotation['image_id'],))
 
     return {"message": "删除成功"}
 
@@ -316,89 +316,30 @@ async def save_annotations(
 ):
     """保存图片的所有标注并完成"""
     with conn.cursor() as cursor:
-        cursor.execute("SELECT * FROM images WHERE id = %s", (image_id,))
+        cursor.execute("SELECT * FROM images WHERE id=%s FOR UPDATE", (image_id,))
         image = cursor.fetchone()
         if not image:
-            raise HTTPException(status_code=404, detail="图片不存在")
-
-        # 删除旧标注
-        cursor.execute("DELETE FROM annotations WHERE image_id = %s", (image_id,))
-
-        annotation_count = 0
+            raise HTTPException(404, "图片不存在")
+        require_dataset(cursor, image['dataset_id'], current_user)
+        if image['annotation_revision'] != data.revision:
+            raise HTTPException(409, "图片标注已被其他操作修改，请重新加载后保存")
+        validate_categories(data.annotations, categories_for_image(cursor, image))
+        cursor.execute("SELECT source_preannotation_id FROM annotations WHERE image_id=%s", (image_id,))
+        previous = cursor.fetchall()
+        sources = {row['source_preannotation_id'] for row in previous if row['source_preannotation_id']}
+        submitted = [ann.source_preannotation_id for ann in data.annotations if ann.source_preannotation_id]
+        if len(set(submitted)) != len(submitted) or set(submitted) - sources:
+            raise HTTPException(422, "标注来源重复或不属于该图片")
+        cursor.execute("DELETE FROM annotations WHERE image_id=%s", (image_id,))
         if not data.skip:
-            # 创建新标注
-            for ann_data in data.annotations:
-                ann_type = ann_data.annotation_type if hasattr(ann_data, 'annotation_type') else 'bbox'
-                cursor.execute(
-                    """INSERT INTO annotations (image_id, category_id, annotation_type, x_center, y_center, width, height,
-                       p1_x, p1_y, p2_x, p2_y, p3_x, p3_y, p4_x, p4_y, created_by)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                    (image_id, ann_data.category_id, ann_type,
-                     ann_data.x_center, ann_data.y_center,
-                     ann_data.width, ann_data.height,
-                     ann_data.p1_x, ann_data.p1_y,
-                     ann_data.p2_x, ann_data.p2_y,
-                     ann_data.p3_x, ann_data.p3_y,
-                     ann_data.p4_x, ann_data.p4_y,
-                     current_user['id'])
-                )
-                annotation_count += 1
-
-        # 更新图片状态
-        # skip=true -> skipped
-        # skip=false 且有标注 -> labeled
-        # skip=false 且无标注 -> pending (不更新状态)
-        if data.skip:
-            new_status = 'skipped'
-        elif annotation_count > 0:
-            new_status = 'labeled'
-        else:
-            new_status = 'pending'
-
-        if new_status != 'pending':
-            cursor.execute(
-                "UPDATE images SET status = %s, labeled_by = %s, labeled_at = NOW() WHERE id = %s",
-                (new_status, current_user['id'], image_id)
-            )
-        else:
-            # 无标注时释放图片分配，让其他人可以处理
-            cursor.execute(
-                "UPDATE images SET status = 'pending', assigned_to = NULL, assigned_at = NULL WHERE id = %s",
-                (image_id,)
-            )
-
-        # 更新数据集统计
-        cursor.execute(
-            "SELECT COUNT(*) as count FROM images WHERE dataset_id = %s AND status = 'labeled'",
-            (image['dataset_id'],)
-        )
-        labeled = cursor.fetchone()['count']
-        cursor.execute(
-            "UPDATE datasets SET labeled_images = %s WHERE id = %s",
-            (labeled, image['dataset_id'])
-        )
-
-        # 更新工作量统计（只有 labeled 或 skipped 才计入）
-        if new_status != 'pending':
-            today = date.today()
-            cursor.execute(
-                "SELECT id FROM work_statistics WHERE user_id = %s AND dataset_id = %s AND date = %s",
-                (current_user['id'], image['dataset_id'], today)
-            )
-            stats = cursor.fetchone()
-
-            if stats:
-                cursor.execute(
-                    "UPDATE work_statistics SET images_labeled = images_labeled + 1, annotations_created = annotations_created + %s WHERE id = %s",
-                    (annotation_count, stats['id'])
-                )
-            else:
-                cursor.execute(
-                    "INSERT INTO work_statistics (user_id, dataset_id, date, images_labeled, annotations_created) VALUES (%s, %s, %s, %s, %s)",
-                    (current_user['id'], image['dataset_id'], today, 1, annotation_count)
-                )
-
-    return {"message": "保存成功", "status": new_status}
+            for ann in data.annotations:
+                insert_annotation(cursor, image_id, ann, current_user['id'], ann.source_preannotation_id)
+        count = 0 if data.skip else len(data.annotations)
+        status = 'skipped' if data.skip else ('labeled' if count else 'pending')
+        finish_image(cursor, image, status, current_user['id'], max(0, count-len(previous)))
+        cursor.execute("INSERT INTO annotation_history (image_id,user_id,action,annotation_data) VALUES (%s,%s,'update',%s)",
+                       (image_id, current_user['id'], json.dumps({'annotations': [a.model_dump() for a in data.annotations], 'skip': data.skip})))
+    return {"message": "保存成功", "status": status, "annotation_revision": data.revision+1}
 
 
 @router.get("/{image_id}/history")

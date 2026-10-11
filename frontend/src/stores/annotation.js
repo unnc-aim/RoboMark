@@ -230,7 +230,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
   function addAnnotation(annotation) {
     const newAnnotation = {
       ...annotation,
-      id: Date.now(), // 临时ID
+      id: crypto.randomUUID(), // 临时ID
       category_id: selectedCategory.value?.id || annotation.category_id
     }
     if (!newAnnotation.category_id) {
@@ -246,7 +246,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
   function addAnnotationWithCategory(annotationData, categoryId) {
     const newAnnotation = {
       ...annotationData,
-      id: Date.now(),
+      id: crypto.randomUUID(),
       category_id: categoryId
     }
     annotations.value.push(newAnnotation)
@@ -410,7 +410,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
         x_center: a.x_center,
         y_center: a.y_center,
         width: a.width,
-        height: a.height
+        height: a.height,
+        source_preannotation_id: a.source_preannotation_id || null
       }
       // 平行四边形额外字段
       if (a.annotation_type === 'parallelogram') {
@@ -435,9 +436,11 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
     const response = await api.post(`/images/${currentImage.value.id}/save`, {
       annotations: annotationsData,
+      revision: currentImage.value.annotation_revision,
       skip
     })
 
+    currentImage.value.annotation_revision = response.data.annotation_revision
     console.log('Save response:', response.data)
 
     // 记录到已处理历史（如果不在历史模式中）
