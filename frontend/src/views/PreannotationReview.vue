@@ -11,6 +11,7 @@ const imageId = computed(() => Number(route.params.imageId))
 const state = ref(null), categories = ref([]), candidates = ref([]), loading = ref(true), busy = ref(false), dirty = ref(false)
 const categoryId = ref(null), mode = ref('annotate'), shapeMode = ref('bbox'), showCandidates = ref(true), showFormal = ref(true)
 const canvas = ref(null), history = ref([]), historyIndex = ref(-1)
+const savedSnapshot = ref('[]')
 const activeCandidates = computed(() => candidates.value.filter(a => !a.is_deleted))
 const ready = computed(() => state.value?.task_image.execution_status === 'succeeded')
 const editable = computed(() => ready.value && ['unreviewed', 'draft'].includes(state.value.task_image.review_status))
@@ -31,11 +32,11 @@ function record() {
   history.value.push(JSON.stringify(candidates.value))
   if (history.value.length > 50) history.value.shift()
   historyIndex.value = history.value.length - 1
-  dirty.value = true
+  dirty.value = JSON.stringify(candidates.value) !== savedSnapshot.value
 }
 
-function undo() { if (historyIndex.value > 0) { historyIndex.value--; candidates.value = JSON.parse(history.value[historyIndex.value]); dirty.value = true } }
-function redo() { if (historyIndex.value < history.value.length - 1) { historyIndex.value++; candidates.value = JSON.parse(history.value[historyIndex.value]); dirty.value = true } }
+function undo() { if (historyIndex.value > 0) { historyIndex.value--; candidates.value = JSON.parse(history.value[historyIndex.value]); dirty.value = JSON.stringify(candidates.value) !== savedSnapshot.value } }
+function redo() { if (historyIndex.value < history.value.length - 1) { historyIndex.value++; candidates.value = JSON.parse(history.value[historyIndex.value]); dirty.value = JSON.stringify(candidates.value) !== savedSnapshot.value } }
 function candidateByCanvasId(id) { return candidates.value.find(a => `candidate-${a.id || a.client_id}` === id) }
 function update(id, values) { if (!editable.value) return; const ann = candidateByCanvasId(id); if (ann) { Object.assign(ann, values); record() } }
 function remove(id) { update(id, { is_deleted: true }) }
@@ -52,6 +53,7 @@ function applyState(data) {
   state.value = data
   candidates.value = data.candidates
   history.value = [JSON.stringify(candidates.value)]
+  savedSnapshot.value = history.value[0]
   historyIndex.value = 0
   dirty.value = false
 }
