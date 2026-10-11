@@ -1,0 +1,165 @@
+{
+  "captured_on": "2026-10-11",
+  "timezone": "Asia/Shanghai",
+  "viewport": {
+    "width": 1680,
+    "height": 1000
+  },
+  "data": "隔离演示 MySQL；图片来自 test/ 和 demo/；预标注采用样例框，连接测试使用本地 HTTP 演示服务。",
+  "screenshots": [
+    {
+      "file": "login.png",
+      "title": "登录",
+      "route": "/login",
+      "state": "未登录，账号密码填写入口",
+      "sha256": "db34f14eb31671fd45f377bcc8d86150907c08805c6263477545bc1f370488fc"
+    },
+    {
+      "file": "register.png",
+      "title": "注册",
+      "route": "/register",
+      "state": "注册表单",
+      "sha256": "cf32829fe6b967d7199381fb76497664d507e4fb042b3db55d7c0a0255f9a12f"
+    },
+    {
+      "file": "home.png",
+      "title": "数据集首页",
+      "route": "/",
+      "state": "两个演示数据集、进度与标注入口",
+      "sha256": "f417dd491d1e0e54756ae067fd168b12f5c2ccbde93dd9c34eb1d7ae179e1145"
+    },
+    {
+      "file": "tutorial.png",
+      "title": "使用教程",
+      "route": "/tutorial",
+      "state": "内置引导步骤",
+      "sha256": "127023ef0bddbe1ff82b0e6367145b0d9d86963423791a108de170b9c138fcbf"
+    },
+    {
+      "file": "dashboard.png",
+      "title": "管理仪表盘",
+      "route": "/admin",
+      "state": "用户、数据集、图片与标注统计",
+      "sha256": "2b5424afcfa4e33e3672fd92f7de24f8e067d3b4bde8bc4c4c5fb8e5a3bad127"
+    },
+    {
+      "file": "datasets.png",
+      "title": "数据集管理",
+      "route": "/admin/datasets",
+      "state": "扫描、类别、预标注、配置与启停入口",
+      "sha256": "d64b8928dec5df8d00dcd3d13ac6f465959a24b7327882823cb205d7c747242b"
+    },
+    {
+      "file": "categories.png",
+      "title": "类别管理",
+      "route": "/admin/categories/1",
+      "state": "颜色、快捷键及批量导入入口",
+      "sha256": "d4660f06e105793f2e118020bb37ff32098e81f38396103a75b13ed19ee185ca"
+    },
+    {
+      "file": "users.png",
+      "title": "用户管理",
+      "route": "/admin/users",
+      "state": "管理员、普通用户与停用账户",
+      "sha256": "122cc237064a6328c61611fb55a8d509f143cea17cbff8db28397c62a0f35e70"
+    },
+    {
+      "file": "statistics.png",
+      "title": "工作量统计",
+      "route": "/admin/statistics",
+      "state": "每日记录、用户贡献与筛选",
+      "sha256": "c27f2ea8ec88e23d34039178f9eadd0f87f13876e2229f194ce7d5aeecb8f7dd"
+    },
+    {
+      "file": "export.png",
+      "title": "数据集导出",
+      "route": "/admin/export",
+      "state": "选中几何数据集，YOLO 与分割比例",
+      "sha256": "c502e29415f4f885c5b17f0dd9eb2e7bdd3d4a9724d36d478c365b9c3929cc43"
+    },
+    {
+      "file": "annotation.png",
+      "title": "人工标注工作台",
+      "route": "/annotate/1?source=manual&image=3",
+      "state": "两个正式矩形框、类别与进度",
+      "sha256": "489dd5e6def3939e5ab21bf0d955426c6fc6966183901d4746cf5682ac4291c3"
+    },
+    {
+      "file": "annotation-points.png",
+      "title": "四点标注",
+      "route": "/annotate/1?source=manual&image=11",
+      "state": "轮廓矩形的四点框；仅编辑展示，未保存",
+      "sha256": "3c6448d30f6c834d8a8fa9f3ff698b7d03de3fb762fbdc589c8b185d8efa7289"
+    },
+    {
+      "file": "category-picker.png",
+      "title": "画后选择类别",
+      "route": "/annotate/1?source=manual&image=11",
+      "state": "绘制完成后的类别搜索与选择",
+      "sha256": "a97017af1fcf933905c7ca1e004ba556cff4c5334ba56b3e2500910de2a9c0cc"
+    },
+    {
+      "file": "annotation-help.png",
+      "title": "标注帮助",
+      "route": "/annotate/1?source=manual&image=3",
+      "state": "工作台中的快捷键帮助弹窗",
+      "sha256": "f2bd19d228e1da48bb551d4d56ddad8f7f68bd2c18b88e06b2fc8f19d9da9420"
+    },
+    {
+      "file": "shortcut-settings.png",
+      "title": "快捷键设置",
+      "route": "/annotate/1?source=manual&image=3",
+      "state": "可自定义保存、跳过、撤销与帮助键",
+      "sha256": "cc0303c039777884e89bcb2267605df455bb408a7b631ba4682184e5b0acf46a"
+    },
+    {
+      "file": "preannotation.png",
+      "title": "预标注任务",
+      "route": "/datasets/1/preannotation?task=2",
+      "state": "Prompt、抽样验证、全量运行与持久化批次",
+      "sha256": "03cb106db91ae23ff16cfa76ba155f2ec44f3d742189efb481a95ca9cdb6fcfd"
+    },
+    {
+      "file": "preannotation-results.png",
+      "title": "批量叠加结果",
+      "route": "/datasets/1/preannotation?task=2",
+      "state": "滚动到结果区，显示状态筛选与候选框叠加",
+      "sha256": "535326c3ebde7023163ef6e842a3ac1c7abc7e2a6e03db336a26fe4b00ac52cf"
+    },
+    {
+      "file": "review.png",
+      "title": "预标注审核工作台",
+      "route": "/annotate/1?source=preannotation&task=2&image=7&review_status=pending",
+      "state": "四个候选框、草稿保存、显式审核与图层",
+      "sha256": "51b713aa8dad05489e5bb908d34e04855d28580cabfd5b1a19f6134672729e9c"
+    },
+    {
+      "file": "dataset-config.png",
+      "title": "数据集格式配置",
+      "route": "/admin/datasets",
+      "state": "机器人数据集的 RC2026-wulin 配置弹窗",
+      "sha256": "18f433e393b76d7c2a241dedbd75ea5bc215e2f83d1ef20b3d021c709f99a0fd"
+    },
+    {
+      "file": "inference-profile.png",
+      "title": "OpenAI 兼容接口配置",
+      "route": "/datasets/1/preannotation?task=2",
+      "state": "Endpoint、模型、认证、响应路径与坐标规则",
+      "sha256": "dde668f846418ab90ae6f4c3bad5bda43b8ba4c19803a7aa541cc0cbc8cdc4b3"
+    },
+    {
+      "file": "inference-http-json.png",
+      "title": "自定义 HTTP JSON 接口",
+      "route": "/datasets/1/preannotation?task=2",
+      "state": "填写请求模板与字段映射；仅编辑展示，未保存",
+      "sha256": "7a7388ac063932d9f2a79d40ea869cb1e2d07817dbb647a1489a4c3f98f95304"
+    },
+    {
+      "file": "connection-test.png",
+      "title": "推理接口通断测试",
+      "route": "/datasets/1/preannotation?task=2",
+      "state": "本地演示 /models 响应，显示模型、HTTP 状态与耗时",
+      "sha256": "d7af17d0f4aeef9448851a5df7b51dcac2f5b343a03811b4f495c5044ca8077b"
+    }
+  ]
+}
