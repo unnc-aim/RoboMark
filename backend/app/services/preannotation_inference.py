@@ -268,8 +268,10 @@ async def infer(config, credentials, image_path, prompt, categories, shape):
         headers["Authorization"] = "Bearer " + credentials["api_key"]
     raw = None
     try:
-        # 总耗时同时由 worker 的 wait_for 限制，单独设置连接 / 读取超时。
-        async with httpx.AsyncClient(timeout=config["timeout_seconds"], follow_redirects=False, trust_env=False) as client:
+        # 慢模型可以持续等待；连接、发送和连接池等待仍有网络超时。
+        network_timeout = config.get("timeout_seconds", 120)
+        timeout = httpx.Timeout(connect=network_timeout, write=network_timeout, pool=30, read=None)
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=False, trust_env=False) as client:
             async with client.stream(config.get("http_method", "POST"), config["endpoint"], json=body, headers=headers) as response:
                 if response.status_code >= 300:
                     raise InferenceError("http", f"推理服务返回 HTTP {response.status_code}",

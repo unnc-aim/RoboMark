@@ -126,7 +126,7 @@ async function remove() {
       <el-form-item label="字段映射 JSON"><el-input v-model="mappingText" type="textarea" :rows="3" placeholder='例如：{"bbox":"bbox_2d","label":"label"}' /><small>键为平台字段，值为模型输出中每个对象的字段路径；可用类别名称 label 映射类别。</small></el-form-item>
       <el-form-item v-if="form.interface_type === 'openai'" label="结构化输出"><el-select v-model="form.structured_output"><el-option label="Prompt 约束" value="none" /><el-option label="response_format / JSON Schema" value="response_format" /><el-option label="vLLM structured_outputs" value="vllm" /></el-select></el-form-item>
       <div class="two-cols">
-        <el-form-item label="单图超时（秒）"><el-input-number v-model="form.timeout_seconds" :min="5" :max="600" /></el-form-item>
+        <el-form-item label="连接 / 发送超时（秒）"><el-input-number v-model="form.timeout_seconds" :min="5" :max="600" /><small>不限制模型响应的总耗时与读取等待，可在任务页手动取消。</small></el-form-item>
         <el-form-item label="最大尝试次数"><el-input-number v-model="form.max_attempts" :min="1" :max="5" /></el-form-item>
       </div>
       <el-checkbox v-if="user.isAdmin" v-model="form.is_shared">共享给其他用户</el-checkbox>

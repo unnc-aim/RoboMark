@@ -400,3 +400,18 @@ def test_pending_review_queue_includes_drafts_but_excludes_final_reviews(system)
         'task_id':job['id'],'review_status':'pending','execution_status':'succeeded'})
     assert response.status_code==200
     assert [row['id'] for row in response.json()['items']]==system['images'][:2]
+
+
+def test_slow_model_has_no_per_image_deadline(system, monkeypatch):
+    """超过旧配置时长仍能完成，且租约任务随请求收尾。"""
+    job = task(system, sample_size=1)
+    claim = claim_image()
+    claim['config']['timeout_seconds'] = .01
+
+    async def slow_infer(*args, **kwargs):
+        await asyncio.sleep(.08)
+        return [box(system)], '{"slow":true}'
+
+    monkeypatch.setattr('app.preannotation_worker.infer', slow_infer)
+    asyncio.run(execute_claim(claim))
+    assert detail(system, job, claim['item']['image_id'])['task_image']['execution_status'] == 'succeeded'

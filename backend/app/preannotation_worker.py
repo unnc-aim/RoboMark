@@ -141,10 +141,7 @@ async def execute_claim(claim):
         request = asyncio.create_task(infer(claim["config"], credentials, claim["image"]["file_path"],
                                             task["prompt"], json_value(task["categories_snapshot"]), task["annotation_type"]))
         lease_task = asyncio.create_task(keep_lease(claim, request))
-        try:
-            annotations, raw = await asyncio.wait_for(request, timeout=claim["config"]["timeout_seconds"])
-        except asyncio.TimeoutError as exc:
-            raise InferenceError("timeout", "推理总耗时超过限制", True) from exc
+        annotations, raw = await request
         await asyncio.to_thread(save_result, claim, annotations, raw)
     except asyncio.CancelledError:
         # 租约被取消 / 收回，旧领取 token 不得写回。
