@@ -7,6 +7,7 @@ from app.schemas.preannotation import ProfileInput, ProfileTestInput, TaskInput,
 from app.services.preannotation_inference import validate_profile, encrypt_credentials, decrypt_credentials, json_value
 from app.services.preannotation_probe import probe_connection
 from app.services.preannotation_trace import sanitize, safe_endpoint, archive_legacy_attempt
+from app.services.preannotation_metrics import attach_inference_metrics
 from app.services.preannotation_store import (
     require_dataset, require_task, require_operator, task_detail, reconcile_task,
     categories_for_image, validate_categories, insert_annotation, finish_image, candidate_rows,
@@ -322,8 +323,13 @@ def list_images(dataset_id: int, task_id: int | None = None, has_candidates: boo
         c.execute("SELECT COUNT(*) AS n" + joins, args)
         total = c.fetchone()["n"]
         ordering = " ORDER BY i.id DESC" if before_id is not None else " ORDER BY i.id"
-        c.execute("SELECT i.id,i.filename,i.width,i.height,i.status,i.annotation_revision,ti.id AS task_image_id,ti.execution_status,ti.review_status,ti.original_count,ti.error_code,ti.error_message,ti.attempts,ti.retry_at,ti.revision" + joins + ordering + " LIMIT %s OFFSET %s", [*args, page_size, (page-1)*page_size])
+        c.execute("""SELECT i.id,i.filename,i.width,i.height,i.status,i.annotation_revision,
+                     ti.id AS task_image_id,ti.execution_status,ti.review_status,ti.original_count,
+                     ti.error_code,ti.error_message,ti.attempts,ti.retry_at,ti.revision,
+                     IF(ti.execution_status='succeeded' AND JSON_VALID(ti.raw_response),
+                        JSON_EXTRACT(ti.raw_response,'$.usage'),NULL) AS legacy_usage""" + joins + ordering + " LIMIT %s OFFSET %s", [*args, page_size, (page-1)*page_size])
         rows = c.fetchall()
+        attach_inference_metrics(c,rows)
         # 一次查询所有本页候选，避免缩略图列表的 N+1 查询。
         candidates = {}
         if rows:

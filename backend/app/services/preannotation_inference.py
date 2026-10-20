@@ -5,6 +5,7 @@ import json
 import math
 import mimetypes
 import re
+import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -288,6 +289,7 @@ async def infer(config, credentials, image_path, prompt, categories, shape, on_e
         network_timeout = config.get("timeout_seconds", 120)
         timeout = httpx.Timeout(connect=network_timeout, write=network_timeout, pool=30, read=None)
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=False, trust_env=False) as client:
+            started = time.perf_counter()
             async with client.stream(config.get("http_method", "POST"), config["endpoint"], json=body, headers=headers) as response:
                 await emit('response_headers', {'http_status': response.status_code,
                     'content_type': response.headers.get('content-type'), 'request_id': response.headers.get('x-request-id')})
@@ -297,12 +299,13 @@ async def infer(config, credentials, image_path, prompt, categories, shape, on_e
                     if size > settings.PREANNOTATION_MAX_RESPONSE_BYTES:
                         raise InferenceError("response_size", "推理响应超过大小限制")
                     chunks.append(chunk)
+            elapsed_ms = (time.perf_counter()-started)*1000
         raw = b"".join(chunks).decode("utf-8")
         try:
             safe_raw = json.dumps(sanitize(json.loads(raw), credentials, encoded), ensure_ascii=False)
         except json.JSONDecodeError:
             safe_raw = sanitize(raw, credentials, encoded)
-        await emit('response', {'raw': safe_raw, 'bytes': size, 'http_status': response.status_code})
+        await emit('response', {'raw': safe_raw, 'bytes': size, 'http_status': response.status_code, 'elapsed_ms': elapsed_ms})
         if response.status_code >= 300:
             raise InferenceError('http', f'推理服务返回 HTTP {response.status_code}',
                                  response.status_code in (408,429,500,502,503,504), raw_response=safe_raw)

@@ -505,3 +505,31 @@ def test_retry_archives_available_legacy_error_without_inventing_request(system)
     assert old['trace']=={'legacy':True} and old['elapsed_ms'] is None
     assert old['error_message']=='旧版本整图超时'
     assert history['attempts'][1]['sequence_number']==4
+
+
+def test_image_cards_use_latest_success_usage_and_lightweight_legacy_fallback(system):
+    from app.services.preannotation_trace import record_event
+    job=task(system)
+    failed=claim_image()
+    record_event(failed,'parsed',{'usage':{'prompt_tokens':9999,'completion_tokens':9999}})
+    save_result(failed,error=InferenceError('validation','bad'))
+    assert system['client'].post(f"/api/preannotation/tasks/{job['id']}/images/{failed['item']['image_id']}/retry").status_code==200
+    success=claim_image()
+    record_event(success,'request',{'body':{'model':'test'}})
+    record_event(success,'response',{'elapsed_ms':2000})
+    record_event(success,'parsed',{'usage':{'prompt_tokens':1280,'completion_tokens':256}})
+    save_result(success,[box(system)],json.dumps({'usage':{'prompt_tokens':1280,'completion_tokens':256}}))
+    legacy=claim_image()
+    save_result(legacy,[],json.dumps({'usage':{'input_tokens':0,'output_tokens':12}}))
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute('DELETE FROM preannotation_attempts WHERE task_image_id=%s',(legacy['item']['id'],))
+    unknown=claim_image();save_result(unknown,[box(system)],'invalid JSON in a legacy record')
+    response=system['client'].get(f"/api/datasets/{system['dataset']}/images",params={'task_id':job['id']})
+    assert response.status_code==200,response.text
+    rows={row['id']:row for row in response.json()['items']}
+    metrics=rows[success['item']['image_id']]['inference_metrics']
+    assert metrics['input_tokens']==1280 and metrics['output_tokens']==256 and metrics['tps']==128
+    old=rows[legacy['item']['image_id']]['inference_metrics']
+    assert old['input_tokens']==0 and old['output_tokens']==12 and old['tps'] is None
+    assert rows[unknown['item']['image_id']]['inference_metrics']['input_tokens'] is None
+    assert 'legacy_usage' not in response.text and 'raw_response' not in response.text

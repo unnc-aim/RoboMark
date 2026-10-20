@@ -48,6 +48,7 @@ def test_actual_request_response_and_provider_reasoning_are_recorded(tmp_path,mo
     assert events[0][1]['headers']['Authorization']=='[已隐藏]'
     assert 'base64,' not in json.dumps(events)
     assert events[3][1]['reasoning_content']=='服务实际返回的说明'
+    assert events[2][1]['elapsed_ms'] > 0
     assert events[-1][1]['count']==1
 
 
