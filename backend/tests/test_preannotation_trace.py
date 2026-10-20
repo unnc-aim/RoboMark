@@ -18,6 +18,10 @@ def test_trace_redacts_auth_and_images_but_preserves_model_parameters():
     assert 'secret-token' not in text and 'unknown-secret' not in text and 'new-secret' not in text
     assert encoded not in text
     assert 'key=abc' not in safe_endpoint('http://localhost/predict?key=abc')
+    nested = sanitize({'content':'{"client_secret":"hidden-secret","X-Token":"hidden-token","max_tokens":8192}'})
+    assert 'hidden-secret' not in nested['content'] and 'hidden-token' not in nested['content']
+    assert json.loads(nested['content'])['max_tokens']==8192
+    assert '[非有限数值' in sanitize({'bad':float('nan')})['bad']
 
 
 def test_actual_request_response_and_provider_reasoning_are_recorded(tmp_path,monkeypatch):

@@ -1,12 +1,13 @@
 """每次领取的持久执行记录；图片仅保留引用，不复制 Base64 或接口凭据。"""
 import json
+import math
 import re
 import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from app.core.database import get_db
 
-SENSITIVE = re.compile(r'^(?:authorization|.*api[-_]?key|(?:access|refresh|auth)[-_]?token|token|secret|password|cookie|set-cookie|credentials?|auth)$', re.I)
+SENSITIVE = re.compile(r'^(?:authorization|.*api[-_]?key|(?:access|refresh|auth)[-_]?token|(?:.*[-_])?token|.*secret|.*password|cookie|set-cookie|.*credentials?|auth)$', re.I)
 
 
 def sanitize(value, credentials=None, image_base64=None):
@@ -18,7 +19,17 @@ def sanitize(value, credentials=None, image_base64=None):
             return {k: '[已隐藏]' if SENSITIVE.search(k) else clean(v) for k, v in obj.items()}
         if isinstance(obj, list):
             return [clean(v) for v in obj]
+        if isinstance(obj, float) and not math.isfinite(obj):
+            return f'[非有限数值: {obj}]'
         if isinstance(obj, str):
+            # 服务经常把 JSON 放在 message.content 字符串中，内部认证字段也需隐藏。
+            if obj.lstrip().startswith(('{','[')):
+                try:
+                    nested = json.loads(obj)
+                except (ValueError, RecursionError):
+                    nested = None
+                if isinstance(nested, (dict, list)):
+                    return json.dumps(clean(nested), ensure_ascii=False)
             obj = re.sub(r'data:image/[^;\s]+;base64,[A-Za-z0-9+/=]+', '[图片内容，见原图]', obj)
             if image_base64:
                 obj = obj.replace(image_base64, '[图片 Base64，见原图]')
