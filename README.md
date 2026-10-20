@@ -29,6 +29,8 @@
 |:---:|:---:|
 | ![管理仪表盘](docs/images/screenshots/dashboard.png) | ![工作量统计](docs/images/screenshots/statistics.png) |
 
+对话式推理详情新增了 [完整交互示例截图](docs/images/screenshots/inference-trace.png)。
+
 全部功能页面及配置弹窗见 [页面截图索引](docs/screenshots.md)。截图使用隔离演示数据，统一以 1680 × 1000 桌面视口拍摄；示例候选框和连接测试服务用于展示交互，不代表真实模型识别精度。
 
 ## 功能特性
@@ -42,6 +44,7 @@
 | 推理接口 | vLLM / OpenAI 兼容接口及自定义 HTTP JSON，Endpoint、模型、认证、请求模板、字段映射、坐标转换；跨数据集复用和管理员共享 |
 | 连接测试 | 已保存配置与未保存配置均可测试；显示可达性、认证或模型检查结果、HTTP 状态和耗时 |
 | 后台预标注 | 数据集 Prompt、抽样验证、全量批次、独立 worker、持久化进度、并发控制、取消、失败重试及租约恢复 |
+| 单图推理记录 | 对话式查看实际请求、模型原始响应、服务返回的推理说明和转换结果；逐次保留历史，单图 / 批次重试，不设整图推理总时限 |
 | 人工审核 | 缩略图批量叠加、按执行 / 审核状态与有无候选框筛选；统一 annotate 工作台编辑、保存草稿、通过、驳回与空结果确认 |
 | 导出 | YOLOv5/v7/v8、YOLO Darknet、COCO JSON，训练 / 验证 / 测试比例、可选包含未标注图片、ZIP 下载 |
 | 工作量 | 总览、近 30 天每日记录、按数据集 / 日期筛选、用户工作量统计、CSV / JSON 导出 |
@@ -64,6 +67,8 @@
 合法空结果需要人工确认；失败结果不能当作“没有目标”。无新增候选时保留已有正式框。审核采用修订版本检查与来源记录，重复通过不会重复导入；已审核候选只读，后续正式框修改切换人工标注。
 
 接口配置保存在 MySQL 的 `preannotation_profiles`，支持多数据集复用；可选 `PREANNOTATION_DEFAULT_PROFILE` 在 `.env` 中管理共享默认接口。详细请求模板、结果 Schema、坐标转换、凭据存储、故障恢复和 API 见 [预标注与审核文档](docs/preannotation.md)。
+
+图片卡片的“推理详情”打开对话式执行记录，查看每次请求的输入输出、HTTP 状态、错误与标准化结果。失败或等待自动重试的图片可以单独立即重试，批次也支持“重试失败”，旧记录不会覆盖。模型响应不受平台整图计时器或读取超时中断，仍保留连接 / 发送超时和手动取消。页面提供标注为 Mock 的“推理对话示例”，可切换成功、失败、等待响应与旧任务四种状态。
 
 ## 技术栈与结构
 
@@ -203,6 +208,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | 首页 / 教程 | `/`、`/tutorial` |
 | 统一人工标注与审核工作台 | `/annotate/:datasetId` |
 | 数据集预标注任务与批量结果 | `/datasets/:datasetId/preannotation` |
+| 每张图的对话式推理记录 | `/datasets/:datasetId/preannotation/:taskId/images/:imageId/trace` |
 | 管理仪表盘 / 数据集 | `/admin`、`/admin/datasets` |
 | 类别 / 用户 | `/admin/categories/:datasetId`、`/admin/users` |
 | 工作量 / 导出 | `/admin/statistics`、`/admin/export` |

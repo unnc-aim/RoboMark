@@ -160,6 +160,20 @@
       "route": "/datasets/1/preannotation?task=2",
       "state": "本地演示 /models 响应，显示模型、HTTP 状态与耗时",
       "sha256": "d7af17d0f4aeef9448851a5df7b51dcac2f5b343a03811b4f495c5044ca8077b"
+    },
+    {
+      "file": "inference-trace.png",
+      "title": "对话式图像推理记录（Mock）",
+      "route": "/datasets/1/preannotation/2/images/2/trace?demo=1",
+      "state": "独立逐次请求历史、请求体、模型返回、转换结果与候选预览；明确标注 Mock，不调用接口",
+      "captured_on": "2026-10-20",
+      "mode": "full_page",
+      "image_size": [
+        1672,
+        1756
+      ],
+      "sha256": "191ec0182db802521541fdf8df829511f7169ff787c5ca4721a36edf3fa1c348"
     }
-  ]
+  ],
+  "updated_on": "2026-10-20"
 }
