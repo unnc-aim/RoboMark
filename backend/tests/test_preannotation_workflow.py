@@ -533,3 +533,65 @@ def test_image_cards_use_latest_success_usage_and_lightweight_legacy_fallback(sy
     assert old['input_tokens']==0 and old['output_tokens']==12 and old['tps'] is None
     assert rows[unknown['item']['image_id']]['inference_metrics']['input_tokens'] is None
     assert 'legacy_usage' not in response.text and 'raw_response' not in response.text
+
+
+def test_prompt_history_deduplicates_exact_text_searches_literals_and_pages(system):
+    p=profile(system)
+    prompts=['检测无人机\n忽略鸟类','Detect DRONE','detect drone','甲'*1500+'A','甲'*1500+'B','标注 100% 的区域','标注 a_b 目标','检测无人机\n忽略鸟类','   ']
+    jobs=[task(system,profile=p,prompt=text,sample_size=1) for text in prompts]
+    url=f"/api/datasets/{system['dataset']}/preannotation-prompts"
+    response=system['client'].get(url)
+    assert response.status_code==200,response.text
+    data=response.json()
+    assert data['total']==7
+    repeated=next(row for row in data['items'] if row['prompt']==prompts[0])
+    assert repeated['usage_count']==2 and repeated['task_id']==jobs[-2]['id']
+    assert repeated['username']=='admin'
+    assert data['items'][0]['task_id']==jobs[-2]['id']
+    assert {'Detect DRONE','detect drone'}.issubset({r['prompt'] for r in data['items']})
+    assert system['client'].get(url,params={'q':'%'}).json()['items'][0]['prompt']=='标注 100% 的区域'
+    assert system['client'].get(url,params={'q':'_'}).json()['total']==1
+    assert system['client'].get(url,params={'q':'不存在'}).json()['total']==0
+    pages=[system['client'].get(url,params={'page':page,'page_size':2}).json()['items'] for page in (1,2,3,4)]
+    assert len({r['task_id'] for rows in pages for r in rows})==7
+    assert system['client'].get(url,params={'page':0}).status_code==422
+    assert system['client'].get(url,params={'q':'a'*257}).status_code==422
+
+
+def test_prompt_history_scopes_own_active_datasets_without_exposing_other_users(system):
+    admin_profile=profile(system)
+    task(system,profile=admin_profile,prompt='管理员的 Prompt')
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute("INSERT INTO users (username,hashed_password,is_active) VALUES ('history-user','unused',TRUE)")
+        user_id=c.lastrowid
+        c.execute('SELECT file_path FROM images WHERE id=%s',(system['images'][0],))
+        path=c.fetchone()['file_path']
+        others=[]
+        for name in ('active-history','inactive-history'):
+            c.execute('INSERT INTO datasets (name,image_path,total_images) VALUES (%s,%s,1)',(name,str(Path(path).parent)))
+            dataset_id=c.lastrowid
+            c.execute("INSERT INTO categories (dataset_id,name) VALUES (%s,'目标')",(dataset_id,))
+            category_id=c.lastrowid
+            c.execute("INSERT INTO images (dataset_id,filename,file_path,width,height) VALUES (%s,'history.png',%s,320,240)",(dataset_id,path))
+            others.append((dataset_id,category_id))
+    other_user={'id':user_id,'is_admin':False,'is_active':True}
+    app.dependency_overrides[get_current_user]=lambda:other_user
+    own_profile=profile(system)
+    task(system,profile=own_profile,prompt='我的当前数据集 Prompt')
+    for dataset_id,category_id in others:
+        result=system['client'].post(f'/api/datasets/{dataset_id}/preannotation-tasks',json={'profile_id':own_profile['id'],'prompt':f'我的数据集 {dataset_id}','category_ids':[category_id]})
+        assert result.status_code==202,result.text
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute('UPDATE datasets SET is_active=FALSE WHERE id=%s',(others[1][0],))
+    url=f"/api/datasets/{system['dataset']}/preannotation-prompts"
+    current=system['client'].get(url).json()
+    assert current['total']==2
+    mine=system['client'].get(url,params={'scope':'mine'}).json()
+    assert mine['total']==2
+    assert all(row['created_by']==user_id for row in mine['items'])
+    assert {row['dataset_id'] for row in mine['items']}=={system['dataset'],others[0][0]}
+    assert system['client'].get(f'/api/datasets/{others[1][0]}/preannotation-prompts').status_code==403
+    assert system['client'].get('/api/datasets/999999/preannotation-prompts').status_code==404
+    assert system['client'].get(url,params={'scope':'all'}).status_code==422
+    app.dependency_overrides[get_current_user]=lambda:system['user']
+    assert system['client'].get(url,params={'scope':'mine'}).json()['total']==1

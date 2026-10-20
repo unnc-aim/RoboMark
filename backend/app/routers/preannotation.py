@@ -1,6 +1,7 @@
 """数据集预标注配置、后台任务、图片筛选及事务化审核 API。"""
 import hashlib
 import json
+from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core import get_db_dependency, get_current_user
 from app.schemas.preannotation import ProfileInput, ProfileTestInput, TaskInput, DraftInput, ReviewInput, Annotation
@@ -161,6 +162,38 @@ def create_task(dataset_id: int, data: TaskInput, conn=Depends(get_db_dependency
             raise HTTPException(422, "数据集中没有图片，请先扫描导入")
         c.execute("UPDATE preannotation_tasks SET total_images=%s WHERE id=%s", (total, task_id))
         return task_detail(c, require_task(c, task_id, user))
+
+
+@router.get('/datasets/{dataset_id}/preannotation-prompts')
+def prompt_history(dataset_id: int, scope: Literal['dataset','mine'] = 'dataset',
+                   q: str = Query('', max_length=256), page: int = Query(1, ge=1),
+                   page_size: int = Query(10, ge=1, le=50),
+                   conn=Depends(get_db_dependency), user=Depends(get_current_user)):
+    with conn.cursor() as c:
+        require_dataset(c,dataset_id,user)
+        clauses, args = ["t.prompt<>''"], []
+        if scope == 'dataset':
+            clauses.append('t.dataset_id=%s'); args.append(dataset_id)
+        else:
+            clauses.append('t.created_by=%s'); args.append(user['id'])
+            if not user['is_admin']:
+                clauses.append('d.is_active=TRUE')
+        if q.strip():
+            # 字面包含搜索，% 和 _ 作为正常文本处理。
+            clauses.append('LOCATE(%s,t.prompt)>0'); args.append(q.strip())
+        source = ' FROM preannotation_tasks t JOIN datasets d ON d.id=t.dataset_id WHERE '+' AND '.join(clauses)
+        # 固定长度指纹避免 TEXT 排序长度限制，也保留大小写与换行差异。
+        c.execute('SELECT COUNT(DISTINCT SHA2(t.prompt,256)) AS n'+source,args)
+        total = c.fetchone()['n']
+        c.execute("""SELECT t.id AS task_id,t.prompt,t.dataset_id,d.name AS dataset_name,
+                     t.created_by,COALESCE(u.username,'已删除用户') AS username,t.is_sample,
+                     t.created_at AS last_used_at,h.usage_count FROM (
+                       SELECT MAX(t.id) AS last_id,COUNT(*) AS usage_count"""+source+"""
+                       GROUP BY SHA2(t.prompt,256)
+                     ) h JOIN preannotation_tasks t ON t.id=h.last_id
+                     JOIN datasets d ON d.id=t.dataset_id LEFT JOIN users u ON u.id=t.created_by
+                     ORDER BY t.id DESC LIMIT %s OFFSET %s""",[*args,page_size,(page-1)*page_size])
+        return {'items':c.fetchall(),'total':total,'page':page,'page_size':page_size}
 
 
 @router.get("/datasets/{dataset_id}/preannotation-tasks")

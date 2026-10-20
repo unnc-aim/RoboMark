@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../stores/user'
@@ -7,6 +7,7 @@ import api from '../utils/api'
 import PreannotationProfileDialog from '../components/PreannotationProfileDialog.vue'
 import PreannotationThumbnail from '../components/PreannotationThumbnail.vue'
 import ConnectionTestResult from '../components/ConnectionTestResult.vue'
+import PreannotationPromptHistory from '../components/PreannotationPromptHistory.vue'
 
 const route = useRoute(), router = useRouter(), user = useUserStore()
 const datasetId = Number(route.params.datasetId)
@@ -15,6 +16,8 @@ const retryingImages = ref(new Set()), busyTasks = ref(new Set())
 const loading = ref(true), creating = ref(false), imageLoading = ref(false), polling = ref(true)
 const profileDialog = ref(false), editingProfile = ref(null)
 const profileId = ref(null), prompt = ref(''), categoryIds = ref([]), shape = ref('bbox'), sampleSize = ref(3)
+const promptInput = ref(null), promptHistoryOpen = ref(false), promptFillUndo = ref(null)
+const canUndoPromptFill = computed(() => promptFillUndo.value && prompt.value === promptFillUndo.value.after)
 const testingConnection = ref(false), connectionResult = ref(null)
 const selectedTaskId = ref(Number(route.query.task) || null), taskTotal = ref(0), taskPage = ref(1)
 const page = ref(Math.max(1,Number(route.query.page)||1)), total = ref(0), overlay = ref(true)
@@ -39,6 +42,29 @@ function metricsTooltip(image) {
   return lines.join('\n')
 }
 let timer, imageRequest = 0, refreshing = false
+
+function focusPrompt() {
+  nextTick(() => {
+    promptInput.value?.$el.scrollIntoView({block:'center',behavior:'smooth'})
+    promptInput.value?.focus()
+  })
+}
+function fillPrompt(text) {
+  if (creating.value || !text?.trim()) return
+  if (text === prompt.value) {
+    if (!promptHistoryOpen.value) focusPrompt()
+    return
+  }
+  promptFillUndo.value={before:prompt.value,after:text}
+  prompt.value=text
+  if (!promptHistoryOpen.value) focusPrompt()
+}
+function undoPromptFill() {
+  if (!canUndoPromptFill.value || creating.value) return
+  prompt.value=promptFillUndo.value.before
+  promptFillUndo.value=null
+  focusPrompt()
+}
 
 function imageParams() {
   const params = { page: page.value, page_size: 24 }
@@ -193,7 +219,11 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
         </div>
         <ConnectionTestResult :result="connectionResult" />
         <el-alert v-if="!categories.length" title="该数据集尚无类别，请先配置类别。" type="warning" :closable="false"><el-button v-if="user.isAdmin" link @click="router.push(`/admin/categories/${datasetId}`)">配置类别</el-button></el-alert>
-        <el-form-item label="Prompt"><el-input v-model="prompt" type="textarea" :rows="3" :maxlength="12000" placeholder="例如：标注图片中的所有无人机，框住完整机身；忽略鸟类和远处无法辨认的物体。" /></el-form-item>
+        <el-form-item label="Prompt" class="prompt-form-item">
+          <template #label><div class="prompt-label"><span>Prompt</span><el-button link type="primary" :disabled="creating" @click="promptHistoryOpen=true">历史 Prompt</el-button></div></template>
+          <el-input ref="promptInput" v-model="prompt" aria-label="Prompt" :disabled="creating" type="textarea" :rows="3" :maxlength="12000" placeholder="例如：标注图片中的所有无人机，框住完整机身；忽略鸟类和远处无法辨认的物体。" />
+          <div v-if="canUndoPromptFill" class="prompt-fill-feedback"><span>已填入历史 Prompt，可继续编辑</span><el-button link type="primary" :disabled="creating" @click="undoPromptFill">撤销填充</el-button></div>
+        </el-form-item>
         <div class="generation-actions"><span>抽样图片</span><el-input-number v-model="sampleSize" :min="1" :max="20" size="small" /><el-button :loading="creating" @click="createTask(true)">抽样验证</el-button><el-button type="primary" :loading="creating" @click="createTask(false)">对整个数据集运行</el-button><small>已有人工标注保留；每次运行产生一个新批次。</small></div>
       </el-form>
     </section>
@@ -202,7 +232,7 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
       <el-empty v-if="!tasks.length" description="尚未创建任务，先试运行几张图片" :image-size="65" />
       <el-table v-else :data="tasks" size="small" @row-click="task => chooseTask(task.id)">
         <el-table-column label="批次" width="115"><template #default="{row}"><el-tag :type="selectedTaskId === row.id ? 'primary' : 'info'">#{{ row.id }} {{ row.is_sample ? '抽样' : '全量' }}</el-tag></template></el-table-column>
-        <el-table-column prop="prompt" label="Prompt" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="prompt" label="Prompt" min-width="200"><template #default="{row}"><div class="batch-prompt-cell"><span :title="row.prompt">{{ row.prompt }}</span><el-button link type="primary" size="small" :disabled="creating" :aria-label="`复用批次 #${row.id} 的 Prompt`" @click.stop="fillPrompt(row.prompt)">复用</el-button></div></template></el-table-column>
         <el-table-column label="进度" min-width="155"><template #default="{row}"><el-progress :percentage="Math.round(row.processed_images / row.total_images * 100)" :stroke-width="5" /><small>{{ row.processed_images }} / {{ row.total_images }} 张</small></template></el-table-column>
         <el-table-column label="状态" width="115"><template #default="{row}">{{ taskLabels[row.status] }}</template></el-table-column>
         <el-table-column label="结果 / 空 / 失败" width="145"><template #default="{row}">{{ row.with_results }} / {{ row.empty_results }} / {{ row.counts.failed || 0 }}</template></el-table-column>
@@ -236,9 +266,10 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
       <el-pagination v-model:current-page="page" :total="total" :page-size="24" layout="prev,pager,next,total" @current-change="loadImages()" />
     </section>
     <PreannotationProfileDialog v-model="profileDialog" :profile="editingProfile" @saved="profileSaved" />
+    <PreannotationPromptHistory v-model="promptHistoryOpen" :dataset-id="datasetId" @fill="fillPrompt" @closed="focusPrompt" />
   </div>
 </template>
 
 <style scoped>
-.preannotation-page{width:100%;min-width:0;color:#263445}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.page-header h1{font-size:26px;margin:12px 0 8px}.page-header p{color:#64748b;margin:0}section{background:white;border:1px solid #e6eaf0;border-radius:12px;padding:22px;margin-top:20px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.section-title h2{font-size:18px;margin:0}.section-title>span{font-size:13px;color:#64748b}.config-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,1fr);gap:22px}.config-grid :deep(.el-select){width:100%}.interface-picker{display:flex;flex-wrap:wrap;width:100%;gap:8px}.interface-picker .el-select{flex:1 1 150px;min-width:0}.interface-picker .el-button+.el-button{margin-left:0}.generation-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.generation-actions small{color:#64748b}.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}.filters .el-select{width:170px}.filters .el-select:first-child{width:250px}.filters>span{margin-left:auto;color:#64748b}.image-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.image-card-wrap{border:1px solid #e3e8ee;border-radius:8px;overflow:hidden;background:white;min-width:0}.image-card-actions{display:flex;justify-content:space-between;gap:10px;padding:0 13px 13px}.page-actions{display:flex;gap:8px;flex-wrap:wrap}.image-card{width:100%;display:block;text-align:left;padding:0;border:0;border-radius:0;overflow:hidden;background:white;cursor:pointer;color:inherit;transition:box-shadow .15s}.image-card:hover{box-shadow:0 3px 16px #21354718;border-color:#8cb4e8}.image-card-body{padding:13px;display:flex;flex-direction:column;gap:10px}.image-card-body>.candidate-summary{align-items:center;gap:6px 12px}.token-metrics{font-size:11px;font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere}.metric-separator{color:#b1bcc9;padding:0 2px}.image-card strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.image-card-body>div{display:flex;gap:7px;flex-wrap:wrap}.image-card small{color:#64748b;line-height:1.5}.image-card .image-error{color:#c24141;max-height:40px;overflow:hidden}.el-pagination{justify-content:center;margin-top:24px}.tasks-panel :deep(.el-table__row){cursor:pointer}@media(max-width:1000px){.image-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.config-grid{grid-template-columns:1fr 1fr}.config-grid>div:first-child{grid-column:1/-1}}@media(max-width:650px){.preannotation-page{padding:0}.image-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.config-grid{grid-template-columns:1fr}.config-grid>div:first-child{grid-column:auto}section{padding:14px}.filters .el-select,.filters .el-select:first-child{width:calc(50% - 6px)}.page-header h1{font-size:20px}.page-header{gap:10px}.section-title>span{display:none}}
+.preannotation-page{width:100%;min-width:0;color:#263445}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.page-header h1{font-size:26px;margin:12px 0 8px}.page-header p{color:#64748b;margin:0}section{background:white;border:1px solid #e6eaf0;border-radius:12px;padding:22px;margin-top:20px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.section-title h2{font-size:18px;margin:0}.section-title>span{font-size:13px;color:#64748b}.prompt-form-item :deep(.el-form-item__label){width:100%}.prompt-label{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%}.prompt-fill-feedback{display:flex;align-items:center;gap:14px;width:100%;color:#72869e;font-size:12px;margin-top:7px}.batch-prompt-cell{display:flex;align-items:center;gap:10px;min-width:0}.batch-prompt-cell>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.batch-prompt-cell .el-button{flex-shrink:0}.config-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,1fr);gap:22px}.config-grid :deep(.el-select){width:100%}.interface-picker{display:flex;flex-wrap:wrap;width:100%;gap:8px}.interface-picker .el-select{flex:1 1 150px;min-width:0}.interface-picker .el-button+.el-button{margin-left:0}.generation-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.generation-actions small{color:#64748b}.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}.filters .el-select{width:170px}.filters .el-select:first-child{width:250px}.filters>span{margin-left:auto;color:#64748b}.image-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.image-card-wrap{border:1px solid #e3e8ee;border-radius:8px;overflow:hidden;background:white;min-width:0}.image-card-actions{display:flex;justify-content:space-between;gap:10px;padding:0 13px 13px}.page-actions{display:flex;gap:8px;flex-wrap:wrap}.image-card{width:100%;display:block;text-align:left;padding:0;border:0;border-radius:0;overflow:hidden;background:white;cursor:pointer;color:inherit;transition:box-shadow .15s}.image-card:hover{box-shadow:0 3px 16px #21354718;border-color:#8cb4e8}.image-card-body{padding:13px;display:flex;flex-direction:column;gap:10px}.image-card-body>.candidate-summary{align-items:center;gap:6px 12px}.token-metrics{font-size:11px;font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere}.metric-separator{color:#b1bcc9;padding:0 2px}.image-card strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.image-card-body>div{display:flex;gap:7px;flex-wrap:wrap}.image-card small{color:#64748b;line-height:1.5}.image-card .image-error{color:#c24141;max-height:40px;overflow:hidden}.el-pagination{justify-content:center;margin-top:24px}.tasks-panel :deep(.el-table__row){cursor:pointer}@media(max-width:1000px){.image-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.config-grid{grid-template-columns:1fr 1fr}.config-grid>div:first-child{grid-column:1/-1}}@media(max-width:650px){.preannotation-page{padding:0}.image-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.config-grid{grid-template-columns:1fr}.config-grid>div:first-child{grid-column:auto}section{padding:14px}.filters .el-select,.filters .el-select:first-child{width:calc(50% - 6px)}.page-header h1{font-size:20px}.page-header{gap:10px}.section-title>span{display:none}}
 </style>
