@@ -38,6 +38,12 @@ const routes = [
         meta: { title: '预标注与审核', activeMenu: '/admin/datasets' }
       },
       {
+        path: ':taskId/images/:imageId/trace',
+        name: 'PreannotationTrace',
+        component: () => import('../views/PreannotationTrace.vue'),
+        meta: { title: '图像推理记录', activeMenu: '/admin/datasets' }
+      },
+      {
         path: ':taskId/images/:imageId',
         name: 'PreannotationReview',
         redirect: to => ({ name:'Annotation', params:{datasetId:to.params.datasetId}, query:{...to.query,source:'preannotation',task:to.params.taskId,image:to.params.imageId,review_status:to.query.review_status || 'all'} }),

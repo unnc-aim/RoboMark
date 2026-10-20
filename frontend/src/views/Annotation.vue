@@ -227,6 +227,9 @@ function addWithCategory(ann,id) { if (isReviewMode.value) review.add(ann,id); e
 function changeCandidateCategory(ann,id) { review.update(review.canvasId(ann),{category_id:id}) }
 function selectBox(ann) { canvasMode.value='annotate'; canvasRef.value?.selectAnnotation(isReviewMode.value ? review.canvasId(ann) : ann.id) }
 function showTaskManager() { router.push({name:'Preannotation',params:{datasetId:datasetId.value},query:{task:review.task?.id,review_status:isReviewMode.value ? review.queue.review_status === 'all' ? '' : review.queue.review_status : '',has_candidates:review.queue.has_candidates,page:route.query.returnPage || 1}}) }
+function showInferenceTrace() {
+  if (review.task && currentImage.value) router.push({name:'PreannotationTrace',params:{datasetId:datasetId.value,taskId:review.task.id,imageId:currentImage.value.id}})
+}
 
 async function loadProgress() {
   try {
@@ -750,6 +753,7 @@ function handleZoomChange(zoom) {
           <div class="review-guidance"><strong>{{ statusText }}</strong><p v-if="!review.ready && currentImage">{{ review.item?.error_message || '这张图片尚未产生可审核的结果，请返回任务页检查。' }}</p><p v-else-if="!review.editable && currentImage">本图已审核，可查看结果；后续正式标注修改请切换人工标注。</p><p v-else>调整候选框后可保存草稿。审核通过才计入正式标注。</p></div>
           <el-button v-if="review.task" size="small" class="review-refresh" :disabled="workspaceLoading || actionBusy || review.busy" @click="refreshResults">刷新当前结果</el-button>
           <el-button v-if="review.item?.raw_response" size="small" class="review-refresh" @click="showRawOutput=true">查看模型输出</el-button>
+          <el-button v-if="currentImage" size="small" class="review-refresh" @click="showInferenceTrace">完整推理记录</el-button>
         </template>
         <template v-else>
 

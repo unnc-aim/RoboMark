@@ -11,6 +11,7 @@ import ConnectionTestResult from '../components/ConnectionTestResult.vue'
 const route = useRoute(), router = useRouter(), user = useUserStore()
 const datasetId = Number(route.params.datasetId)
 const dataset = ref(null), profiles = ref([]), categories = ref([]), tasks = ref([]), images = ref([])
+const retryingImages = ref(new Set()), busyTasks = ref(new Set())
 const loading = ref(true), creating = ref(false), imageLoading = ref(false), polling = ref(true)
 const profileDialog = ref(false), editingProfile = ref(null)
 const profileId = ref(null), prompt = ref(''), categoryIds = ref([]), shape = ref('bbox'), sampleSize = ref(3)
@@ -115,14 +116,36 @@ async function taskAction(task, action) {
     try { await ElMessageBox.confirm('取消剩余处理，已生成的结果仍可审核。', '取消预标注任务', { type: 'warning' }) }
     catch { return }
   }
-  await api.post(`/preannotation/tasks/${task.id}/${action}`)
-  await refresh()
+  if (busyTasks.value.has(task.id)) return
+  busyTasks.value.add(task.id)
+  try {
+    const result = await api.post(`/preannotation/tasks/${task.id}/${action}`)
+    if (action === 'retry-failed') ElMessage.success(`已重新排队 ${result.data.retried_images} 张图片，历史记录已保留`)
+    await refresh()
+  } catch {} finally { busyTasks.value.delete(task.id) }
 }
 
 function startReview(task) { router.push({name:'Annotation',params:{datasetId},query:{source:'preannotation',task:task.id,review_status:'pending'}}) }
 
+function canRetryImage(image) {
+  return selectedTask.value && (user.isAdmin || selectedTask.value.created_by === user.user?.id)
+    && !['cancelled','cancelling'].includes(selectedTask.value.status) && image.review_status === 'unreviewed'
+    && (image.execution_status === 'failed' || (image.execution_status === 'queued' && image.error_code))
+}
+function openTrace(image, demo=false) {
+  router.push({name:'PreannotationTrace',params:{datasetId,taskId:selectedTaskId.value || tasks.value[0]?.id || 1,imageId:image?.id || images.value[0]?.id || 1},query:{...Object.fromEntries(Object.entries(filters.value).filter(([,value])=>value!=='')),page:page.value,...(demo?{demo:'1',returnTask:selectedTaskId.value || undefined}:{})}})
+}
+async function retryImage(image) {
+  if (!canRetryImage(image) || retryingImages.value.has(image.id)) return
+  retryingImages.value.add(image.id)
+  try {
+    await api.post(`/preannotation/tasks/${selectedTaskId.value}/images/${image.id}/retry`)
+    ElMessage.success('已重新排队，历史记录已保留');await refresh()
+  } catch {} finally { retryingImages.value.delete(image.id) }
+}
 function openImage(image) {
   if (!selectedTaskId.value) return router.push({name:'Annotation',params:{datasetId},query:{source:'manual',image:image.id}})
+  if (image.execution_status !== 'succeeded') return openTrace(image)
   const query = Object.fromEntries(Object.entries(filters.value).filter(([,value]) => value !== ''))
   router.push({ name:'Annotation',params:{datasetId},query:{...query,source:'preannotation',task:selectedTaskId.value,image:image.id,review_status:filters.value.review_status || 'all',returnPage:page.value} })
 }
@@ -144,7 +167,7 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
   <div class="preannotation-page" v-loading="loading">
     <header class="page-header">
       <div><el-button link @click="router.push(user.isAdmin ? '/admin/datasets' : '/')">← {{ user.isAdmin ? '数据集管理' : '数据集' }}</el-button><h1>{{ dataset?.name || '数据集' }} · 预标注</h1><p>输入识别要求，后台批量生成候选框，再由你审核。</p></div>
-      <el-button @click="router.push(`/annotate/${datasetId}`)">打开标注工作台</el-button>
+      <div class="page-actions"><el-button @click="openTrace(null,true)">推理对话示例</el-button><el-button @click="router.push(`/annotate/${datasetId}`)">打开标注工作台</el-button></div>
     </header>
     <el-alert v-if="!polling" title="自动刷新已暂停，请检查服务后点击刷新。" type="warning" :closable="false" show-icon />
     <section class="generation-panel">
@@ -170,7 +193,7 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
         <el-table-column label="进度" min-width="155"><template #default="{row}"><el-progress :percentage="Math.round(row.processed_images / row.total_images * 100)" :stroke-width="5" /><small>{{ row.processed_images }} / {{ row.total_images }} 张</small></template></el-table-column>
         <el-table-column label="状态" width="115"><template #default="{row}">{{ taskLabels[row.status] }}</template></el-table-column>
         <el-table-column label="结果 / 空 / 失败" width="145"><template #default="{row}">{{ row.with_results }} / {{ row.empty_results }} / {{ row.counts.failed || 0 }}</template></el-table-column>
-        <el-table-column label="操作" width="250"><template #default="{row}"><el-button link type="primary" @click.stop="chooseTask(row.id)">查看结果</el-button><el-button v-if="row.counts.succeeded" link type="primary" @click.stop="startReview(row)">工作台审核</el-button><el-button v-if="(user.isAdmin || row.created_by === user.user?.id) && ['queued','running'].includes(row.status)" link type="danger" @click.stop="taskAction(row,'cancel')">取消</el-button><el-button v-if="(user.isAdmin || row.created_by === user.user?.id) && row.counts.failed && row.status !== 'cancelled'" link @click.stop="taskAction(row,'retry-failed')">重试失败</el-button></template></el-table-column>
+        <el-table-column label="操作" width="250"><template #default="{row}"><el-button link type="primary" @click.stop="chooseTask(row.id)">查看结果</el-button><el-button v-if="row.counts.succeeded" link type="primary" @click.stop="startReview(row)">工作台审核</el-button><el-button v-if="(user.isAdmin || row.created_by === user.user?.id) && ['queued','running'].includes(row.status)" link type="danger" @click.stop="taskAction(row,'cancel')">取消</el-button><el-button v-if="(user.isAdmin || row.created_by === user.user?.id) && row.retryable_images && !['cancelled','cancelling'].includes(row.status)" link :loading="busyTasks.has(row.id)" @click.stop="taskAction(row,'retry-failed')">重试失败</el-button></template></el-table-column>
       </el-table>
       <el-pagination v-if="taskTotal > 20" v-model:current-page="taskPage" :total="taskTotal" :page-size="20" layout="prev,pager,next" @current-change="loadTasks" />
     </section>
@@ -178,7 +201,19 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
       <div class="section-title"><h2>{{ selectedTask ? `批次 #${selectedTask.id} · 图片与审核` : '数据集图片' }}</h2><el-switch v-model="overlay" active-text="叠加候选框" /></div>
       <div class="filters"><el-select :model-value="selectedTaskId" clearable placeholder="选择任务批次" @change="chooseTask"><el-option v-for="t in tasks" :key="t.id" :value="t.id" :label="`#${t.id} ${t.is_sample ? '抽样' : '全量'} · ${t.prompt}`" /></el-select><el-select v-model="filters.has_candidates" placeholder="所有候选结果" :disabled="!selectedTaskId" @change="filterChanged"><el-option label="所有候选结果" value="" /><el-option label="存在候选框" value="true" /><el-option label="无候选框" value="false" /></el-select><el-select v-model="filters.execution_status" placeholder="所有执行状态" :disabled="!selectedTaskId" @change="filterChanged"><el-option label="所有执行状态" value="" /><el-option v-for="(label,value) in executionLabels" :key="value" :label="label" :value="value" /></el-select><el-select v-model="filters.review_status" placeholder="所有审核状态" :disabled="!selectedTaskId" @change="filterChanged"><el-option label="所有审核状态" value="" /><el-option v-for="(label,value) in reviewLabels" :key="value" :label="label" :value="value" /></el-select><span>{{ total }} 张</span></div>
       <el-empty v-if="!images.length" description="没有符合条件的图片" />
-      <div class="image-grid"><button v-for="image in images" :key="image.id" class="image-card" @click="openImage(image)"><PreannotationThumbnail :image="image" :categories="categories" :overlay="overlay" /><div class="image-card-body"><strong :title="image.filename">{{ image.filename }}</strong><div v-if="image.execution_status"><el-tag size="small" :type="image.execution_status === 'failed' ? 'danger' : 'info'">{{ executionLabels[image.execution_status] }}</el-tag><el-tag v-if="image.execution_status === 'succeeded'" size="small" :type="image.review_status === 'approved' ? 'success' : 'warning'">{{ reviewLabels[image.review_status] }}</el-tag></div><small v-if="image.execution_status === 'succeeded'">{{ image.candidates.length }} 个候选框<span v-if="image.original_count === 0"> · 模型未发现目标</span><span v-else-if="!image.candidates.length"> · 已删除全部候选</span></small><small v-if="image.error_message" class="image-error" :title="image.error_message">{{ image.error_message }}</small></div></button></div>
+      <div class="image-grid">
+        <article v-for="image in images" :key="image.id" class="image-card-wrap">
+          <button class="image-card" @click="openImage(image)">
+            <PreannotationThumbnail :image="image" :categories="categories" :overlay="overlay" />
+            <div class="image-card-body"><strong :title="image.filename">{{ image.filename }}</strong>
+              <div v-if="image.execution_status"><el-tag size="small" :type="image.execution_status === 'failed' ? 'danger' : 'info'">{{ image.execution_status==='queued' && image.error_code?'等待自动重试':executionLabels[image.execution_status] }}</el-tag><el-tag v-if="image.execution_status === 'succeeded'" size="small" :type="image.review_status === 'approved' ? 'success' : 'warning'">{{ reviewLabels[image.review_status] }}</el-tag></div>
+              <small v-if="image.execution_status === 'succeeded'">{{ image.candidates.length }} 个候选框<span v-if="image.original_count === 0"> · 模型未发现目标</span><span v-else-if="!image.candidates.length"> · 已删除全部候选</span></small>
+              <small v-if="image.error_message" class="image-error" :title="image.error_message">{{ image.error_message }}</small>
+            </div>
+          </button>
+          <div v-if="selectedTaskId" class="image-card-actions"><el-button link type="primary" @click="openTrace(image)">推理详情</el-button><el-button v-if="canRetryImage(image)" link type="warning" :loading="retryingImages.has(image.id)" @click="retryImage(image)">重试此图</el-button></div>
+        </article>
+      </div>
       <el-pagination v-model:current-page="page" :total="total" :page-size="24" layout="prev,pager,next,total" @current-change="loadImages()" />
     </section>
     <PreannotationProfileDialog v-model="profileDialog" :profile="editingProfile" @saved="profileSaved" />
@@ -186,5 +221,5 @@ onUnmounted(() => { clearInterval(timer); imageRequest++ })
 </template>
 
 <style scoped>
-.preannotation-page{width:100%;min-width:0;color:#263445}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.page-header h1{font-size:26px;margin:12px 0 8px}.page-header p{color:#64748b;margin:0}section{background:white;border:1px solid #e6eaf0;border-radius:12px;padding:22px;margin-top:20px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.section-title h2{font-size:18px;margin:0}.section-title>span{font-size:13px;color:#64748b}.config-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,1fr);gap:22px}.config-grid :deep(.el-select){width:100%}.interface-picker{display:flex;flex-wrap:wrap;width:100%;gap:8px}.interface-picker .el-select{flex:1 1 150px;min-width:0}.interface-picker .el-button+.el-button{margin-left:0}.generation-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.generation-actions small{color:#64748b}.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}.filters .el-select{width:170px}.filters .el-select:first-child{width:250px}.filters>span{margin-left:auto;color:#64748b}.image-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.image-card{display:block;text-align:left;padding:0;border:1px solid #e3e8ee;border-radius:8px;overflow:hidden;background:white;cursor:pointer;color:inherit;transition:box-shadow .15s}.image-card:hover{box-shadow:0 3px 16px #21354718;border-color:#8cb4e8}.image-card-body{padding:13px;display:flex;flex-direction:column;gap:10px}.image-card strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.image-card-body>div{display:flex;gap:7px;flex-wrap:wrap}.image-card small{color:#64748b;line-height:1.5}.image-card .image-error{color:#c24141;max-height:40px;overflow:hidden}.el-pagination{justify-content:center;margin-top:24px}.tasks-panel :deep(.el-table__row){cursor:pointer}@media(max-width:1000px){.image-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.config-grid{grid-template-columns:1fr 1fr}.config-grid>div:first-child{grid-column:1/-1}}@media(max-width:650px){.preannotation-page{padding:0}.image-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.config-grid{grid-template-columns:1fr}.config-grid>div:first-child{grid-column:auto}section{padding:14px}.filters .el-select,.filters .el-select:first-child{width:calc(50% - 6px)}.page-header h1{font-size:20px}.page-header{gap:10px}.section-title>span{display:none}}
+.preannotation-page{width:100%;min-width:0;color:#263445}.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.page-header h1{font-size:26px;margin:12px 0 8px}.page-header p{color:#64748b;margin:0}section{background:white;border:1px solid #e6eaf0;border-radius:12px;padding:22px;margin-top:20px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.section-title h2{font-size:18px;margin:0}.section-title>span{font-size:13px;color:#64748b}.config-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.7fr) minmax(0,1fr);gap:22px}.config-grid :deep(.el-select){width:100%}.interface-picker{display:flex;flex-wrap:wrap;width:100%;gap:8px}.interface-picker .el-select{flex:1 1 150px;min-width:0}.interface-picker .el-button+.el-button{margin-left:0}.generation-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.generation-actions small{color:#64748b}.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}.filters .el-select{width:170px}.filters .el-select:first-child{width:250px}.filters>span{margin-left:auto;color:#64748b}.image-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.image-card-wrap{border:1px solid #e3e8ee;border-radius:8px;overflow:hidden;background:white;min-width:0}.image-card-actions{display:flex;justify-content:space-between;gap:10px;padding:0 13px 13px}.page-actions{display:flex;gap:8px;flex-wrap:wrap}.image-card{width:100%;display:block;text-align:left;padding:0;border:0;border-radius:0;overflow:hidden;background:white;cursor:pointer;color:inherit;transition:box-shadow .15s}.image-card:hover{box-shadow:0 3px 16px #21354718;border-color:#8cb4e8}.image-card-body{padding:13px;display:flex;flex-direction:column;gap:10px}.image-card strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.image-card-body>div{display:flex;gap:7px;flex-wrap:wrap}.image-card small{color:#64748b;line-height:1.5}.image-card .image-error{color:#c24141;max-height:40px;overflow:hidden}.el-pagination{justify-content:center;margin-top:24px}.tasks-panel :deep(.el-table__row){cursor:pointer}@media(max-width:1000px){.image-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.config-grid{grid-template-columns:1fr 1fr}.config-grid>div:first-child{grid-column:1/-1}}@media(max-width:650px){.preannotation-page{padding:0}.image-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.config-grid{grid-template-columns:1fr}.config-grid>div:first-child{grid-column:auto}section{padding:14px}.filters .el-select,.filters .el-select:first-child{width:calc(50% - 6px)}.page-header h1{font-size:20px}.page-header{gap:10px}.section-title>span{display:none}}
 </style>

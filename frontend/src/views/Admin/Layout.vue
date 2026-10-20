@@ -81,7 +81,7 @@ async function handleLogout() {
           <el-breadcrumb separator="/">
             <el-breadcrumb-item :to="{ path: userStore.isAdmin ? '/admin' : '/' }">{{ userStore.isAdmin ? '管理后台' : '数据集' }}</el-breadcrumb-item>
             <el-breadcrumb-item v-if="userStore.isAdmin && route.meta.activeMenu === '/admin/datasets'" :to="{ path: '/admin/datasets' }">数据集管理</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="route.name === 'PreannotationReview'" :to="{ name: 'Preannotation', params: { datasetId: route.params.datasetId }, query: { task: route.params.taskId } }">预标注与审核</el-breadcrumb-item>
+            <el-breadcrumb-item v-if="['PreannotationReview','PreannotationTrace'].includes(route.name)" :to="{ name: 'Preannotation', params: { datasetId: route.params.datasetId }, query: { task: route.params.taskId } }">预标注与审核</el-breadcrumb-item>
             <el-breadcrumb-item v-if="route.name !== 'AdminDashboard'">
               {{ pageTitle }}
             </el-breadcrumb-item>

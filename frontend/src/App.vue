@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 
 const userStore = useUserStore()
 const route = useRoute()
-const workspaceFooter = computed(() => ['Preannotation', 'PreannotationReview'].includes(route.name))
+const workspaceFooter = computed(() => ['Preannotation', 'PreannotationReview', 'PreannotationTrace'].includes(route.name))
 </script>
 
 <template>
