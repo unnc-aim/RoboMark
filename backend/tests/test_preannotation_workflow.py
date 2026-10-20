@@ -258,6 +258,12 @@ def test_real_http_adapters_use_same_background_pipeline(system):
             state = detail(system,job,claim['item']['image_id'])
             assert state['task_image']['execution_status'] == 'succeeded', state
             assert len(state['candidates']) == 1
+            history=trace(system,job,claim['item']['image_id'])
+            assert history['total']==2
+            assert history['attempts'][0]['status']=='interrupted'
+            assert set(history['attempts'][-1]['trace'])=={'request','response_headers','response','parsed','normalized'}
+            assert 'test-token' not in json.dumps(history)
+            assert 'base64,' not in json.dumps(history)
     finally:
         server.shutdown();server.server_close();thread.join()
 
@@ -289,7 +295,7 @@ def test_existing_database_upgrade_preserves_annotations(system):
     from app.services.preannotation_store import insert_annotation
     with database.get_db() as conn, conn.cursor() as c:
         annotation_id = insert_annotation(c,system['images'][0],box(system),1)
-        for table in ('preannotations','preannotation_task_images','preannotation_tasks','preannotation_profiles','dataset_configs'):
+        for table in ('preannotations','preannotation_attempts','preannotation_task_images','preannotation_tasks','preannotation_profiles','dataset_configs'):
             c.execute(f'DROP TABLE {table}')
         c.execute('ALTER TABLE images DROP COLUMN annotation_revision')
         c.execute('ALTER TABLE annotations DROP INDEX uk_annotation_source, DROP COLUMN source_preannotation_id, DROP COLUMN annotation_type')
@@ -415,3 +421,87 @@ def test_slow_model_has_no_per_image_deadline(system, monkeypatch):
     monkeypatch.setattr('app.preannotation_worker.infer', slow_infer)
     asyncio.run(execute_claim(claim))
     assert detail(system, job, claim['item']['image_id'])['task_image']['execution_status'] == 'succeeded'
+
+
+def trace(system, job, image_id, **params):
+    response=system['client'].get(f"/api/preannotation/tasks/{job['id']}/images/{image_id}/trace",params=params)
+    assert response.status_code==200,response.text
+    return response.json()
+
+
+def test_per_image_retry_preserves_attempt_history_and_protects_success(system):
+    job=task(system,sample_size=1)
+    first=claim_image();image_id=first['item']['image_id']
+    save_result(first,error=InferenceError('validation','响应格式错误'))
+    assert trace(system,job,image_id)['can_retry']
+    url=f"/api/preannotation/tasks/{job['id']}/images/{image_id}/retry"
+    assert system['client'].post(url).status_code==200
+    assert system['client'].post(url).status_code==409
+    second=claim_image();save_result(second,[box(system)],'success')
+    history=trace(system,job,image_id)
+    assert [(a['sequence_number'],a['status']) for a in history['attempts']]==[(1,'failed'),(2,'succeeded')]
+    assert history['attempts'][0]['error_message']=='响应格式错误'
+    assert not history['can_retry']
+    assert system['client'].post(url).status_code==409
+    assert len(detail(system,job,image_id)['candidates'])==1
+
+
+def test_waiting_automatic_retry_can_be_started_immediately(system):
+    job=task(system,sample_size=1)
+    claim=claim_image();image_id=claim['item']['image_id']
+    save_result(claim,error=InferenceError('network','连接失败',True))
+    state=trace(system,job,image_id)
+    assert state['task_image']['execution_status']=='queued' and state['can_retry']
+    assert system['client'].get(f"/api/preannotation/tasks/{job['id']}").json()['retryable_images']==1
+    assert system['client'].post(f"/api/preannotation/tasks/{job['id']}/retry-failed").json()['retried_images']==1
+    assert claim_image()['item']['image_id']==image_id
+    assert trace(system,job,image_id)['total']==2
+
+
+def test_attempt_pagination_and_legacy_fallback(system):
+    job=task(system,sample_size=1);image_id=system['images'][0]
+    for _ in range(6):
+        claim=claim_image();save_result(claim,error=InferenceError('validation','bad output'))
+        system['client'].post(f"/api/preannotation/tasks/{job['id']}/images/{image_id}/retry")
+    latest=trace(system,job,image_id,page_size=2)
+    assert [a['sequence_number'] for a in latest['attempts']]==[5,6]
+    older=trace(system,job,image_id,before_id=latest['attempts'][0]['id'],page_size=2)
+    assert [a['sequence_number'] for a in older['attempts']]==[3,4]
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute('DELETE FROM preannotation_attempts WHERE task_image_id=%s',(claim['item']['id'],))
+        c.execute('UPDATE preannotation_task_images SET raw_response=%s WHERE id=%s',('{"legacy":true}',claim['item']['id']))
+    legacy=trace(system,job,image_id)
+    assert legacy['total']==0 and legacy['legacy_response']=='{"legacy":true}'
+
+
+def test_trace_permissions_cancel_and_late_record_protection(system):
+    from app.services.preannotation_trace import record_event
+    from app.core.security import get_current_user
+    job=task(system,sample_size=1);claim=claim_image();image_id=claim['item']['image_id']
+    record_event(claim,'request',{'body':{'model':'test'}})
+    app.dependency_overrides[get_current_user]=lambda:{'id':99,'is_admin':False,'is_active':True}
+    assert system['client'].post(f"/api/preannotation/tasks/{job['id']}/images/{image_id}/retry").status_code==403
+    app.dependency_overrides[get_current_user]=lambda:system['user']
+    assert system['client'].post(f"/api/preannotation/tasks/{job['id']}/cancel").status_code==200
+    record_event(claim,'response',{'raw':'late response'})
+    state=trace(system,job,image_id)
+    assert state['attempts'][0]['status']=='cancelled'
+    assert 'response' not in state['attempts'][0]['trace']
+    assert system['client'].get(f"/api/preannotation/tasks/{job['id']}/images/99999/trace").status_code==404
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute('UPDATE datasets SET is_active=FALSE WHERE id=%s',(system['dataset'],))
+    app.dependency_overrides[get_current_user]=lambda:{'id':99,'is_admin':False,'is_active':True}
+    assert system['client'].get(f"/api/preannotation/tasks/{job['id']}/images/{image_id}/trace").status_code==403
+
+
+def test_retry_archives_available_legacy_error_without_inventing_request(system):
+    job=task(system,sample_size=1);image_id=system['images'][0]
+    with database.get_db() as conn,conn.cursor() as c:
+        c.execute("UPDATE preannotation_task_images SET execution_status='failed',attempts=3,error_code='timeout',error_message='旧版本整图超时' WHERE task_id=%s",(job['id'],))
+    assert system['client'].post(f"/api/preannotation/tasks/{job['id']}/images/{image_id}/retry").status_code==200
+    claim_image();history=trace(system,job,image_id)
+    assert history['total']==2
+    old=history['attempts'][0]
+    assert old['trace']=={'legacy':True} and old['elapsed_ms'] is None
+    assert old['error_message']=='旧版本整图超时'
+    assert history['attempts'][1]['sequence_number']==4

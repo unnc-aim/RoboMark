@@ -69,7 +69,7 @@ class ProfileInput(BaseModel):
     coordinate_system: Literal["normalized", "pixels", "relative_1000"] = "normalized"
     box_format: Literal["center", "xyxy"] = "center"
     structured_output: Literal["none", "response_format", "vllm"] = "none"
-    timeout_seconds: int = Field(default=120, ge=5, le=600)
+    timeout_seconds: int = Field(default=120, ge=5, le=600, description='连接与发送超时；不限制单图推理总耗时或响应读取等待')
     max_attempts: int = Field(default=3, ge=1, le=5)
     is_shared: bool = False
 

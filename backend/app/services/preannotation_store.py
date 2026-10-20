@@ -37,6 +37,8 @@ def task_detail(c, task):
     c.execute("""SELECT SUM(execution_status='succeeded' AND original_count>0) AS with_results,
                  SUM(execution_status='succeeded' AND original_count=0) AS empty_results,
                  SUM(review_status='approved') AS approved, SUM(review_status='rejected') AS rejected
+                 ,SUM(review_status='unreviewed' AND (execution_status='failed' OR
+                   (execution_status='queued' AND error_code IS NOT NULL))) AS retryable_images
                  FROM preannotation_task_images WHERE task_id=%s""", (task["id"],))
     aggregate = {k: int(v or 0) for k, v in c.fetchone().items()}
     c.execute("SELECT image_id,error_code,error_message FROM preannotation_task_images WHERE task_id=%s AND execution_status='failed' ORDER BY image_id LIMIT 20", (task["id"],))

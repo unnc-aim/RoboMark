@@ -1,5 +1,6 @@
 """声明式 HTTP 适配、凭据保护及模型结果转换；不执行用户代码。"""
 import base64
+import hashlib
 import json
 import math
 import mimetypes
@@ -13,6 +14,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from PIL import Image
 from app.core.config import settings
 from app.schemas.preannotation import Annotation, ProfileInput, POINT_FIELDS, GEOMETRY_FIELDS
+from app.services.preannotation_trace import sanitize, safe_endpoint
 
 
 class InferenceError(Exception):
@@ -229,7 +231,7 @@ def normalize_output(output, config, categories, shape, width, height):
     return results
 
 
-async def infer(config, credentials, image_path, prompt, categories, shape):
+async def infer(config, credentials, image_path, prompt, categories, shape, on_event=None):
     path = Path(image_path)
     try:
         if path.stat().st_size > settings.PREANNOTATION_MAX_IMAGE_BYTES:
@@ -267,15 +269,28 @@ async def infer(config, credentials, image_path, prompt, categories, shape):
     if credentials.get("api_key") and not any(key.lower() == "authorization" for key in headers):
         headers["Authorization"] = "Bearer " + credentials["api_key"]
     raw = None
+    async def emit(stage, data):
+        if on_event:
+            await on_event(stage, sanitize(data, credentials, encoded))
+
+    await emit('request', {
+        'method': config.get('http_method', 'POST'), 'endpoint': safe_endpoint(config['endpoint']),
+        'headers': {key: value if key.lower() == 'content-type' else '[已隐藏]' for key, value in headers.items()},
+        'body': body, 'image': {'filename': path.name, 'width': width, 'height': height, 'mime': mime,
+                              'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()},
+        'interface_type': config['interface_type'], 'profile_version': config.get('profile_version'),
+        'network_timeout_seconds': config.get('timeout_seconds',120), 'read_timeout_seconds': None,
+        'prompt': prompt, 'output_schema': schema,
+        'conversion': {key: config.get(key) for key in ('response_path','annotations_path','coordinate_system','box_format','field_mapping')}
+    })
     try:
         # 慢模型可以持续等待；连接、发送和连接池等待仍有网络超时。
         network_timeout = config.get("timeout_seconds", 120)
         timeout = httpx.Timeout(connect=network_timeout, write=network_timeout, pool=30, read=None)
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=False, trust_env=False) as client:
             async with client.stream(config.get("http_method", "POST"), config["endpoint"], json=body, headers=headers) as response:
-                if response.status_code >= 300:
-                    raise InferenceError("http", f"推理服务返回 HTTP {response.status_code}",
-                                         response.status_code in (408, 429, 500, 502, 503, 504))
+                await emit('response_headers', {'http_status': response.status_code,
+                    'content_type': response.headers.get('content-type'), 'request_id': response.headers.get('x-request-id')})
                 chunks, size = [], 0
                 async for chunk in response.aiter_bytes():
                     size += len(chunk)
@@ -283,11 +298,31 @@ async def infer(config, credentials, image_path, prompt, categories, shape):
                         raise InferenceError("response_size", "推理响应超过大小限制")
                     chunks.append(chunk)
         raw = b"".join(chunks).decode("utf-8")
+        try:
+            safe_raw = json.dumps(sanitize(json.loads(raw), credentials, encoded), ensure_ascii=False)
+        except json.JSONDecodeError:
+            safe_raw = sanitize(raw, credentials, encoded)
+        await emit('response', {'raw': safe_raw, 'bytes': size, 'http_status': response.status_code})
+        if response.status_code >= 300:
+            raise InferenceError('http', f'推理服务返回 HTTP {response.status_code}',
+                                 response.status_code in (408,429,500,502,503,504), raw_response=safe_raw)
         response_data = json.loads(raw)
-        if config["interface_type"] == "openai" and response_data.get("choices", [{}])[0].get("finish_reason") == "length":
+        if config['interface_type'] == 'openai' and not isinstance(response_data, dict):
+            raise ValueError('OpenAI 兼容接口必须返回 JSON 对象')
+        choices = response_data.get('choices', []) if isinstance(response_data, dict) else []
+        first_choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
+        if config['interface_type'] == 'openai' and not isinstance(first_choice.get('message'), dict):
+            raise ValueError('OpenAI 兼容响应缺少 choices[0].message 对象')
+        if config["interface_type"] == "openai" and first_choice.get("finish_reason") == "length":
             raise ValueError("模型输出被截断")
         output = extract(response_data, config.get("response_path", ""))
+        message = first_choice.get('message', {})
+        if not isinstance(message, dict):
+            message = {}
+        await emit('parsed', {'output': output, 'reasoning_content': message.get('reasoning_content'),
+                             'usage': response_data.get('usage') if isinstance(response_data, dict) else None})
         annotations = normalize_output(output, config, categories, shape, width, height)
+        await emit('normalized', {'annotations': annotations, 'count': len(annotations)})
         return annotations, redact(raw, credentials)
     except httpx.HTTPError as exc:
         raise InferenceError("network", "推理请求超时或网络不可用", True) from exc
@@ -297,7 +332,7 @@ async def infer(config, credentials, image_path, prompt, categories, shape):
         raise InferenceError("validation", f"模型候选框的 {field} 不合法，请检查坐标范围、面积与顶点顺序", raw_response=redact(raw, credentials)) from exc
     except json.JSONDecodeError as exc:
         raise InferenceError("validation", "模型响应不是有效 JSON，请检查接口输出格式", raw_response=redact(raw, credentials)) from exc
-    except (ValueError, KeyError, IndexError, TypeError) as exc:
+    except (ValueError, KeyError, IndexError, TypeError, UnicodeDecodeError) as exc:
         raise InferenceError("validation", f"模型结果验证失败：{str(exc)[:1000]}", raw_response=redact(raw, credentials)) from exc
 
 

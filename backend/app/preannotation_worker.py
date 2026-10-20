@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.database import get_db, get_connection
 from app.services.preannotation_inference import infer, decrypt_credentials, json_value, InferenceError
 from app.services.preannotation_store import reconcile_task
+from app.services.preannotation_trace import start_attempt, record_event, finish_attempt
 
 logger = logging.getLogger("preannotation-worker")
 
@@ -28,6 +29,11 @@ def claim_image():
             tasks = c.fetchall()
             for task in tasks:
                 config = json_value(task["config_snapshot"])
+                c.execute("""UPDATE preannotation_attempts a JOIN preannotation_task_images ti ON ti.id=a.task_image_id
+                             SET a.status='interrupted',a.error_code='lease_expired',
+                             a.error_message='worker 租约到期，等待恢复',a.finished_at=NOW(6)
+                             WHERE ti.task_id=%s AND a.status='running' AND ti.execution_status='running'
+                             AND ti.lease_until<NOW(6)""", (task['id'],))
                 # 失去租约的结果必须更换领取 token，防止旧 worker 写回。
                 c.execute("""UPDATE preannotation_task_images SET execution_status=
                              IF(attempts >= %s,'failed','queued'),claim_token=NULL,lease_until=NULL,
@@ -52,6 +58,7 @@ def claim_image():
                     continue
                 token = str(uuid.uuid4())
                 c.execute("UPDATE preannotation_task_images SET execution_status='running',attempts=attempts+1,claim_token=%s,lease_until=DATE_ADD(NOW(6),INTERVAL 45 SECOND),error_code=NULL,error_message=NULL WHERE id=%s", (token, item["id"]))
+                start_attempt(c, item['id'], token)
                 c.execute("UPDATE preannotation_tasks SET status='running' WHERE id=%s", (task["id"],))
                 c.execute("SELECT file_path FROM images WHERE id=%s", (item["image_id"],))
                 image = c.fetchone()
@@ -88,26 +95,31 @@ def save_result(claim, annotations=None, raw=None, error=None):
         c.execute("SELECT *,lease_until>NOW(6) AS lease_active FROM preannotation_task_images WHERE id=%s FOR UPDATE", (item["id"],))
         current = c.fetchone()
         if not current or current["claim_token"] != claim["token"] or current["execution_status"] != "running" or not current["lease_active"]:
+            finish_attempt(c, claim['token'], 'interrupted', 'stale_claim', '领取已失效，结果未写入候选框')
             return False
         if current_task["status"] in ("cancelled", "cancelling"):
             c.execute("UPDATE preannotation_task_images SET execution_status='cancelled',claim_token=NULL,lease_until=NULL WHERE id=%s", (item["id"],))
+            finish_attempt(c, claim['token'], 'cancelled', 'cancelled', '任务已取消')
         elif error:
             retry = error.retryable and current["attempts"] < claim["config"]["max_attempts"]
             c.execute("""UPDATE preannotation_task_images SET execution_status=%s,error_code=%s,error_message=%s,
                          raw_response=%s,claim_token=NULL,lease_until=NULL,retry_at=DATE_ADD(NOW(6),INTERVAL %s SECOND)
                          WHERE id=%s""", ("queued" if retry else "failed", error.code, str(error)[:2000],
                                           error.raw_response, min(60, 2 ** current["attempts"]), item["id"]))
+            finish_attempt(c, claim['token'], 'failed', error.code, str(error)[:2000])
         else:
             # 校验最新类别；任务快照对应类别被删除时不落入成功状态。
             c.execute("SELECT id FROM categories WHERE dataset_id=%s", (task["dataset_id"],))
             ids = {r["id"] for r in c.fetchall()}
             if any(ann["category_id"] not in ids for ann in annotations):
                 c.execute("UPDATE preannotation_task_images SET execution_status='failed',error_code='category_deleted',error_message='模型结果使用的类别已被删除',raw_response=%s,claim_token=NULL,lease_until=NULL WHERE id=%s", (raw, item["id"]))
+                finish_attempt(c, claim['token'], 'failed', 'category_deleted', '模型结果使用的类别已被删除')
             else:
                 if annotations:
                     c.executemany("INSERT INTO preannotations (task_image_id,original_geometry,geometry) VALUES (%s,%s,%s)",
                                   [(item["id"], json.dumps(ann), json.dumps(ann)) for ann in annotations])
                 c.execute("UPDATE preannotation_task_images SET execution_status='succeeded',original_count=%s,raw_response=%s,claim_token=NULL,lease_until=NULL,retry_at=NULL,revision=revision+1 WHERE id=%s", (len(annotations), raw, item["id"]))
+                finish_attempt(c, claim['token'], 'succeeded')
         reconcile_task(c, task["id"])
         return True
 
@@ -138,8 +150,11 @@ async def execute_claim(claim):
             raise InferenceError("image", "图片已被删除")
         credentials = decrypt_credentials(profile["credentials"])
         task = claim["task"]
+        async def emit(stage, data):
+            await asyncio.to_thread(record_event, claim, stage, data)
         request = asyncio.create_task(infer(claim["config"], credentials, claim["image"]["file_path"],
-                                            task["prompt"], json_value(task["categories_snapshot"]), task["annotation_type"]))
+                                            task["prompt"], json_value(task["categories_snapshot"]), task["annotation_type"],
+                                            on_event=emit))
         lease_task = asyncio.create_task(keep_lease(claim, request))
         annotations, raw = await request
         await asyncio.to_thread(save_result, claim, annotations, raw)

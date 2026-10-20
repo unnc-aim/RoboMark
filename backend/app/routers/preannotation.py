@@ -6,6 +6,7 @@ from app.core import get_db_dependency, get_current_user
 from app.schemas.preannotation import ProfileInput, ProfileTestInput, TaskInput, DraftInput, ReviewInput, Annotation
 from app.services.preannotation_inference import validate_profile, encrypt_credentials, decrypt_credentials, json_value
 from app.services.preannotation_probe import probe_connection
+from app.services.preannotation_trace import sanitize, safe_endpoint, archive_legacy_attempt
 from app.services.preannotation_store import (
     require_dataset, require_task, require_operator, task_detail, reconcile_task,
     categories_for_image, validate_categories, insert_annotation, finish_image, candidate_rows,
@@ -187,6 +188,9 @@ def cancel_task(task_id: int, conn=Depends(get_db_dependency), user=Depends(get_
         if task["status"] not in ("queued", "running", "cancelling"):
             return task_detail(c, task)
         c.execute("UPDATE preannotation_tasks SET status='cancelling' WHERE id=%s", (task_id,))
+        c.execute("""UPDATE preannotation_attempts a JOIN preannotation_task_images ti ON ti.id=a.task_image_id
+                     SET a.status='cancelled',a.error_code='cancelled',a.error_message='用户取消了任务',a.finished_at=NOW(6)
+                     WHERE ti.task_id=%s AND a.status='running'""", (task_id,))
         # 直接使所有领取 token 失效；worker 写结果前再次检查。
         c.execute("UPDATE preannotation_task_images SET execution_status='cancelled',claim_token=NULL,lease_until=NULL WHERE task_id=%s AND execution_status IN ('queued','running')", (task_id,))
         reconcile_task(c, task_id)
@@ -200,9 +204,78 @@ def retry_failed(task_id: int, conn=Depends(get_db_dependency), user=Depends(get
         require_operator(task, user)
         if task["status"] in ("cancelled", "cancelling"):
             raise HTTPException(409, "取消的任务不能重试，请创建新批次")
-        c.execute("UPDATE preannotation_task_images SET execution_status='queued',attempts=0,error_code=NULL,error_message=NULL,retry_at=NULL,claim_token=NULL,lease_until=NULL WHERE task_id=%s AND execution_status='failed' AND review_status='unreviewed'", (task_id,))
+        c.execute("SELECT * FROM preannotation_task_images WHERE task_id=%s AND review_status='unreviewed' AND (execution_status='failed' OR (execution_status='queued' AND error_code IS NOT NULL)) FOR UPDATE", (task_id,))
+        for item in c.fetchall():
+            archive_legacy_attempt(c,item)
+        c.execute("UPDATE preannotation_task_images SET execution_status='queued',attempts=0,error_code=NULL,error_message=NULL,retry_at=NULL,claim_token=NULL,lease_until=NULL WHERE task_id=%s AND (execution_status='failed' OR (execution_status='queued' AND error_code IS NOT NULL)) AND review_status='unreviewed'", (task_id,))
+        retried = c.rowcount
         reconcile_task(c, task_id)
-        return task_detail(c, require_task(c, task_id, user))
+        return {**task_detail(c, require_task(c, task_id, user)), 'retried_images': retried}
+
+
+@router.post('/preannotation/tasks/{task_id}/images/{image_id}/retry')
+def retry_image(task_id: int, image_id: int, conn=Depends(get_db_dependency), user=Depends(get_current_user)):
+    with conn.cursor() as c:
+        task = require_task(c, task_id, user, lock=True)
+        require_operator(task, user)
+        if task['status'] in ('cancelled','cancelling'):
+            raise HTTPException(409, '取消的任务不能重试，请创建新批次')
+        c.execute('SELECT * FROM preannotation_task_images WHERE task_id=%s AND image_id=%s FOR UPDATE', (task_id,image_id))
+        item = c.fetchone()
+        if not item:
+            raise HTTPException(404, '图片不在该批次中')
+        if item['review_status'] != 'unreviewed' or not (item['execution_status']=='failed' or (item['execution_status']=='queued' and item['error_code'])):
+            raise HTTPException(409, '仅失败或等待自动重试的未审核图片可以重试')
+        archive_legacy_attempt(c,item)
+        c.execute("""UPDATE preannotation_task_images SET execution_status='queued',attempts=0,
+                     error_code=NULL,error_message=NULL,retry_at=NULL,claim_token=NULL,lease_until=NULL
+                     WHERE task_id=%s AND image_id=%s AND review_status='unreviewed'
+                     AND (execution_status='failed' OR (execution_status='queued' AND error_code IS NOT NULL))""", (task_id,image_id))
+        if not c.rowcount:
+            raise HTTPException(409, '仅失败或等待自动重试的未审核图片可以重试')
+        reconcile_task(c,task_id)
+        return {'message':'图片已重新排队，历史推理记录已保留'}
+
+
+@router.get('/preannotation/tasks/{task_id}/images/{image_id}/trace')
+def inference_trace(task_id: int, image_id: int, page: int = Query(1, ge=1),
+                    page_size: int = Query(5, ge=1, le=20),
+                    before_id: int | None = Query(None, ge=1),
+                    conn=Depends(get_db_dependency), user=Depends(get_current_user)):
+    with conn.cursor() as c:
+        task = require_task(c,task_id,user)
+        c.execute('SELECT id,filename,width,height,dataset_id FROM images WHERE id=%s AND dataset_id=%s', (image_id,task['dataset_id']))
+        image = c.fetchone()
+        c.execute('SELECT * FROM preannotation_task_images WHERE task_id=%s AND image_id=%s', (task_id,image_id))
+        item = c.fetchone()
+        if not image or not item:
+            raise HTTPException(404, '图片不在该批次中')
+        c.execute('SELECT COUNT(*) AS n FROM preannotation_attempts WHERE task_image_id=%s', (item['id'],))
+        total = c.fetchone()['n']
+        query = """SELECT id,sequence_number,status,trace,error_code,error_message,started_at,finished_at,
+                     ROUND(TIMESTAMPDIFF(MICROSECOND,started_at,COALESCE(finished_at,NOW(6)))/1000) AS elapsed_ms
+                     FROM preannotation_attempts WHERE task_image_id=%s"""
+        args = [item['id']]
+        if before_id is not None:
+            query += ' AND id<%s'
+            args.append(before_id)
+        c.execute(query+' ORDER BY id DESC LIMIT %s OFFSET %s', [*args,page_size,0 if before_id else (page-1)*page_size])
+        attempts = [{**r, 'trace': json_value(r['trace'])} for r in reversed(c.fetchall())]
+        for attempt in attempts:
+            if attempt['trace'].get('legacy'):
+                attempt['elapsed_ms'] = None
+        config = json_value(task['config_snapshot'])
+        return {'image':image, 'task':task_detail(c,task),
+                'task_image':{k:v for k,v in item.items() if k not in ('claim_token','lease_until','raw_response')},
+                'input':sanitize({'prompt':task['prompt'],'endpoint':safe_endpoint(config['endpoint']),
+                    'model':config.get('model'),'interface_type':config.get('interface_type'),
+                    'annotation_type':task['annotation_type'],'categories':json_value(task['categories_snapshot']),
+                    'conversion':{k:config.get(k) for k in ('response_path','annotations_path','box_format','coordinate_system','field_mapping')}}),
+                'attempts':attempts,'total':total,'page':page,'page_size':page_size,
+                'legacy_response':item['raw_response'] if not total else None,
+                'can_retry':(user['is_admin'] or task['created_by']==user['id'])
+                    and task['status'] not in ('cancelled','cancelling') and item['review_status']=='unreviewed'
+                    and (item['execution_status']=='failed' or (item['execution_status']=='queued' and bool(item['error_code'])))}
 
 
 @router.get("/datasets/{dataset_id}/images")
@@ -249,7 +322,7 @@ def list_images(dataset_id: int, task_id: int | None = None, has_candidates: boo
         c.execute("SELECT COUNT(*) AS n" + joins, args)
         total = c.fetchone()["n"]
         ordering = " ORDER BY i.id DESC" if before_id is not None else " ORDER BY i.id"
-        c.execute("SELECT i.id,i.filename,i.width,i.height,i.status,i.annotation_revision,ti.id AS task_image_id,ti.execution_status,ti.review_status,ti.original_count,ti.error_code,ti.error_message,ti.revision" + joins + ordering + " LIMIT %s OFFSET %s", [*args, page_size, (page-1)*page_size])
+        c.execute("SELECT i.id,i.filename,i.width,i.height,i.status,i.annotation_revision,ti.id AS task_image_id,ti.execution_status,ti.review_status,ti.original_count,ti.error_code,ti.error_message,ti.attempts,ti.retry_at,ti.revision" + joins + ordering + " LIMIT %s OFFSET %s", [*args, page_size, (page-1)*page_size])
         rows = c.fetchall()
         # 一次查询所有本页候选，避免缩略图列表的 N+1 查询。
         candidates = {}

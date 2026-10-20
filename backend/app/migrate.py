@@ -41,6 +41,10 @@ def migrate():
                 if statement.strip():
                     c.execute(statement)
             add_column(c, "preannotation_profiles", "environment_key", "VARCHAR(100) NULL UNIQUE")
+            sql = (Path(__file__).resolve().parents[2] / "database/migration_004_preannotation_attempts.sql").read_text()
+            for statement in sql.split(";"):
+                if statement.strip():
+                    c.execute(statement)
         finally:
             c.execute("SELECT RELEASE_LOCK(CONCAT(DATABASE(), ':robomark-migrate'))")
     print("数据库已升级：数据集配置、预标注任务、审核版本与标注来源")
