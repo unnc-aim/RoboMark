@@ -101,6 +101,14 @@ worker 支持多个并发槽位，同一 endpoint 的配额通过数据库领取
 
 API：`GET /api/preannotation/tasks/{task}/images/{image}/trace` 分页读取记录（默认最近 5 条，支持 `before_id` 加载更早记录）；`POST /api/preannotation/tasks/{task}/images/{image}/retry` 重试单图。原批次 `retry-failed` 接口返回 `retried_images`。升级时执行 `python -m app.migrate`，迁移器会创建 migration 004 的记录表；随后重启 API 与 worker。仅执行 migration 003 不足以启用记录功能。
 
+### 图片卡片的 Token 与 TPS
+
+成功图片的候选框数量旁展示“输入 Token / 输出 Token · TPS”。用量读取服务顶层 `usage` 的 `prompt_tokens` / `completion_tokens`，也兼容 `input_tokens` / `output_tokens`。只使用这张图片最近一次成功请求的数据，不累计失败重试的消耗，也不会从生成文本长度或 `total_tokens` 猜测输入 / 输出数量。
+
+新请求记录从 HTTP 请求开始到响应正文接收完成的单调计时，`TPS = 输出 Token ÷ 请求耗时（秒）`，包含连接、排队与首 Token 等待，不表示模型纯解码速度。已有完整阶段记录但没有 HTTP 计时的，使用请求至响应阶段的时间差估算，提示中明确标注“估算”。更旧的结果可从已有原始响应中读取 Token，但没有耗时就显示 `— TPS`；服务未返回用量时也显示 `—`，合法零值保留为 `0`。
+
+图片列表 API 返回 `inference_metrics`：`input_tokens`、`output_tokens`、`tps`、`elapsed_ms` 与 `duration_source`（`http` / `trace` / `null`）。一页只增加一次批量查询，提取用量和计时小字段，不把完整推理链或原始响应发到缩略图列表。此功能无需新增数据库迁移。
+
 ## 请求格式与结果转换
 
 OpenAI 兼容模式发送图片 data URL 与 Prompt，支持 Prompt 约束、`response_format` JSON Schema 或 vLLM `structured_outputs`。使用哪种扩展应与实际服务版本匹配。
@@ -205,3 +213,5 @@ ROBOMARK_TEST_DATABASE_URL='mysql+pymysql://test_user:test_password@127.0.0.1:33
 统一工作台补充验收：39 项后端测试通过；Playwright 完成 21 项流程断言，覆盖默认全量批次、改类别、移框、补画、删除与撤销、空结果筛选、仅保存草稿、通过后切图、空结果确认、正式框保留、审核后只读、人工模式切换和旧链接重定向。审核写入使用浏览器内存 mock，没有通过验收去审核用户现有结果。1680×1000 和 1280×800 布局已查看截图，浏览器无运行时错误。
 
 逐图推理记录补充验收（2026-10-20）：48 项后端测试通过，覆盖慢响应不受整图计时器中断、真实 HTTP 请求分阶段记录、原始错误响应、凭据与图片内容脱敏、单图 / 批次重试、历史游标、旧错误归档、租约恢复和权限。Playwright 完成 25 项流程断言，覆盖 Mock 四状态、历史查看、实际旧任务读取、审核页往返、单图 / 卡片 / 批次重试、刷新失败保留记录和示例隔离；审核与重试写入使用浏览器 mock，未改动现有结果。1680、1280 和 390 像素宽度已检查布局。真实推理网关的超时策略仍由上游服务决定。
+
+Token / TPS 补充验收（2026-10-20）：67 项后端测试通过，包含合法零值、两组用量字段名、非法用量、缺少计时、旧阶段耗时估算、最近成功尝试及旧原始响应回退；前端构建通过。Playwright 的 11 项断言覆盖真实旧结果的用量展示、千位格式、TPS 提示、零值 / 缺失值区分、桌面 / 笔记本 / 手机布局和无推理写入。指标展示使用 mock 用量与计时，不重跑用户推理。

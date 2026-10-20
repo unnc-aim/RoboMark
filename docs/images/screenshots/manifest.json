@@ -173,6 +173,19 @@
         1756
       ],
       "sha256": "191ec0182db802521541fdf8df829511f7169ff787c5ca4721a36edf3fa1c348"
+    },
+    {
+      "file": "preannotation-metrics.png",
+      "title": "图片卡片 Token 与 TPS",
+      "route": "/datasets/1/preannotation?task=3",
+      "state": "用量与计时采用展示数据，呈现成功请求、阶段耗时估算、旧结果缺少耗时及缺少 usage；不调用推理服务",
+      "captured_on": "2026-10-20",
+      "mode": "element",
+      "image_size": [
+        1412,
+        557
+      ],
+      "sha256": "64a0428bf2c94c70bdd8af8b55343ef9ca8d98c059bdc5fe2b5ade8400f725cf"
     }
   ],
   "updated_on": "2026-10-20"

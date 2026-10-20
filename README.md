@@ -29,7 +29,7 @@
 |:---:|:---:|
 | ![管理仪表盘](docs/images/screenshots/dashboard.png) | ![工作量统计](docs/images/screenshots/statistics.png) |
 
-对话式推理详情新增了 [完整交互示例截图](docs/images/screenshots/inference-trace.png)。
+查看 [对话式推理详情截图](docs/images/screenshots/inference-trace.png) 与 [卡片 Token / TPS 指标示例](docs/images/screenshots/preannotation-metrics.png)。
 
 全部功能页面及配置弹窗见 [页面截图索引](docs/screenshots.md)。截图使用隔离演示数据，统一以 1680 × 1000 桌面视口拍摄；示例候选框和连接测试服务用于展示交互，不代表真实模型识别精度。
 
@@ -45,6 +45,7 @@
 | 连接测试 | 已保存配置与未保存配置均可测试；显示可达性、认证或模型检查结果、HTTP 状态和耗时 |
 | 后台预标注 | 数据集 Prompt、抽样验证、全量批次、独立 worker、持久化进度、并发控制、取消、失败重试及租约恢复 |
 | 单图推理记录 | 对话式查看实际请求、模型原始响应、服务返回的推理说明和转换结果；逐次保留历史，单图 / 批次重试，不设整图推理总时限 |
+| 推理指标 | 图片卡片在候选框数量旁显示输入 / 输出 Token 和 TPS；旧记录缺少用量或耗时时显示 `—`，不伪造数据 |
 | 人工审核 | 缩略图批量叠加、按执行 / 审核状态与有无候选框筛选；统一 annotate 工作台编辑、保存草稿、通过、驳回与空结果确认 |
 | 导出 | YOLOv5/v7/v8、YOLO Darknet、COCO JSON，训练 / 验证 / 测试比例、可选包含未标注图片、ZIP 下载 |
 | 工作量 | 总览、近 30 天每日记录、按数据集 / 日期筛选、用户工作量统计、CSV / JSON 导出 |
@@ -292,7 +293,7 @@ server {
 | POST | `/api/export` | 导出训练数据 |
 | GET | `/api/admin/statistics/overview` | 管理统计 |
 
-开发规范见 [CLAUDE.md](CLAUDE.md)。每个功能或修复及时提交，提交信息使用 `feat:` / `fix:` / `docs:` / `refactor:` 加简洁中文说明，不添加 coauthor。
+开发规范见 [CLAUDE.md](CLAUDE.md)。所有开发直接使用 `main`，不创建新的开发分支，除非用户后续明确要求。每个功能或修复及时提交，提交信息使用 `feat:` / `fix:` / `docs:` / `refactor:` 加简洁中文说明，不添加 coauthor。
 
 后续计划包括标注框复制 / 粘贴、键盘微调、自动保存、任务分派、协作反馈、视频与分割标注。目前预标注审核由用户完成，未提供自动质量审核。
 
