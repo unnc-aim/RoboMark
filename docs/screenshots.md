@@ -1,10 +1,10 @@
 # 功能页面截图
 
-基础截图拍摄于 2026-10-11，新增推理详情与 Token / TPS 指标拍摄于 2026-10-20（Asia/Shanghai）。截图均来自 Vue 页面，以 **1680 × 1000** 桌面视口拍摄，不含浏览器工具栏；推理详情使用整页长图，指标示例截取图片卡片区。
+基础截图拍摄于 2026-10-11，新增推理详情、Token / TPS 指标与 Prompt 复用拍摄于 2026-10-20（Asia/Shanghai）。截图均来自 Vue 页面，以 **1680 × 1000** 桌面视口拍摄，不含浏览器工具栏；推理详情使用整页长图，指标示例截取图片卡片区。
 
 使用隔离演示数据库及仓库的 `test/`、`demo/` 图片，没有改动业务数据库、真实推理接口或用户审核结果。候选框来自样例框数据；连接测试访问本地 HTTP 演示服务的模型列表，不代表实际 vLLM 模型的识别精度。四点标注和 HTTP JSON 配置展示的是未保存编辑状态。
 
-覆盖 13 个独立页面路由，并补充人工 / 审核模式、批量结果区及关键功能弹窗，共 **24 张**。旧的独立审核路由重定向到 annotate，因此不另存旧页面截图。
+覆盖 13 个独立页面路由，并补充人工 / 审核模式、批量结果区及关键功能弹窗，共 **25 张**。旧的独立审核路由重定向到 annotate，因此不另存旧页面截图。
 
 新增的推理详情使用页面自带的 Mock 交互示例，展示逐次请求历史、实际请求体的展示方式、服务返回与标准化结果；不会提交真实任务。
 
@@ -37,6 +37,7 @@
 | 自定义 HTTP JSON 接口 | `/datasets/1/preannotation?task=2` | [inference-http-json.png](images/screenshots/inference-http-json.png) |
 | 对话式图像推理记录（Mock） | `/datasets/1/preannotation/2/images/2/trace?demo=1` | [inference-trace.png](images/screenshots/inference-trace.png) |
 | 图片卡片 Token 与 TPS | `/datasets/1/preannotation?task=3` | [preannotation-metrics.png](images/screenshots/preannotation-metrics.png) |
+| 历史 Prompt 搜索与复用 | `/datasets/1/preannotation?task=2` | [prompt-history.png](images/screenshots/prompt-history.png) |
 | 推理接口通断测试 | `/datasets/1/preannotation?task=2` | [connection-test.png](images/screenshots/connection-test.png) |
 
 ## 截图浏览
@@ -83,6 +84,7 @@
 
 | 自定义 HTTP JSON 接口 | 对话式图像推理记录（Mock） | `/datasets/1/preannotation/2/images/2/trace?demo=1` | [inference-trace.png](images/screenshots/inference-trace.png) |
 | 图片卡片 Token 与 TPS | `/datasets/1/preannotation?task=3` | [preannotation-metrics.png](images/screenshots/preannotation-metrics.png) |
+| 历史 Prompt 搜索与复用 | `/datasets/1/preannotation?task=2` | [prompt-history.png](images/screenshots/prompt-history.png) |
 | 推理接口通断测试 |
 |:---:|:---:|
 | ![自定义 HTTP JSON 接口](images/screenshots/inference-http-json.png) | ![推理接口通断测试](images/screenshots/connection-test.png) |
@@ -96,6 +98,12 @@
 用量及耗时为展示样例，覆盖有完整计时、使用阶段时间估算、无耗时与无用量的情况。将鼠标放到指标上可查看计算口径与缺失原因。
 
 ![图片卡片 Token 与 TPS](images/screenshots/preannotation-metrics.png)
+
+### 历史 Prompt 搜索与复用
+
+历史列表使用展示数据，支持搜索、切换当前数据集 / 我的全部数据集、分页、查看完整多行内容和一键填入。
+
+![历史 Prompt 搜索与复用](images/screenshots/prompt-history.png)
 
 ## 后续更新
 

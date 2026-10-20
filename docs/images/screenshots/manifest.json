@@ -186,6 +186,19 @@
         557
       ],
       "sha256": "64a0428bf2c94c70bdd8af8b55343ef9ca8d98c059bdc5fe2b5ade8400f725cf"
+    },
+    {
+      "file": "prompt-history.png",
+      "title": "历史 Prompt 搜索与复用",
+      "route": "/datasets/1/preannotation?task=2",
+      "state": "历史列表使用展示数据，包含范围切换、搜索、分页、全文预览与一键填入；不提交推理任务",
+      "captured_on": "2026-10-20",
+      "mode": "element",
+      "image_size": [
+        960,
+        729
+      ],
+      "sha256": "6955357010561829550bed220cb5f38544a91a44a7bf0002c35b2db99e98838a"
     }
   ],
   "updated_on": "2026-10-20"
