@@ -38,7 +38,7 @@ const active = computed(() =>
 const imageSrc = computed(() =>
   isDemo.value
     ? "/preannotation-demo.png"
-    : `/api/images/${data.value?.image.id}/file`,
+    : `/api/images/${data.value?.image.id}/preview?width=1280`,
 );
 const resultImage = computed(() => ({
   ...data.value?.image,

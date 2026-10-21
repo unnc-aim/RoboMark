@@ -135,7 +135,7 @@ async function remove() {
               })
             "
             ><img
-              :src="`/api/images/${image.id}/file`"
+              :src="`/api/images/${image.id}/preview?width=640`"
               :alt="image.filename"
               loading="lazy"
               decoding="async"

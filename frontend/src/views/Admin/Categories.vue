@@ -418,7 +418,7 @@ async function handleBatchImageImport() {
           <div class="template-preview">
             <img
               v-if="category.template_image_path"
-              :src="`/api/categories/${category.id}/template-image`"
+              :src="`/api/categories/${category.id}/template-image/preview?width=640`"
               :alt="`${category.name}的模板图片`"
               loading="lazy"
               decoding="async"

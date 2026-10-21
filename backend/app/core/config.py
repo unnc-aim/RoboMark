@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     # 文件上传配置
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_IMAGE_EXTENSIONS: list = [".jpg", ".jpeg", ".png", ".bmp", ".webp"]
+    # 默认为 backend/uploads/image_previews；可放在独立缓存盘，可安全清理。
+    IMAGE_PREVIEW_CACHE_DIR: str = ""
 
     # 独立于 JWT 密钥（dev.sh 会轮换 SECRET_KEY），保护推理接口凭据
     PREANNOTATION_ENCRYPTION_KEY: str = ""

@@ -35,7 +35,7 @@ function open() {
     <div class="dataset-cover">
       <img
         v-if="cover.data.value?.items[0]"
-        :src="`/api/images/${cover.data.value.items[0].id}/file`"
+        :src="`/api/images/${cover.data.value.items[0].id}/preview?width=640`"
         :alt="dataset.name"
         loading="lazy"
         decoding="async"

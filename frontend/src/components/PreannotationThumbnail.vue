@@ -23,7 +23,7 @@ const shapes = computed(() =>
     :style="{ aspectRatio: `${image.width || 4}/${image.height || 3}` }"
   >
     <img
-      :src="imageUrl || `/api/images/${image.id}/file`"
+      :src="imageUrl || `/api/images/${image.id}/preview?width=640`"
       :alt="image.filename"
       loading="lazy"
       decoding="async"
