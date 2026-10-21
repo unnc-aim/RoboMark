@@ -1188,6 +1188,10 @@ section {
 .preannotation-results .ui-table-wrap {
   border: 0;
 }
+.tasks-panel :deep(.ui-table) {
+  table-layout: fixed;
+  min-width: 980px;
+}
 .generation-panel :deep(textarea) {
   min-height: 155px;
 }
