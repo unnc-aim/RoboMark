@@ -21,7 +21,7 @@ import logo from "../assets/brand/aim-premium.png";
   flex-shrink: 0;
   object-fit: contain;
 }
-:global(.dark) .brand-logo {
+.dark .brand-logo {
   filter: invert(1);
 }
 </style>
