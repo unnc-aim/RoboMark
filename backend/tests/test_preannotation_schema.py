@@ -72,3 +72,12 @@ def test_requested_schema_matches_configured_response_paths_and_mapping():
     assert 'category_id' not in item['properties']
     assert item['properties']['class_name']['enum'] == ['无人机']
     assert output_schema({'annotations_path':''},CATEGORIES,'bbox')['type'] == 'array'
+
+
+def test_custom_positive_sample_size_above_twenty():
+    from app.schemas.preannotation import TaskInput
+    base = dict(profile_id=1, prompt="Detect robots", category_ids=[12])
+    assert TaskInput(**base, sample_size=35).sample_size == 35
+    for size in (0, -1):
+        with pytest.raises(ValidationError):
+            TaskInput(**base, sample_size=size)

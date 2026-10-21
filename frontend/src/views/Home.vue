@@ -1,228 +1,102 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
-import api from '../utils/api'
-
-const router = useRouter()
-const userStore = useUserStore()
-
-const datasets = ref([])
-const loading = ref(true)
-
-onMounted(async () => {
-  try {
-    const response = await api.get('/datasets')
-    datasets.value = response.data
-  } finally {
-    loading.value = false
-  }
-})
-
-function startAnnotation(datasetId) {
-  router.push(`/annotate/${datasetId}`)
-}
-
-function handleLogout() {
-  userStore.logout()
-  router.push('/login')
-}
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
+import WorkspaceLayout from "../layouts/WorkspaceLayout.vue";
+import DatasetCard from "../components/DatasetCard.vue";
+import { useDatasets } from "../shared/api/datasets";
+import { useUserStore } from "../stores/user";
+const router = useRouter(),
+  user = useUserStore(),
+  query = useDatasets();
+const search = ref(""),
+  status = ref("all"),
+  layout = ref("grid");
+const datasets = computed(() => query.data.value || []);
+const filtered = computed(() =>
+  datasets.value.filter(
+    (d) =>
+      `${d.name} ${d.description || ""}`
+        .toLowerCase()
+        .includes(search.value.toLowerCase()) &&
+      (status.value === "all" ||
+        (status.value === "done"
+          ? d.total_images > 0 && d.labeled_images >= d.total_images
+          : d.labeled_images < d.total_images)),
+  ),
+);
 </script>
-
 <template>
-  <div class="home-container">
-    <header class="header">
-      <div class="logo">
-        <h1>RoboMark</h1>
+  <WorkspaceLayout>
+    <header class="page-heading">
+      <div>
+        <h1>选择数据集，开始工作。</h1>
+        <p>从一张图片开始，让每个目标得到可靠的标注。</p>
       </div>
-      <div class="user-info">
-        <span>{{ userStore.user?.username }}</span>
-        <el-button v-if="userStore.isAdmin" type="primary" link @click="router.push('/')">
-          首页
-        </el-button>
-        <el-button v-if="userStore.isAdmin" type="primary" link @click="router.push('/admin')">
-          管理后台
-        </el-button>
-
-        <el-button type="primary" link @click="router.push('/tutorial')">
-          使用教程
-        </el-button>
-        <el-button type="danger" link @click="handleLogout">
-          退出登录
-        </el-button>
-      </div>
+      <ui-button
+        v-if="user.isAdmin"
+        type="primary"
+        icon="Plus"
+        @click="router.push('/admin/datasets?create=1')"
+        >新建数据集</ui-button
+      >
     </header>
-
-    <main class="main">
-      <h2 class="section-title">选择数据集开始标注</h2>
-
-      <div v-loading="loading" class="datasets-grid">
-        <div v-if="!loading && datasets.length === 0" class="empty-state">
-          <el-empty description="暂无可用数据集">
-            <template v-if="userStore.isAdmin">
-              <el-button type="primary" @click="router.push('/admin/datasets')">
-                创建数据集
-              </el-button>
-            </template>
-          </el-empty>
-        </div>
-
-        <div
-          v-for="dataset in datasets"
-          :key="dataset.id"
-          class="dataset-card"
-          @click="startAnnotation(dataset.id)"
-        >
-          <div class="card-header">
-            <h3>{{ dataset.name }}</h3>
-          </div>
-          <div class="card-body">
-            <p class="description">{{ dataset.description || '暂无描述' }}</p>
-            <div class="stats">
-              <div class="stat-item">
-                <span class="label">总图片</span>
-                <span class="value">{{ dataset.total_images }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="label">已标注</span>
-                <span class="value">{{ dataset.labeled_images }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="label">进度</span>
-                <span class="value">
-                  {{ dataset.total_images > 0
-                    ? Math.round(dataset.labeled_images / dataset.total_images * 100)
-                    : 0 }}%
-                </span>
-              </div>
-            </div>
-            <el-progress
-              :percentage="dataset.total_images > 0
-                ? Math.round(dataset.labeled_images / dataset.total_images * 100)
-                : 0"
-              :stroke-width="6"
-            />
-          </div>
-          <div class="card-footer">
-            <el-button type="primary" size="small">开始标注</el-button>
-            <el-button size="small" @click.stop="router.push(`/datasets/${dataset.id}/preannotation`)">预标注与审核</el-button>
-          </div>
-        </div>
+    <div class="summary-strip">
+      <span
+        ><strong>{{ datasets.length }}</strong> 个数据集</span
+      ><span
+        ><strong>{{
+          datasets.reduce((s, d) => s + d.total_images, 0).toLocaleString()
+        }}</strong>
+        张图片</span
+      ><span
+        ><strong>{{
+          datasets.reduce((s, d) => s + d.labeled_images, 0).toLocaleString()
+        }}</strong>
+        张已标注</span
+      >
+    </div>
+    <div class="collection-toolbar">
+      <ui-radio-group v-model="status" aria-label="数据集状态"
+        ><ui-radio-button value="all">全部数据集</ui-radio-button
+        ><ui-radio-button value="active">进行中</ui-radio-button
+        ><ui-radio-button value="done">已完成</ui-radio-button></ui-radio-group
+      >
+      <div class="collection-controls">
+        <ui-input
+          v-model="search"
+          prefix-icon="Search"
+          placeholder="搜索数据集…"
+        /><ui-radio-group v-model="layout" aria-label="布局"
+          ><ui-radio-button value="grid" aria-label="网格视图"
+            ><ui-icon name="LayoutGrid" /></ui-radio-button
+          ><ui-radio-button value="list" aria-label="列表视图"
+            ><ui-icon name="List" /></ui-radio-button
+        ></ui-radio-group>
       </div>
-    </main>
-  </div>
+    </div>
+    <ui-alert v-if="query.isError.value" type="error" title="数据集加载失败"
+      ><ui-button size="small" @click="query.refetch()"
+        >重新加载</ui-button
+      ></ui-alert
+    >
+    <div
+      v-loading="query.isPending.value"
+      class="dataset-collection"
+      :class="{ 'list-view': layout === 'list' }"
+    >
+      <DatasetCard
+        v-for="dataset in filtered"
+        :key="dataset.id"
+        :dataset="dataset"
+        :list="layout === 'list'"
+      />
+    </div>
+    <ui-empty
+      v-if="!query.isPending.value && !query.isError.value && !filtered.length"
+      :description="search ? '没有匹配的数据集' : '暂无可用数据集'"
+      ><ui-button v-if="search" @click="search = ''"
+        >清除搜索</ui-button
+      ></ui-empty
+    >
+  </WorkspaceLayout>
 </template>
-
-<style scoped>
-.home-container {
-  min-height: 100vh;
-  background: #f5f7fa;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 32px;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.logo h1 {
-  margin: 0;
-  font-size: 24px;
-  color: #333;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 32px;
-}
-
-.section-title {
-  margin-bottom: 24px;
-  color: #333;
-}
-
-.datasets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
-}
-
-.empty-state {
-  grid-column: 1 / -1;
-  padding: 60px;
-}
-
-.dataset-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.dataset-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.card-header {
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.card-header h3 {
-  margin: 0;
-}
-
-.card-body {
-  padding: 20px;
-}
-
-.description {
-  color: #666;
-  margin-bottom: 16px;
-  height: 40px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stats {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-item .label {
-  display: block;
-  font-size: 12px;
-  color: #999;
-}
-
-.stat-item .value {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-}
-
-.card-footer {
-  padding: 12px 20px;
-  border-top: 1px solid #f0f0f0;
-  text-align: right;
-}
-</style>

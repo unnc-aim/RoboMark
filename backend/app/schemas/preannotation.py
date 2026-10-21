@@ -79,7 +79,7 @@ class TaskInput(BaseModel):
     prompt: str = Field(min_length=1, max_length=12000)
     annotation_type: Literal["bbox", "parallelogram"] = "bbox"
     category_ids: list[int] = Field(min_length=1, max_length=200)
-    sample_size: Optional[int] = Field(default=None, ge=1, le=20)
+    sample_size: Optional[int] = Field(default=None, ge=1)
 
 
 class ProfileTestInput(BaseModel):

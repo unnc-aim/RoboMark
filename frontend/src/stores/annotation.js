@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '../utils/api'
+import { parseCategoryKeys } from '../features/annotation/domain/shortcuts'
 
 const PREFETCH_SIZE = 20       // 预加载数量
 const PREFETCH_THRESHOLD = 5   // 剩余多少张时触发预加载
@@ -455,7 +456,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   // 根据快捷键选择类别
   function selectCategoryByKey(key) {
-    const category = categories.value.find(c => c.shortcut_key === key)
+    const category = categories.value.find(c => parseCategoryKeys(c.shortcut_key).includes(key))
     if (category) {
       selectedCategory.value = category
       return category

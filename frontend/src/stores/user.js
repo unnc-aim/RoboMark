@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '../utils/api'
+import { queryClient } from '../shared/api/query'
 
 const STORAGE_KEY = 'robomark-token'
 const USER_STORAGE_KEY = 'robomark-user'
@@ -24,6 +25,7 @@ export const useUserStore = defineStore('user', () => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     })
 
+    queryClient.clear()
     token.value = response.data.access_token
     user.value = response.data.user
     localStorage.setItem(STORAGE_KEY, token.value)
@@ -61,6 +63,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function logout() {
+    queryClient.clear()
     user.value = null
     token.value = null
     initialized.value = true

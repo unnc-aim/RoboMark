@@ -1,0 +1,322 @@
+[
+  {
+    "id": "spades-a",
+    "file": "spades-a.webp",
+    "name": "黑桃 A",
+    "source": "1 GoosePlay 鹅作剧 ♠/黑桃A.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5529262,
+    "bytes": 100840
+  },
+  {
+    "id": "spades-2",
+    "file": "spades-2.webp",
+    "name": "黑桃 2",
+    "source": "2 Mk.Ⅱ mmRobot 多面手/黑桃2.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4544610,
+    "bytes": 95460
+  },
+  {
+    "id": "spades-3",
+    "file": "spades-3.webp",
+    "name": "黑桃 3",
+    "source": "3 AIM-01 初号机/黑桃3.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4630139,
+    "bytes": 92412
+  },
+  {
+    "id": "spades-4",
+    "file": "spades-4.webp",
+    "name": "黑桃 4",
+    "source": "4 Orb Lord 圆神/黑桃4.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 3976521,
+    "bytes": 88350
+  },
+  {
+    "id": "spades-5",
+    "file": "spades-5.webp",
+    "name": "黑桃 5",
+    "source": "5 SID 希德/黑桃5.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5371895,
+    "bytes": 109034
+  },
+  {
+    "id": "spades-7",
+    "file": "spades-7.webp",
+    "name": "黑桃 7",
+    "source": "7 Adoraboom 可爱爆了/黑桃7.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4830306,
+    "bytes": 101996
+  },
+  {
+    "id": "spades-8",
+    "file": "spades-8.webp",
+    "name": "黑桃 8",
+    "source": "8 AIM Illustrious 光辉/黑桃8.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5128760,
+    "bytes": 95618
+  },
+  {
+    "id": "spades-10",
+    "file": "spades-10.webp",
+    "name": "黑桃 10",
+    "source": "10 Barghest 巴格斯/黑桃10.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5038039,
+    "bytes": 88580
+  },
+  {
+    "id": "hearts-a",
+    "file": "hearts-a.webp",
+    "name": "红桃 A",
+    "source": "1 Archer 弓箭手 ♥/1 红桃A.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5475048,
+    "bytes": 93778
+  },
+  {
+    "id": "hearts-2",
+    "file": "hearts-2.webp",
+    "name": "红桃 2",
+    "source": "2 Mk.Ⅰ engineer 工程/红桃2.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 3954759,
+    "bytes": 91794
+  },
+  {
+    "id": "hearts-3",
+    "file": "hearts-3.webp",
+    "name": "红桃 3",
+    "source": "3 OMNI-MAN  全圆恶人/红桃3.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4606508,
+    "bytes": 95106
+  },
+  {
+    "id": "hearts-4",
+    "file": "hearts-4.webp",
+    "name": "红桃 4",
+    "source": "4 Helios 赫利俄斯 ♥/红桃4.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 8962638,
+    "bytes": 101266
+  },
+  {
+    "id": "hearts-7",
+    "file": "hearts-7.webp",
+    "name": "红桃 7",
+    "source": "7 Geiger counter 盖格计数器/红桃7.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5200148,
+    "bytes": 104892
+  },
+  {
+    "id": "hearts-8",
+    "file": "hearts-8.webp",
+    "name": "红桃 8",
+    "source": "8 AIM Implacable 怨仇 ♥/红桃8.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5093127,
+    "bytes": 96670
+  },
+  {
+    "id": "hearts-10",
+    "file": "hearts-10.webp",
+    "name": "红桃 10",
+    "source": "10 Catapult 投石机 ♥/红桃10.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4496674,
+    "bytes": 88200
+  },
+  {
+    "id": "clubs-2",
+    "file": "clubs-2.webp",
+    "name": "梅花 2",
+    "source": "2 Mk.Ⅳ Hand of Omnissiah万机之手/梅花2.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4940909,
+    "bytes": 97200
+  },
+  {
+    "id": "clubs-3",
+    "file": "clubs-3.webp",
+    "name": "梅花 3",
+    "source": "3 Phase 相位臂❗/梅花3.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5054113,
+    "bytes": 97106
+  },
+  {
+    "id": "clubs-4",
+    "file": "clubs-4.webp",
+    "name": "梅花 4",
+    "source": "4 Frog 林蛙/梅花4.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5970662,
+    "bytes": 102134
+  },
+  {
+    "id": "clubs-5",
+    "file": "clubs-5.webp",
+    "name": "梅花 5",
+    "source": "5 Twist 扭扭舞/梅花5.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5064369,
+    "bytes": 97676
+  },
+  {
+    "id": "clubs-6",
+    "file": "clubs-6.webp",
+    "name": "梅花 6",
+    "source": "6 WHY SIX？ 歪6/梅花6.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5608672,
+    "bytes": 82036
+  },
+  {
+    "id": "clubs-7",
+    "file": "clubs-7.webp",
+    "name": "梅花 7",
+    "source": "7 Delta 德尔塔/梅花7.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4713633,
+    "bytes": 100694
+  },
+  {
+    "id": "clubs-8",
+    "file": "clubs-8.webp",
+    "name": "梅花 8",
+    "source": "8 AIM Hermes 竞技神/梅花8.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4846746,
+    "bytes": 78460
+  },
+  {
+    "id": "clubs-9",
+    "file": "clubs-9.webp",
+    "name": "梅花 9",
+    "source": "9 GBU-12 藕盒/梅花9.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 3073574,
+    "bytes": 59640
+  },
+  {
+    "id": "clubs-10",
+    "file": "clubs-10.webp",
+    "name": "梅花 10",
+    "source": "10 Navis 纳维斯 ♣/梅花10.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5664573,
+    "bytes": 97150
+  },
+  {
+    "id": "diamonds-a",
+    "file": "diamonds-a.webp",
+    "name": "方片 A",
+    "source": "1 Stewart 斯图尔特/方片A.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4805855,
+    "bytes": 102820
+  },
+  {
+    "id": "diamonds-2",
+    "file": "diamonds-2.webp",
+    "name": "方片 2",
+    "source": "2 Mk.Ⅱ Devastator 大力神/方片2.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 3865848,
+    "bytes": 85538
+  },
+  {
+    "id": "diamonds-3",
+    "file": "diamonds-3.webp",
+    "name": "方片 3",
+    "source": "3 Palma 帕尔马/方片3.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4283391,
+    "bytes": 85284
+  },
+  {
+    "id": "diamonds-4",
+    "file": "diamonds-4.webp",
+    "name": "方片 4",
+    "source": "4 V-Loop 五边形战士/方片4.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5033400,
+    "bytes": 95454
+  },
+  {
+    "id": "diamonds-5",
+    "file": "diamonds-5.webp",
+    "name": "方片 5",
+    "source": "5 Hex-Loop 六边形战士/方片5.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5861244,
+    "bytes": 102674
+  },
+  {
+    "id": "diamonds-7",
+    "file": "diamonds-7.webp",
+    "name": "方片 7",
+    "source": "7 Ogre Magi蓝胖子/方片7.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5108668,
+    "bytes": 104298
+  },
+  {
+    "id": "diamonds-8",
+    "file": "diamonds-8.webp",
+    "name": "方片 8",
+    "source": "8 AIM Ark Royal 皇家方舟/方片8.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 5550396,
+    "bytes": 90180
+  },
+  {
+    "id": "diamonds-10",
+    "file": "diamonds-10.webp",
+    "name": "方片 10",
+    "source": "10 WORM 区区♦/方片10.png",
+    "width": 640,
+    "height": 977,
+    "original_bytes": 4278637,
+    "bytes": 82870
+  }
+]

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { message } from '../shared/ui/feedback'
 
 const STORAGE_KEY = 'robomark-token'
 
@@ -29,8 +29,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response,
   error => {
+    if (axios.isCancel(error)) return Promise.reject(error)
     const detail = error.response?.data?.detail
-    const message = Array.isArray(detail)
+    const errorText = Array.isArray(detail)
       ? detail.map(item => item.msg || '输入格式不正确').join('；')
       : (detail || error.message || '请求失败')
 
@@ -38,7 +39,7 @@ api.interceptors.response.use(
       localStorage.removeItem(STORAGE_KEY)
       window.location.href = '/login'
     } else {
-      ElMessage.error(message)
+      message.error(errorText)
     }
 
     return Promise.reject(error)

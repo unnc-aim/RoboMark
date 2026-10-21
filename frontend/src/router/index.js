@@ -52,6 +52,23 @@ const routes = [
     ]
   },
   {
+    path: '/datasets/:datasetId',
+    component: () => import('../views/Admin/Layout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      { path: '', name: 'DatasetDetail', component: () => import('../views/DatasetDetail.vue'), meta: { title: '数据集详情' } },
+      { path: 'settings', name: 'DatasetSettings', component: () => import('../views/DatasetSettings.vue'), meta: { title: '数据集设置', requiresAdmin: true } }
+    ]
+  },
+  {
+    path: '/profiles', component: () => import('../views/Admin/Layout.vue'), meta: { requiresAuth: true },
+    children: [{ path: '', name: 'Profiles', component: () => import('../views/Profiles.vue'), meta: { title: '推理接口' } }]
+  },
+  {
+    path: '/settings', component: () => import('../views/Admin/Layout.vue'), meta: { requiresAuth: true },
+    children: [{ path: '', name: 'WorkspaceSettings', component: () => import('../views/WorkspaceSettings.vue'), meta: { title: '工作空间设置' } }]
+  },
+  {
     path: '/tutorial',
     name: 'Tutorial',
     component: () => import('../views/Tutorial.vue'),
@@ -99,6 +116,7 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(to, from, saved) { return saved || (to.path !== from.path ? { top: 0 } : undefined) },
   routes
 })
 

@@ -1,531 +1,277 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-const currentStep = ref(0)
-
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import WorkspaceLayout from "../layouts/WorkspaceLayout.vue";
+const router = useRouter(),
+  currentStep = ref(0);
 const steps = [
   {
-    title: '选择数据集',
-    description: '在首页选择一个要标注的数据集，点击"开始标注"按钮进入标注界面。',
+    title: "选择数据集",
+    description:
+      "从首页选择需要处理的数据集。通过进度与状态，找到可以继续的工作。",
     tips: [
-      '可以查看每个数据集的标注进度',
-      '进度条显示已完成的百分比'
-    ]
+      "查看数据集总量与已完成数量",
+      "人工标注直接进入画布；预标注先进入批次页面",
+    ],
   },
   {
-    title: '选择标注类别',
-    description: '在左侧面板中选择要标注的目标类别。如果数据集只有一个类别，会自动选中。',
+    title: "配置目标类别",
+    description:
+      "每个类别都有独立的名称、颜色、模板和快捷键，画布与对象列表保持一致。",
     tips: [
-      '每个类别都有对应的颜色',
-      '可以通过快捷键快速切换类别',
-      '当前选中的类别会高亮显示'
-    ]
+      "默认画后选择类别，主动选类或单类别时自动应用",
+      "使用类别快捷键快速切换标注目标",
+    ],
   },
   {
-    title: '绘制标注框',
-    description: '在图片上按住鼠标左键拖动来绘制边界框。松开鼠标完成绘制。',
+    title: "绘制与调整",
+    description: "使用矩形、四点或八点工具标出目标，再检查边缘是否贴合。",
     tips: [
-      '框要尽量贴合目标边缘',
-      '可以选中已有的框进行调整',
-      '双击框可以删除它',
-      '按 Delete 键删除选中的框'
-    ]
+      "V 标注 · H 平移 · 滚轮缩放",
+      "拖动对象或角点调整位置与尺寸；Esc 取消当前绘制",
+    ],
   },
   {
-    title: '调整和保存',
-    description: '绘制完成后，可以调整框的大小和位置。确认无误后点击"保存"按钮。',
+    title: "保存与审核",
+    description: "人工标注保存正式框；预标注先保存草稿，再显式通过审核。",
     tips: [
-      '拖动框的角和边可以调整大小',
-      '支持撤销 (Ctrl+Z) 和重做 (Ctrl+Shift+Z)',
-      '如果图片中没有目标，按 N 键跳过'
-    ]
+      "保存草稿不会通过审核",
+      "通过并下一张才会将候选结果纳入正式标注；已有正式框保持只读",
+    ],
   },
   {
-    title: '快捷键操作',
-    description: '熟练使用快捷键可以大大提高标注效率。',
+    title: "使用快捷键",
+    description: "让常用操作留在手边，减少在画布与面板之间来回切换。",
     tips: [
-      'Ctrl+S: 保存当前标注',
-      'N: 跳过当前图片（无目标）',
-      'Ctrl+Z: 撤销',
-      'Ctrl+Shift+Z: 重做',
-      '滚轮: 缩放画布',
-      '空格+拖动: 平移画布',
-      '数字键/字母键: 切换类别',
-      '?: 显示帮助面板'
-    ]
-  }
-]
-
-function nextStep() {
-  if (currentStep.value < steps.length - 1) {
-    currentStep.value++
-  }
-}
-
-function prevStep() {
-  if (currentStep.value > 0) {
-    currentStep.value--
-  }
-}
-
-function goToAnnotation() {
-  router.push('/')
-}
+      "⌘ / Ctrl + S 保存；⌘ / Ctrl + Enter 通过审核",
+      "← / → 切换图片；工作台「快捷键」中可自定义操作",
+    ],
+  },
+];
+const shortcuts = [
+  ["保存标注 / 草稿", "⌘ / Ctrl + S"],
+  ["通过并下一张", "⌘ / Ctrl + Enter"],
+  ["撤销 / 重做", "⌘ / Ctrl + Z / ⇧ Z"],
+  ["选择 / 平移工具", "V / H"],
+  ["取消当前绘制", "Esc"],
+  ["上一张 / 下一张", "← / →"],
+  ["搜索工作空间", "⌘ / Ctrl + K"],
+  ["显示帮助", "?"],
+];
 </script>
-
 <template>
-  <div class="tutorial-container">
-    <header class="header">
-      <div class="logo">
-        <h1>RoboMark 使用教程</h1>
+  <WorkspaceLayout
+    ><header class="page-heading">
+      <div>
+        <h1>让标注顺手起来。</h1>
+        <p>五个步骤，熟悉从数据集到审核完成的工作流程。</p>
       </div>
-      <el-button @click="router.push('/')" type="primary" link>
-        返回首页
-      </el-button>
+      <ui-button type="primary" icon="ArrowRight" @click="router.push('/')"
+        >选择数据集开始标注</ui-button
+      >
     </header>
-
-    <main class="main">
-      <div class="steps-nav">
-        <div
+    <div class="tutorial-layout">
+      <nav class="tutorial-nav" aria-label="教程步骤">
+        <ui-button
           v-for="(step, index) in steps"
-          :key="index"
-          class="step-dot"
-          :class="{ active: index === currentStep, completed: index < currentStep }"
+          :key="step.title"
+          variant="ghost"
+          :class="{ active: currentStep === index }"
           @click="currentStep = index"
-        >
-          <span class="number">{{ index + 1 }}</span>
-          <span class="title">{{ step.title }}</span>
-        </div>
-      </div>
-
-      <div class="step-content">
-        <div class="step-header">
-          <span class="step-number">步骤 {{ currentStep + 1 }}</span>
+          ><span>{{ index + 1 }}</span
+          >{{ step.title }}<ui-icon name="ArrowRight"
+        /></ui-button>
+      </nav>
+      <ui-card class="panel-padding"
+        ><div class="section-heading">
           <h2>{{ steps[currentStep].title }}</h2>
+          <ui-tag>{{ currentStep + 1 }} / 5</ui-tag>
         </div>
-
-        <p class="description">{{ steps[currentStep].description }}</p>
-
-        <div class="tips-card">
-          <h3>提示</h3>
-          <ul>
-            <li v-for="(tip, index) in steps[currentStep].tips" :key="index">
-              {{ tip }}
-            </li>
-          </ul>
+        <p class="tutorial-description">{{ steps[currentStep].description }}</p>
+        <div class="tutorial-demo">
+          <img
+            src="/design/arena-3591.jpg"
+            alt="MVM3D 机器人多目标标注示意"
+          /><span class="tutorial-box">蓝方机器人</span>
+          <div class="demo-toolbar">
+            <ui-icon name="MousePointer2" /><ui-icon name="Hand" /><ui-icon
+              name="Square"
+            /><ui-icon name="Pentagon" />
+          </div>
+          <small>MVM3D · MIT License · 示例图片</small>
         </div>
-
-        <div class="demo-area">
-          <!-- 步骤1: 数据集选择示意 -->
-          <div v-if="currentStep === 0" class="demo-datasets">
-            <div class="demo-card">
-              <div class="card-header">示例数据集</div>
-              <div class="card-body">
-                <div class="progress-bar">
-                  <div class="fill" style="width: 65%"></div>
-                </div>
-                <span>65% 完成</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 步骤2: 类别选择示意 -->
-          <div v-if="currentStep === 1" class="demo-categories">
-            <div class="category-item active">
-              <span class="dot" style="background: #FF0000"></span>
-              <span>行人</span>
-              <kbd>1</kbd>
-            </div>
-            <div class="category-item">
-              <span class="dot" style="background: #00FF00"></span>
-              <span>车辆</span>
-              <kbd>2</kbd>
-            </div>
-            <div class="category-item">
-              <span class="dot" style="background: #0000FF"></span>
-              <span>自行车</span>
-              <kbd>3</kbd>
-            </div>
-          </div>
-
-          <!-- 步骤3: 绘制框示意 -->
-          <div v-if="currentStep === 2" class="demo-drawing">
-            <div class="demo-image">
-              <div class="bbox"></div>
-              <div class="cursor"></div>
-            </div>
-            <p class="demo-hint">按住拖动绘制框</p>
-          </div>
-
-          <!-- 步骤4: 调整框示意 -->
-          <div v-if="currentStep === 3" class="demo-adjusting">
-            <div class="demo-image">
-              <div class="bbox selected">
-                <span class="handle tl"></span>
-                <span class="handle tr"></span>
-                <span class="handle bl"></span>
-                <span class="handle br"></span>
-              </div>
-            </div>
-            <p class="demo-hint">拖动角点调整大小</p>
-          </div>
-
-          <!-- 步骤5: 快捷键示意 -->
-          <div v-if="currentStep === 4" class="demo-shortcuts">
-            <div class="shortcut-grid">
-              <div class="shortcut-item">
-                <kbd>Ctrl</kbd> + <kbd>S</kbd>
-                <span>保存</span>
-              </div>
-              <div class="shortcut-item">
-                <kbd>N</kbd>
-                <span>跳过</span>
-              </div>
-              <div class="shortcut-item">
-                <kbd>Ctrl</kbd> + <kbd>Z</kbd>
-                <span>撤销</span>
-              </div>
-              <div class="shortcut-item">
-                <kbd>滚轮</kbd>
-                <span>缩放</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="nav-buttons">
-          <el-button @click="prevStep" :disabled="currentStep === 0">
-            上一步
-          </el-button>
-          <el-button
-            v-if="currentStep < steps.length - 1"
+        <ul class="tutorial-tips">
+          <li v-for="tip in steps[currentStep].tips" :key="tip">{{ tip }}</li>
+        </ul>
+        <div class="tutorial-actions">
+          <ui-button
+            icon="ArrowLeft"
+            :disabled="currentStep === 0"
+            @click="currentStep--"
+            >上一步</ui-button
+          ><span class="muted">{{ currentStep + 1 }} / 5</span
+          ><ui-button
+            v-if="currentStep < 4"
             type="primary"
-            @click="nextStep"
+            @click="currentStep++"
+            >下一步 <ui-icon name="ArrowRight" /></ui-button
+          ><ui-button v-else type="primary" @click="router.push('/')"
+            >开始标注</ui-button
           >
-            下一步
-          </el-button>
-          <el-button
-            v-else
-            type="success"
-            @click="goToAnnotation"
-          >
-            开始标注
-          </el-button>
-        </div>
+        </div></ui-card
+      >
+    </div>
+    <ui-card class="panel-padding shortcut-panel"
+      ><div class="section-heading">
+        <h2>常用快捷键</h2>
+        <span class="form-tip">在工作台中可自定义</span>
       </div>
-    </main>
-  </div>
+      <div class="shortcut-grid">
+        <div v-for="[label, key] in shortcuts" :key="label">
+          <span>{{ label }}</span
+          ><ui-kbd>{{ key }}</ui-kbd>
+        </div>
+      </div></ui-card
+    ></WorkspaceLayout
+  >
 </template>
-
 <style scoped>
-.tutorial-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-}
-
-.header h1 {
-  color: white;
-  margin: 0;
-  font-size: 24px;
-}
-
-.main {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 20px 40px 60px;
-}
-
-.steps-nav {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 40px;
-  position: relative;
-}
-
-.steps-nav::before {
-  content: '';
-  position: absolute;
-  top: 20px;
-  left: 40px;
-  right: 40px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.step-dot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  z-index: 1;
-}
-
-.step-dot .number {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin-bottom: 8px;
-  transition: all 0.3s;
-}
-
-.step-dot.active .number {
-  background: white;
-  color: #667eea;
-  transform: scale(1.2);
-}
-
-.step-dot.completed .number {
-  background: #67c23a;
-}
-
-.step-dot .title {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  text-align: center;
-}
-
-.step-dot.active .title {
-  color: white;
-  font-weight: bold;
-}
-
-.step-content {
-  background: white;
-  border-radius: 16px;
-  padding: 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-}
-
-.step-header {
-  margin-bottom: 20px;
-}
-
-.step-number {
-  color: #667eea;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.step-header h2 {
-  margin: 8px 0 0;
-  color: #333;
-}
-
-.description {
-  font-size: 16px;
-  color: #666;
-  line-height: 1.8;
-  margin-bottom: 24px;
-}
-
-.tips-card {
-  background: #f5f7fa;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 32px;
-}
-
-.tips-card h3 {
-  margin: 0 0 12px;
-  color: #333;
-  font-size: 14px;
-}
-
-.tips-card ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.tips-card li {
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.demo-area {
-  min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #1a1a2e;
-  border-radius: 8px;
-  padding: 32px;
-  margin-bottom: 32px;
-}
-
-/* 演示样式 */
-.demo-datasets .demo-card {
-  width: 200px;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.demo-datasets .card-header {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  padding: 12px 16px;
-}
-
-.demo-datasets .card-body {
-  padding: 16px;
-}
-
-.demo-datasets .progress-bar {
-  height: 8px;
-  background: #eee;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.demo-datasets .progress-bar .fill {
-  height: 100%;
-  background: #67c23a;
-}
-
-.demo-categories {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.demo-categories .category-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: #0f3460;
-  border-radius: 6px;
-  color: white;
-}
-
-.demo-categories .category-item.active {
-  background: #e94560;
-}
-
-.demo-categories .dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.demo-categories kbd {
-  margin-left: auto;
-  padding: 2px 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.demo-drawing,
-.demo-adjusting {
-  text-align: center;
-}
-
-.demo-image {
-  width: 300px;
-  height: 200px;
-  background: #2d2d2d;
-  border-radius: 4px;
-  position: relative;
-  margin: 0 auto 16px;
-}
-
-.demo-image .bbox {
-  position: absolute;
-  width: 100px;
-  height: 80px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px solid #e94560;
-  background: rgba(233, 69, 96, 0.2);
-}
-
-.demo-image .bbox.selected {
-  border: 3px solid #e94560;
-}
-
-.demo-image .cursor {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M4 4l16 8-8 4-4 8z"/></svg>');
-  right: 60px;
-  bottom: 40px;
-  animation: drawAnim 2s infinite;
-}
-
-.handle {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: #e94560;
-}
-
-.handle.tl { top: -4px; left: -4px; cursor: nw-resize; }
-.handle.tr { top: -4px; right: -4px; cursor: ne-resize; }
-.handle.bl { bottom: -4px; left: -4px; cursor: sw-resize; }
-.handle.br { bottom: -4px; right: -4px; cursor: se-resize; }
-
-.demo-hint {
-  color: #a0a0a0;
-  font-size: 14px;
-}
-
-.demo-shortcuts .shortcut-grid {
+.tutorial-layout {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 25px;
 }
-
-.shortcut-item {
+.tutorial-nav {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
-  padding: 16px;
-  background: #0f3460;
+}
+.tutorial-nav .ui-button {
+  justify-content: flex-start;
+  padding: 14px;
+  font-size: 12px;
+  gap: 13px;
+}
+.tutorial-nav .ui-button > span {
+  width: 23px;
+  height: 23px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+}
+.tutorial-nav .ui-button > svg {
+  margin-left: auto;
+  width: 12px;
+}
+.tutorial-nav .active {
+  background: #edf1ff;
+  color: var(--primary);
+}
+.tutorial-description {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.tutorial-demo {
+  position: relative;
+  margin: 22px 0;
+  overflow: hidden;
   border-radius: 8px;
+  background: #182132;
 }
-
-.shortcut-item kbd {
-  padding: 4px 10px;
-  background: #1a4a7a;
-  border: 1px solid #2a5a8a;
-  border-radius: 4px;
-  color: white;
-  font-size: 14px;
+.tutorial-demo > img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2.5;
+  object-fit: cover;
+  opacity: 0.9;
 }
-
-.shortcut-item span {
-  color: #a0a0a0;
-  font-size: 13px;
+.tutorial-box {
+  position: absolute;
+  top: 31%;
+  left: 42%;
+  width: 19%;
+  height: 45%;
+  border: 2px solid #7da6ff;
+  color: #b9d0ff;
+  font-size: 10px;
+  padding: 4px;
 }
-
-.nav-buttons {
+.demo-toolbar {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  background: #1d222bcc;
   display: flex;
-  justify-content: center;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  color: #cdd5e3;
+  border-radius: 6px;
 }
-
-@keyframes drawAnim {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-60px, -40px); }
+.tutorial-demo > small {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-size: 8px;
+  color: #d4dbea;
+}
+.tutorial-tips {
+  font-size: 12px;
+  line-height: 2.1;
+  color: var(--muted);
+  padding-left: 18px;
+}
+.tutorial-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  font-size: 11px;
+}
+.shortcut-panel {
+  margin-top: 25px;
+}
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 45px;
+}
+.shortcut-grid > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  padding: 15px 0;
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .tutorial-layout {
+    grid-template-columns: 1fr;
+  }
+  .tutorial-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .tutorial-nav .ui-button {
+    padding: 8px;
+    font-size: 11px;
+  }
+  .tutorial-nav .ui-button > svg {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .shortcut-grid {
+    grid-template-columns: 1fr;
+  }
+  .tutorial-demo > img {
+    aspect-ratio: 1.6;
+  }
 }
 </style>

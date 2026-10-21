@@ -7,18 +7,30 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "vite build && cp -r ./dist/ ../sslly-nginx/static/robomark-frontend"
+    "deploy": "vite build && cp -r ./dist/ ../sslly-nginx/static/robomark-frontend",
+    "typecheck": "vue-tsc --noEmit",
+    "check:ui": "node scripts/check-ui.mjs",
+    "test": "node --test src/utils/*.test.js src/features/annotation/domain/*.test.ts",
+    "check": "pnpm check:ui && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.3.2",
+    "@lucide/vue": "^1.59.0",
+    "@tanstack/vue-query": "^5.104.5",
     "axios": "^1.13.4",
-    "element-plus": "^2.13.1",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-vue": "^8.6.0",
     "pinia": "^3.0.4",
+    "reka-ui": "^2.11.0",
     "vue": "^3.5.24",
-    "vue-router": "^4.6.4"
+    "vue-router": "^4.6.4",
+    "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-vue": "^6.0.1",
-    "vite": "^7.2.4"
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "vue-tsc": "^3.3.13"
   }
 }

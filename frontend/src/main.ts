@@ -1,0 +1,16 @@
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+import { VueQueryPlugin } from "@tanstack/vue-query";
+import { queryClient } from "./shared/api/query";
+import { installUI } from "./shared/ui";
+import App from "./App.vue";
+import router from "./router";
+import "./shared/styles/tokens.css";
+import "vue-sonner/style.css";
+import "./style.css";
+const app = createApp(App);
+app.use(createPinia());
+app.use(VueQueryPlugin, { queryClient });
+app.use(router);
+installUI(app);
+app.mount("#app");
