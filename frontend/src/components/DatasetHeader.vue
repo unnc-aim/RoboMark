@@ -54,7 +54,7 @@ const description = computed(
   min-width: 0;
 }
 .dataset-back {
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   padding: 6px 0;
   min-height: 30px;
   font-size: 11px;
@@ -66,8 +66,8 @@ const description = computed(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
 }
 .dataset-heading-copy {
   flex: 1;
@@ -85,8 +85,7 @@ const description = computed(
   white-space: nowrap;
 }
 .dataset-heading p {
-  margin: 8px 0 0;
-  min-height: 22px;
+  margin: var(--space-2) 0 0;
   font-size: 12px;
   line-height: 22px;
   color: var(--muted);
@@ -103,7 +102,7 @@ const description = computed(
   .dataset-heading {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: var(--space-4);
   }
   .dataset-heading-copy {
     width: 100%;

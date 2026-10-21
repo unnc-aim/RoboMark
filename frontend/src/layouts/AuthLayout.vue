@@ -45,7 +45,7 @@ defineProps({ register: Boolean });
   overflow: hidden;
 }
 .auth-form-area {
-  padding: 36px 48px;
+  padding: var(--space-7) var(--space-7);
   display: flex;
   flex-direction: column;
   background: white;
@@ -63,19 +63,19 @@ defineProps({ register: Boolean });
   width: 100%;
   max-width: 350px;
   margin: auto;
-  padding: 45px 0;
+  padding: var(--space-7) 0;
 }
 .auth-mini-brand {
-  margin-bottom: 28px;
+  margin-bottom: var(--space-6);
 }
 .auth-form-content h2 {
   font-size: 29px;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 .auth-form-content > p {
   font-size: 12px;
   color: var(--muted);
-  margin-bottom: 30px;
+  margin-bottom: var(--space-6);
 }
 .auth-form-area > footer {
   font-size: 9px;
@@ -84,7 +84,7 @@ defineProps({ register: Boolean });
 }
 @media (max-width: 950px) {
   .auth-form-area {
-    padding: 30px;
+    padding: var(--space-6);
   }
 }
 @media (max-width: 650px) {
@@ -95,11 +95,11 @@ defineProps({ register: Boolean });
     display: none;
   }
   .auth-form-area {
-    padding: 25px;
+    padding: var(--space-5);
     min-height: calc(100dvh - 80px);
   }
   .auth-form-content {
-    padding: 45px 0;
+    padding: var(--space-7) 0;
   }
   .auth-form-content h2 {
     font-size: 28px;

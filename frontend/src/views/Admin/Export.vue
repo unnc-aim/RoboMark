@@ -352,7 +352,7 @@ dataset/
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-5);
 }
 
 .page-header h2 {
@@ -360,18 +360,18 @@ dataset/
 }
 
 .export-form {
-  margin-bottom: 32px;
+  margin-bottom: var(--space-6);
 }
 
 .split-config {
   display: flex;
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .split-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .split-item span {
@@ -380,16 +380,16 @@ dataset/
 }
 
 .tip {
-  margin-left: 12px;
+  margin-left: var(--space-3);
   color: #999;
   font-size: 13px;
 }
 
 .export-result {
-  padding: 24px;
+  padding: var(--space-5);
   background: #f0f9eb;
   border-radius: 8px;
-  margin-bottom: 32px;
+  margin-bottom: var(--space-6);
 }
 
 .export-result h3 {
@@ -400,13 +400,13 @@ dataset/
 .result-info {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .info-item {
@@ -426,7 +426,7 @@ dataset/
 }
 
 .format-info {
-  padding: 24px;
+  padding: var(--space-5);
   background: #f5f7fa;
   border-radius: 8px;
 }
@@ -438,7 +438,7 @@ dataset/
 .format-content pre {
   background: #2d2d2d;
   color: #f8f8f2;
-  padding: 16px;
+  padding: var(--space-4);
   border-radius: 4px;
   overflow-x: auto;
   font-size: 13px;
@@ -449,7 +449,7 @@ dataset/
 .format-select {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .format-desc {
@@ -459,11 +459,11 @@ dataset/
 .export-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 25px;
+  gap: var(--space-5);
   align-items: start;
 }
 .export-form {
-  margin-bottom: 25px;
+  margin-bottom: var(--space-5);
 }
 .export-preview {
   min-height: 340px;
@@ -476,11 +476,11 @@ dataset/
 .export-result h3 {
   color: var(--success);
   font-size: 15px;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 .export-result .info-grid {
   grid-template-columns: 1fr 1fr;
-  gap: 24px 20px;
+  gap: var(--space-5) var(--space-5);
 }
 .export-result .info-item .label {
   font-size: 10px;
@@ -493,10 +493,10 @@ dataset/
   color: var(--foreground);
 }
 .export-result .result-info {
-  gap: 25px;
+  gap: var(--space-5);
 }
 .split-config {
-  gap: 15px;
+  gap: var(--space-4);
   width: 100%;
 }
 .split-item {
@@ -523,14 +523,14 @@ dataset/
 }
 .format-info h3 {
   font-size: 14px;
-  margin-bottom: 15px;
+  margin-bottom: var(--space-4);
 }
 @media (max-width: 950px) {
   .export-layout {
     grid-template-columns: 1fr;
   }
   .export-preview {
-    margin-bottom: 25px;
+    margin-bottom: var(--space-5);
   }
   .export-form {
     margin-bottom: 0;

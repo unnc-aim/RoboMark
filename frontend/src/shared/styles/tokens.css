@@ -21,6 +21,15 @@
   --success: #269879;
   --danger: #d34b54;
   --radius: 8px;
+  /* Compact spacing shared by layouts, views and reusable controls. */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 20px;
+  --space-7: 24px;
+  --space-8: 32px;
 }
 .dark {
   color-scheme: dark;
@@ -119,8 +128,8 @@ svg {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 35px;
-  padding: 8px 13px;
+  min-height: 32px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--border);
   border-radius: 7px;
   background: var(--surface);
@@ -166,7 +175,7 @@ svg {
 .ui-button--ghost {
   background: transparent;
   border-color: transparent;
-  padding: 6px 8px;
+  padding: 6px var(--space-2);
   color: var(--muted);
 }
 .ui-button--ghost:hover {
@@ -175,16 +184,16 @@ svg {
 }
 .ui-button--small {
   min-height: 29px;
-  padding: 5px 9px;
+  padding: 5px var(--space-3);
   font-size: 12px;
 }
 .ui-button--large {
-  min-height: 43px;
+  min-height: 38px;
   font-size: 14px;
 }
 .ui-button--icon {
-  width: 34px;
-  padding: 7px;
+  width: 32px;
+  padding: var(--space-2);
 }
 .ui-button-group {
   display: inline-flex;
@@ -202,8 +211,8 @@ svg {
 }
 .ui-input {
   width: 100%;
-  padding: 9px 11px;
-  min-height: 36px;
+  padding: var(--space-2) 10px;
+  min-height: 34px;
   border: 1px solid var(--border);
   border-radius: 7px;
   background: var(--surface);
@@ -225,8 +234,8 @@ svg {
 }
 .input-prefix {
   position: absolute;
-  left: 11px;
-  top: 11px;
+  left: 10px;
+  top: 9px;
   color: var(--muted);
   width: 16px;
   height: 16px;
@@ -238,7 +247,7 @@ svg {
   position: absolute;
   right: 3px;
   top: 3px;
-  min-height: 30px;
+  min-height: 28px;
 }
 .ui-input-wrap:has(.input-action) .ui-input {
   padding-right: 38px;
@@ -253,8 +262,8 @@ svg {
 .ui-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
   min-width: 0;
 }
 .ui-label {
@@ -298,10 +307,10 @@ svg {
 }
 .ui-option {
   display: flex;
-  gap: 14px;
+  gap: var(--space-4);
   justify-content: space-between;
   align-items: center;
-  padding: 9px 10px;
+  padding: var(--space-3) var(--space-3);
   border-radius: 4px;
   font-size: 13px;
   cursor: pointer;
@@ -345,7 +354,7 @@ svg {
 .ui-dialog-header {
   position: relative;
   flex-shrink: 0;
-  padding: 22px 24px 17px;
+  padding: var(--space-5) var(--space-5) var(--space-4);
   border-bottom: 1px solid var(--border);
 }
 .ui-dialog-title {
@@ -357,22 +366,22 @@ svg {
 }
 .dialog-close {
   position: absolute;
-  right: 14px;
-  top: 16px;
+  right: 10px;
+  top: 10px;
 }
 .ui-dialog-body {
-  padding: 24px;
+  padding: var(--space-5);
   overflow-y: auto;
   min-height: 0;
   font-size: 13px;
   line-height: 1.65;
 }
 .ui-dialog-footer {
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -380,7 +389,7 @@ svg {
 .ui-switch-label {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-3);
   font-size: 12px;
   cursor: pointer;
 }
@@ -433,7 +442,7 @@ svg {
   border-radius: 7px;
 }
 .ui-segment {
-  padding: 6px 10px;
+  padding: 6px var(--space-3);
   background: transparent;
   border: 0;
   border-radius: 5px;
@@ -490,7 +499,7 @@ svg {
 .ui-progress {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
 }
 .ui-progress-track {
@@ -513,7 +522,7 @@ svg {
   font-variant-numeric: tabular-nums;
 }
 .ui-progress-circle {
-  margin: 12px 0;
+  margin: var(--space-3) 0;
   width: 100%;
 }
 .ui-progress-circle .ui-progress-track {
@@ -524,22 +533,22 @@ svg {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: var(--space-4);
   text-align: center;
   color: var(--muted);
-  padding: 45px 20px;
-  min-height: 160px;
+  padding: var(--space-7) var(--space-5);
+  min-height: 120px;
 }
 .ui-alert {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 13px 16px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4);
   border: 1px solid #3a61ed25;
   background: #3a61ed08;
   color: var(--primary);
   border-radius: 8px;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   font-size: 12px;
 }
 .ui-alert--warning {
@@ -560,7 +569,7 @@ svg {
 .ui-divider {
   height: 1px;
   background: var(--border);
-  margin: 20px 0;
+  margin: var(--space-5) 0;
 }
 .ui-table-wrap {
   width: 100%;
@@ -585,7 +594,7 @@ svg {
 }
 .ui-table td,
 .ui-table th {
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
   border-bottom: 1px solid var(--border);
 }
 .ui-table tr:last-child td {
@@ -602,12 +611,12 @@ svg {
 }
 .ui-tabs-list {
   display: flex;
-  gap: 24px;
+  gap: var(--space-5);
   border-bottom: 1px solid var(--border);
   overflow: auto;
 }
 .ui-tab-trigger {
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
@@ -621,14 +630,14 @@ svg {
   border-bottom-color: var(--primary);
 }
 .ui-tab-content {
-  padding-top: 20px;
+  padding-top: var(--space-5);
 }
 .ui-pagination {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 14px;
-  margin-top: 22px;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
   font-size: 12px;
 }
 .ui-pagination .muted {
@@ -639,7 +648,7 @@ svg {
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 .ui-link:hover {
   color: var(--primary);
@@ -673,16 +682,16 @@ svg {
 }
 @media (max-width: 600px) {
   .ui-dialog-body {
-    padding: 18px;
+    padding: var(--space-4);
   }
   .ui-dialog-footer {
-    padding: 14px 18px;
+    padding: var(--space-4) var(--space-4);
   }
   .ui-dialog-header {
-    padding: 18px;
+    padding: var(--space-4);
   }
   .ui-pagination {
-    gap: 8px;
+    gap: var(--space-2);
   }
   .ui-button {
     white-space: normal;
@@ -701,18 +710,18 @@ svg {
   border-radius: 7px;
   overflow: hidden;
   background: var(--surface-muted);
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 .ui-collapsible-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 10px;
+  padding: 7px var(--space-3);
 }
 .ui-collapsible-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex: 1;
   min-width: 0;
   border: 0;
@@ -727,7 +736,7 @@ svg {
   transform: rotate(180deg);
 }
 .ui-collapsible-content {
-  padding: 0 12px 12px;
+  padding: 0 var(--space-3) var(--space-3);
 }
 
 .ui-select-trigger {

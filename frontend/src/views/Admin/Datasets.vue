@@ -433,7 +433,7 @@ function closeBatchImportDialog() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-5);
 }
 
 .page-header h2 {
@@ -442,7 +442,7 @@ function closeBatchImportDialog() {
 
 .header-buttons {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .form-tip {
@@ -452,14 +452,14 @@ function closeBatchImportDialog() {
 }
 
 .import-progress {
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 
 .progress-info {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .progress-status {
@@ -472,13 +472,13 @@ function closeBatchImportDialog() {
 }
 
 .progress-detail {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .progress-stats {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
+  margin-top: var(--space-2);
   font-size: 13px;
   color: #909399;
 }
@@ -486,7 +486,7 @@ function closeBatchImportDialog() {
 .current-folder {
   font-size: 12px;
   color: #909399;
-  padding: 8px;
+  padding: var(--space-2);
   background: #f5f7fa;
   border-radius: 4px;
 }

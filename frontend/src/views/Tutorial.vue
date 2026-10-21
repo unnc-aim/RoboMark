@@ -139,18 +139,18 @@ const shortcuts = [
 .tutorial-layout {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr);
-  gap: 25px;
+  gap: var(--space-5);
 }
 .tutorial-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .tutorial-nav .ui-button {
   justify-content: flex-start;
-  padding: 14px;
+  padding: var(--space-4);
   font-size: 12px;
-  gap: 13px;
+  gap: var(--space-4);
 }
 .tutorial-nav .ui-button > span {
   width: 23px;
@@ -176,7 +176,7 @@ const shortcuts = [
 }
 .tutorial-demo {
   position: relative;
-  margin: 22px 0;
+  margin: var(--space-5) 0;
   overflow: hidden;
   border-radius: 8px;
   background: #182132;
@@ -206,8 +206,8 @@ const shortcuts = [
   background: #1d222bcc;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 10px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   color: #cdd5e3;
   border-radius: 6px;
 }
@@ -228,26 +228,26 @@ const shortcuts = [
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 25px;
+  margin-top: var(--space-5);
   border-top: 1px solid var(--border);
-  padding-top: 20px;
+  padding-top: var(--space-5);
   font-size: 11px;
 }
 .shortcut-panel {
-  margin-top: 25px;
+  margin-top: var(--space-5);
 }
 .shortcut-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 45px;
+  gap: 0 var(--space-7);
 }
 .shortcut-grid > div {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   border-bottom: 1px solid var(--border);
-  padding: 15px 0;
+  padding: var(--space-4) 0;
   font-size: 11px;
 }
 @media (max-width: 900px) {
@@ -259,7 +259,7 @@ const shortcuts = [
     flex-wrap: wrap;
   }
   .tutorial-nav .ui-button {
-    padding: 8px;
+    padding: var(--space-2);
     font-size: 11px;
   }
   .tutorial-nav .ui-button > svg {

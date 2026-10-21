@@ -160,11 +160,11 @@ const largest = computed(() =>
 .dashboard-metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  margin-bottom: 25px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 .metric {
-  padding: 22px;
+  padding: var(--space-5);
 }
 .metric > span {
   display: flex;
@@ -182,7 +182,7 @@ const largest = computed(() =>
   font-size: 31px;
   letter-spacing: -1px;
   font-weight: 600;
-  margin: 17px 0 10px;
+  margin: var(--space-4) 0 var(--space-3);
 }
 .metric > small {
   font-size: 9px;
@@ -191,7 +191,7 @@ const largest = computed(() =>
 .dashboard-columns {
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(270px, 1fr);
-  gap: 25px;
+  gap: var(--space-5);
 }
 .dashboard-activity {
   min-height: 100%;
@@ -199,17 +199,17 @@ const largest = computed(() =>
 .dashboard-chart {
   height: 235px;
   display: flex;
-  gap: 15px;
+  gap: var(--space-4);
   align-items: flex-end;
   justify-content: space-around;
-  padding: 20px 0;
+  padding: var(--space-5) 0;
 }
 .chart-day {
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .chart-day > div {
   width: 70%;
@@ -233,9 +233,9 @@ const largest = computed(() =>
   display: grid;
   grid-template-columns: minmax(0, 1fr) 90px 140px;
   align-items: center;
-  gap: 15px;
+  gap: var(--space-4);
   border-bottom: 1px solid var(--border);
-  padding: 14px 0;
+  padding: var(--space-4) 0;
 }
 .dashboard-dataset > .ui-button {
   padding: 0;
@@ -250,8 +250,8 @@ const largest = computed(() =>
 }
 .activity-item {
   display: flex;
-  gap: 12px;
-  padding: 20px 0;
+  gap: var(--space-3);
+  padding: var(--space-5) 0;
   border-bottom: 1px solid var(--border);
 }
 .activity-dot {
@@ -269,7 +269,7 @@ const largest = computed(() =>
 .activity-item p {
   font-size: 10px;
   color: var(--muted);
-  margin: 7px 0 11px;
+  margin: 7px 0 var(--space-3);
 }
 .activity-item small {
   font-size: 9px;
@@ -278,8 +278,8 @@ const largest = computed(() =>
 .contributor {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 15px 0;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
   font-size: 11px;
 }
 .contributor > span {
@@ -305,10 +305,10 @@ const largest = computed(() =>
 }
 @media (max-width: 600px) {
   .dashboard-metrics {
-    gap: 12px;
+    gap: var(--space-3);
   }
   .metric {
-    padding: 16px;
+    padding: var(--space-4);
   }
   .metric > strong {
     font-size: 25px;

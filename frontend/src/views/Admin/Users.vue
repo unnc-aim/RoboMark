@@ -295,7 +295,7 @@ async function handleCreateUser() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-5);
 }
 
 .page-header h2 {
@@ -304,7 +304,7 @@ async function handleCreateUser() {
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex-wrap: nowrap;
 }
@@ -324,8 +324,8 @@ async function handleCreateUser() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 22px;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
   font-size: 11px;
 }
 .members-search > .ui-input-wrap {

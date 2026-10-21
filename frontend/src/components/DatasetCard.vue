@@ -139,12 +139,12 @@ function open() {
   z-index: 1;
 }
 .dataset-card-content {
-  padding: 19px 20px 0;
+  padding: var(--space-5) var(--space-5) 0;
 }
 .dataset-card-title {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
 }
 .dataset-card-title h3 {
@@ -157,14 +157,14 @@ function open() {
   font-size: 11px;
   line-height: 1.8;
   color: var(--muted);
-  margin: 8px 0 23px;
-  min-height: 39px;
+  margin: var(--space-2) 0 var(--space-5);
+  min-height: 0;
 }
 .dataset-card-progress {
   display: flex;
   justify-content: space-between;
   font-size: 10px;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
   color: var(--muted);
 }
 .dataset-card-progress strong {
@@ -182,8 +182,8 @@ function open() {
   justify-content: space-between;
   align-items: center;
   border-top: 1px solid var(--border);
-  margin-top: 20px;
-  padding: 12px 0;
+  margin-top: var(--space-5);
+  padding: var(--space-3) 0;
   gap: 5px;
 }
 .dataset-card-footer > span {
@@ -217,7 +217,7 @@ function open() {
 }
 .dataset-card-list .dataset-card-content > p {
   min-height: 0;
-  margin: 7px 0 12px;
+  margin: 7px 0 var(--space-3);
 }
 @media (max-width: 700px) {
   .dataset-card-list .dataset-cover {
@@ -227,7 +227,7 @@ function open() {
     display: none;
   }
   .dataset-card-list .dataset-card-content {
-    padding: 14px 12px 0;
+    padding: var(--space-4) var(--space-3) 0;
   }
   .dataset-card-footer {
     flex-wrap: wrap;

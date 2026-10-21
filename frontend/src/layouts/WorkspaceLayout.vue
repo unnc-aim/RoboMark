@@ -172,14 +172,14 @@ onUnmounted(() => {
   background: var(--surface);
   border-right: 1px solid var(--border);
   z-index: 50;
-  padding: 25px 16px 15px;
+  padding: var(--space-5) var(--space-4) var(--space-4);
 }
 .workspace-brand {
   justify-content: flex-start;
-  gap: 8px;
-  min-height: 39px;
-  padding: 4px 8px;
-  margin: -4px 0 21px;
+  gap: var(--space-2);
+  min-height: 35px;
+  padding: 4px var(--space-2);
+  margin: -4px 0 var(--space-5);
   color: var(--foreground);
 }
 .workspace-brand :deep(.brand-logo) {
@@ -213,12 +213,12 @@ onUnmounted(() => {
 }
 .workspace-nav .ui-button {
   justify-content: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   border-radius: 7px;
-  padding: 11px 13px;
+  padding: var(--space-3) var(--space-4);
   font-size: 12px;
   color: #777f8f;
-  min-height: 39px;
+  min-height: 35px;
 }
 .workspace-nav .active {
   background: #edf1ff;
@@ -226,13 +226,13 @@ onUnmounted(() => {
   font-weight: 600;
 }
 .workspace-nav .navigation-section-start {
-  margin-top: 22px;
+  margin-top: var(--space-5);
 }
 .sidebar-note {
-  margin: auto 7px 20px;
-  padding-top: 40px;
+  margin: auto 7px var(--space-5);
+  padding-top: var(--space-7);
   display: flex;
-  gap: 9px;
+  gap: var(--space-3);
   font-size: 10px;
   color: #8c94a2;
   line-height: 1.8;
@@ -248,8 +248,8 @@ onUnmounted(() => {
 .workspace-account {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding-top: 15px;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--border);
 }
 .account-avatar {
@@ -275,18 +275,18 @@ onUnmounted(() => {
   margin-left: 224px;
 }
 .workspace-topbar {
-  height: 64px;
+  height: 52px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 34px;
+  padding: 0 var(--space-6);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: var(--space-4);
   font-size: 11px;
   color: #8a92a2;
 }
@@ -296,12 +296,11 @@ onUnmounted(() => {
 }
 .workspace-search {
   font-size: 11px;
-  gap: 10px;
+  gap: var(--space-3);
   color: #969dac;
 }
 .workspace-main {
-  padding: 34px;
-  max-width: 1700px;
+  padding: var(--space-6);
   margin: 0 auto;
   min-width: 0;
 }
@@ -314,33 +313,33 @@ onUnmounted(() => {
 .search-links {
   display: flex;
   flex-direction: column;
-  margin-top: 18px;
+  margin-top: var(--space-4);
 }
 .search-links .ui-button {
   justify-content: flex-start;
-  padding: 12px;
+  padding: var(--space-3);
 }
 .search-links .ui-icon {
-  margin-right: 8px;
+  margin-right: var(--space-2);
 }
 @media (min-width: 1700px) {
   .workspace-main {
-    padding: 40px 50px;
+    padding: var(--space-7);
   }
 }
 @media (max-width: 1000px) {
   .workspace-sidebar {
     width: 195px;
-    padding: 22px 12px;
+    padding: var(--space-5) var(--space-3);
   }
   .workspace-body {
     margin-left: 195px;
   }
   .workspace-main {
-    padding: 25px;
+    padding: var(--space-5);
   }
   .workspace-topbar {
-    padding: 0 24px;
+    padding: 0 var(--space-5);
   }
   .workspace-search > span,
   .workspace-search .ui-kbd {
@@ -360,11 +359,11 @@ onUnmounted(() => {
     margin-left: 0;
   }
   .workspace-main {
-    padding: 22px 16px;
+    padding: var(--space-5) var(--space-4);
   }
   .workspace-topbar {
-    height: 56px;
-    padding: 0 14px;
+    height: 50px;
+    padding: 0 var(--space-4);
   }
   .mobile-navigation {
     display: inline-flex;

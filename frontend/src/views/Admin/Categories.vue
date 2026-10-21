@@ -614,7 +614,7 @@ async function handleBatchImageImport() {
 .category-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -625,7 +625,7 @@ async function handleBatchImageImport() {
 .categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 .category-card {
   min-width: 0;
@@ -634,14 +634,14 @@ async function handleBatchImageImport() {
   height: 3px;
 }
 .card-content {
-  padding: 14px;
+  padding: var(--space-4);
 }
 .category-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 .category-card-header h3 {
   margin: 0;
@@ -698,9 +698,9 @@ async function handleBatchImageImport() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 20px;
-  margin-top: 10px;
+  margin-top: var(--space-3);
   font-size: 10px;
   color: var(--muted);
 }
@@ -720,12 +720,12 @@ async function handleBatchImageImport() {
 .empty-card {
   border: 2px dashed #ddd;
   border-radius: 8px;
-  padding: 40px;
+  padding: var(--space-7);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-3);
   color: #999;
   cursor: pointer;
   transition: all 0.2s;
@@ -744,7 +744,7 @@ async function handleBatchImageImport() {
 
 .color-picker {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -768,14 +768,14 @@ async function handleBatchImageImport() {
 .batch-image-tip {
   color: #666;
   font-size: 13px;
-  margin-bottom: 16px;
-  padding: 8px 12px;
+  margin-bottom: var(--space-4);
+  padding: var(--space-2) var(--space-3);
   background: #f5f7fa;
   border-radius: 4px;
 }
 .category-key-editor {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .category-key-editor .capturing {

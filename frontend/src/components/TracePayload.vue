@@ -29,7 +29,7 @@ async function copy() {
 </template>
 <style scoped>
 .trace-payload {
-  margin-top: 12px;
+  margin-top: var(--space-3);
   border: 1px solid #dde5ef;
   border-radius: 8px;
   overflow: hidden;
@@ -40,8 +40,8 @@ async function copy() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 9px 12px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
   cursor: pointer;
   color: #476078;
   font-size: 12px;
@@ -58,7 +58,7 @@ async function copy() {
 }
 .trace-payload pre {
   margin: 0;
-  padding: 12px 15px;
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid #e4eaf2;
   max-height: 420px;
   overflow: auto;

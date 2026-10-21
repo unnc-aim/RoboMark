@@ -598,19 +598,19 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 22px;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
 }
 .trace-header h1 {
   font-size: 25px;
-  margin: 12px 0 6px;
+  margin: var(--space-3) 0 6px;
   letter-spacing: -0.5px;
 }
 .trace-header h1 span {
   color: #93a1b3;
   font-weight: 400;
   font-size: 19px;
-  margin-left: 8px;
+  margin-left: var(--space-2);
 }
 .trace-header p {
   margin: 0;
@@ -619,22 +619,22 @@ onUnmounted(() => {
 }
 .header-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .header-actions .ui-button {
   margin: 0;
 }
 .demo-banner {
-  padding: 14px 18px;
+  padding: var(--space-4) var(--space-4);
   border: 1px solid #e6d8af;
   background: #fffbef;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
   border-radius: 8px;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 .demo-banner strong {
   color: #956719;
@@ -653,7 +653,7 @@ onUnmounted(() => {
 .trace-layout {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr) 250px;
-  gap: 20px;
+  gap: var(--space-5);
   align-items: start;
 }
 .attempts-rail {
@@ -677,15 +677,15 @@ onUnmounted(() => {
   color: #8796a6;
 }
 .rail-hint {
-  margin: 10px 0 18px;
+  margin: var(--space-3) 0 var(--space-4);
 }
 .attempt-link {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: var(--space-3);
   width: 100%;
   text-align: left;
-  padding: 14px;
+  padding: var(--space-4);
   border: 1px solid transparent;
   background: transparent;
   border-radius: 8px;
@@ -735,7 +735,7 @@ onUnmounted(() => {
 }
 .older-button {
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 .conversation {
   min-width: 0;
@@ -745,12 +745,12 @@ onUnmounted(() => {
   overflow: hidden;
 }
 .conversation-heading {
-  padding: 18px 24px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid #e7ecf3;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .conversation-heading strong {
   font-size: 13px;
@@ -759,12 +759,12 @@ onUnmounted(() => {
 .conversation-heading span:not(.ui-tag) {
   font-size: 11px;
   color: #94a3b8;
-  margin-left: 10px;
+  margin-left: var(--space-3);
 }
 .message {
   display: flex;
-  gap: 12px;
-  margin: 26px 24px;
+  gap: var(--space-3);
+  margin: var(--space-5) var(--space-5);
 }
 .avatar {
   flex: 0 0 28px;
@@ -806,8 +806,8 @@ onUnmounted(() => {
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 6px 0 12px;
+  gap: var(--space-3);
+  margin: 6px 0 var(--space-3);
 }
 .message-meta span {
   font-weight: 400;
@@ -815,7 +815,7 @@ onUnmounted(() => {
   color: #8f9cac;
 }
 .user-bubble {
-  padding: 16px 18px;
+  padding: var(--space-4) var(--space-4);
   background: #f0f5fc;
   border: 1px solid #e5edf8;
   border-radius: 0 10px 10px 10px;
@@ -829,9 +829,9 @@ onUnmounted(() => {
 }
 .image-attachment {
   display: inline-block;
-  margin-top: 12px;
+  margin-top: var(--space-3);
   font-size: 11px;
-  padding: 6px 8px;
+  padding: 6px var(--space-2);
   border: 1px solid #d9e5f3;
   border-radius: 5px;
   color: #6081a3;
@@ -848,18 +848,18 @@ onUnmounted(() => {
 }
 .endpoint-line span {
   color: #37927a;
-  margin-right: 8px;
+  margin-right: var(--space-2);
 }
 .muted {
   color: #94a3b8;
   font-size: 12px;
   line-height: 1.7;
   display: block;
-  margin-top: 10px;
+  margin-top: var(--space-3);
 }
 .provider-reasoning {
   background: #f5f6f8;
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: 8px;
   color: #7b8796;
   font-size: 12px;
@@ -876,26 +876,26 @@ onUnmounted(() => {
 .waiting-message {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 22px;
+  gap: var(--space-3);
+  padding: var(--space-5);
   background: #f5f8fc;
   border-radius: 8px;
   color: #6b86a3;
   font-size: 12px;
 }
 .waiting-message p {
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
   line-height: 1.6;
 }
 .validation-success {
   border-left: 3px solid #4eb18f;
-  padding: 10px 14px;
+  padding: var(--space-3) var(--space-4);
   background: #f1f9f5;
   font-size: 12px;
   color: #43846d;
 }
 .validation-success p {
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
   font-size: 11px;
   line-height: 1.7;
 }
@@ -903,50 +903,50 @@ onUnmounted(() => {
   background: #fff6f3;
   border: 1px solid #f4ded5;
   border-radius: 8px;
-  padding: 16px;
+  padding: var(--space-4);
   color: #bc674d;
   font-size: 12px;
 }
 .failure-message code {
   display: block;
-  margin-top: 10px;
+  margin-top: var(--space-3);
   color: #a78372;
 }
 .failure-message p {
   font-size: 11px;
-  margin: 12px 0 0;
+  margin: var(--space-3) 0 0;
   line-height: 1.8;
 }
 .usage-line {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  margin-top: 12px;
+  margin-top: var(--space-3);
   font-size: 10px;
   color: #95a1b0;
 }
 .attempt-footer {
   border-top: 1px solid #edf0f4;
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-5);
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   overflow-wrap: anywhere;
   font-size: 10px;
   color: #94a3b8;
 }
 .legacy-state {
-  padding: 24px;
+  padding: var(--space-5);
 }
 .image-context {
-  padding: 18px;
+  padding: var(--space-4);
   background: #fff;
   border: 1px solid #e0e7ef;
   border-radius: 10px;
   min-width: 0;
 }
 .image-context h2 {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 .image-context .thumbnail {
   border: 1px solid #e6ecf2;
@@ -954,16 +954,16 @@ onUnmounted(() => {
 }
 .image-context > strong {
   font-size: 11px;
-  margin-top: 12px;
+  margin-top: var(--space-3);
   display: block;
   overflow-wrap: anywhere;
 }
 .image-context dl {
   display: grid;
   grid-template-columns: 65px minmax(0, 1fr);
-  gap: 14px 8px;
+  gap: var(--space-4) var(--space-2);
   font-size: 11px;
-  margin: 24px 0;
+  margin: var(--space-5) 0;
 }
 .image-context dt {
   color: #8d9aaa;
@@ -975,8 +975,8 @@ onUnmounted(() => {
 }
 .context-note {
   border-top: 1px solid #edf0f5;
-  padding-top: 14px;
-  margin: 18px 0 0;
+  padding-top: var(--space-4);
+  margin: var(--space-4) 0 0;
   color: #96a3b3;
   font-size: 10px;
   line-height: 1.8;
@@ -996,10 +996,10 @@ onUnmounted(() => {
     align-items: flex-start;
   }
   .message {
-    margin: 20px 18px;
+    margin: var(--space-5) var(--space-4);
   }
   .conversation-heading {
-    padding: 18px;
+    padding: var(--space-4);
   }
 }
 @media (max-width: 700px) {
@@ -1008,12 +1008,12 @@ onUnmounted(() => {
   }
   .trace-layout {
     grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
+    gap: var(--space-4);
   }
   .attempts-rail {
     position: static;
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
   .rail-heading {
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
   .attempt-link {
     width: auto;
     min-width: 120px;
-    padding: 10px;
+    padding: var(--space-3);
   }
   .image-context {
     grid-column: 1;
@@ -1039,22 +1039,22 @@ onUnmounted(() => {
     width: 100%;
   }
   .message {
-    margin: 18px 12px;
-    gap: 8px;
+    margin: var(--space-4) var(--space-3);
+    gap: var(--space-2);
   }
   .avatar {
     flex-basis: 24px;
     height: 24px;
   }
   .conversation-heading {
-    padding: 14px;
+    padding: var(--space-4);
   }
   .conversation-heading > div span {
     display: block;
     margin: 6px 0 0;
   }
   .attempt-footer {
-    padding: 14px;
+    padding: var(--space-4);
   }
   .image-context .thumbnail {
     max-width: 100%;

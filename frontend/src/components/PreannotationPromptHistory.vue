@@ -245,7 +245,7 @@ onUnmounted(() => {
 }
 .history-toolbar {
   display: flex;
-  gap: 14px;
+  gap: var(--space-4);
   align-items: center;
 }
 .history-toolbar .ui-radio-group {
@@ -257,12 +257,12 @@ onUnmounted(() => {
 .history-hint {
   font-size: 12px;
   color: #8a97a7;
-  margin: 12px 0 18px;
+  margin: var(--space-3) 0 var(--space-4);
 }
 .history-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 18px;
+  gap: var(--space-4);
   min-height: 320px;
   align-items: start;
 }
@@ -275,13 +275,13 @@ onUnmounted(() => {
 .result-count {
   font-size: 12px;
   color: #8a97a7;
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
 }
 .history-item {
   position: relative;
   border: 1px solid #e1e7ef;
   border-radius: 8px;
-  margin-bottom: 9px;
+  margin-bottom: var(--space-3);
   background: #fff;
 }
 .history-item.selected {
@@ -293,7 +293,7 @@ onUnmounted(() => {
   text-align: left;
   border: 0;
   background: none;
-  padding: 13px 54px 13px 13px;
+  padding: var(--space-4) 54px var(--space-4) var(--space-4);
   width: 100%;
   color: inherit;
   cursor: pointer;
@@ -321,7 +321,7 @@ onUnmounted(() => {
   overflow: hidden;
   font-size: 13px;
   line-height: 1.7;
-  margin: 8px 0;
+  margin: var(--space-2) 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -338,7 +338,7 @@ onUnmounted(() => {
 }
 .history-results .ui-pagination {
   justify-content: center;
-  margin: 16px 0 6px;
+  margin: var(--space-4) 0 6px;
 }
 .prompt-preview {
   position: sticky;
@@ -346,7 +346,7 @@ onUnmounted(() => {
   border: 1px solid #e1e7ef;
   background: #f8fafc;
   border-radius: 8px;
-  padding: 17px;
+  padding: var(--space-4);
   min-width: 0;
   max-height: 53dvh;
   overflow: auto;
@@ -354,7 +354,7 @@ onUnmounted(() => {
 .prompt-preview header {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   font-size: 12px;
   color: #526881;
 }
@@ -366,7 +366,7 @@ onUnmounted(() => {
   font-size: 11px;
   color: #8c9aab;
   line-height: 1.8;
-  margin-top: 12px;
+  margin-top: var(--space-3);
   overflow-wrap: anywhere;
 }
 .prompt-preview pre {
@@ -376,7 +376,7 @@ onUnmounted(() => {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   color: #34485f;
-  margin: 16px 0 0;
+  margin: var(--space-4) 0 0;
 }
 .preview-placeholder {
   font-size: 12px;
@@ -390,7 +390,7 @@ onUnmounted(() => {
   font-size: 12px;
   color: #8c9aab;
   float: left;
-  margin-top: 9px;
+  margin-top: var(--space-3);
 }
 .length-warning {
   color: #bd663f;
@@ -420,7 +420,7 @@ onUnmounted(() => {
     float: none;
     display: block;
     text-align: left;
-    margin: 0 0 12px;
+    margin: 0 0 var(--space-3);
   }
   .history-hint {
     line-height: 1.7;

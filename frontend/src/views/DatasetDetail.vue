@@ -178,13 +178,13 @@ async function remove() {
 .image-browser-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .detail-images {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: var(--space-4);
 }
 .detail-image {
   padding: 0;
@@ -206,8 +206,8 @@ async function remove() {
 .detail-image > span {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  padding: 12px 13px 6px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) 6px;
 }
 .detail-image strong {
   font-size: 11px;
@@ -215,7 +215,7 @@ async function remove() {
   text-overflow: ellipsis;
 }
 .detail-image > small {
-  padding: 0 13px 13px;
+  padding: 0 var(--space-4) var(--space-4);
   color: var(--muted);
   font-size: 10px;
 }
@@ -224,8 +224,8 @@ async function remove() {
   align-items: center;
   justify-content: space-between;
   font-size: 10px;
-  gap: 15px;
-  margin-top: 22px;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
   overflow-wrap: anywhere;
 }
 @media (max-width: 1000px) {

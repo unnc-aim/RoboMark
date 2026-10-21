@@ -37,7 +37,7 @@ function selected(file: any, files: any[]) {
 }
 .directory-controls {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .directory-controls > .ui-input-wrap {
   flex: 1;

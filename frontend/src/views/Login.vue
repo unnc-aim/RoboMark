@@ -70,6 +70,6 @@ async function handleLogin() {
 .auth-note {
   font-size: 10px;
   color: var(--muted);
-  margin: 0 0 18px;
+  margin: 0 0 var(--space-4);
 }
 </style>

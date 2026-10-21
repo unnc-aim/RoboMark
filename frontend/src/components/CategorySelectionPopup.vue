@@ -206,7 +206,7 @@ function scrollToHighlighted() {
 }
 
 .panel-label {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   color: #888;
   font-size: 12px;
   text-transform: uppercase;
@@ -220,7 +220,7 @@ function scrollToHighlighted() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  padding: var(--space-3);
   position: relative;
 }
 
@@ -239,7 +239,7 @@ function scrollToHighlighted() {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px var(--space-4);
   background: rgba(0, 0, 0, 0.7);
   border-radius: 20px;
   color: #67c23a;
@@ -263,7 +263,7 @@ function scrollToHighlighted() {
 }
 
 .panel-header {
-  padding: 12px 16px 8px;
+  padding: var(--space-3) var(--space-4) var(--space-2);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -281,12 +281,12 @@ function scrollToHighlighted() {
 }
 
 .search-bar {
-  padding: 4px 16px 10px;
+  padding: 4px var(--space-4) var(--space-3);
 }
 
 .search-input {
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: #16213e;
   border: 1px solid #333;
   border-radius: 8px;
@@ -307,7 +307,7 @@ function scrollToHighlighted() {
 .category-grid {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 10px 10px;
+  padding: 4px var(--space-3) var(--space-3);
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 6px;
@@ -388,7 +388,7 @@ function scrollToHighlighted() {
   grid-column: 1 / -1;
   text-align: center;
   color: #666;
-  padding: 32px;
+  padding: var(--space-6);
   font-size: 14px;
 }
 .popup-container {
@@ -423,7 +423,7 @@ function scrollToHighlighted() {
 }
 .category-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--space-3);
 }
 .category-card {
   padding: 0;
@@ -465,7 +465,7 @@ function scrollToHighlighted() {
   }
   .panel-header {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--space-2);
   }
 }
 </style>
@@ -486,7 +486,7 @@ function scrollToHighlighted() {
   height: 100%;
   position: absolute;
   inset: 0;
-  padding: 12px;
+  padding: var(--space-3);
   object-fit: contain;
 }
 .image-preview {

@@ -33,7 +33,7 @@ const type = computed(() =>
 </template>
 <style scoped>
 .connection-result {
-  margin: 12px 0;
+  margin: var(--space-3) 0;
 }
 .result-detail {
   display: block;

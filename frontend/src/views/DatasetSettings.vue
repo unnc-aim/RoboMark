@@ -171,7 +171,7 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
-  margin-top: 25px;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
 }
 </style>

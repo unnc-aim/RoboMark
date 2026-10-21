@@ -1694,17 +1694,17 @@ function handleZoomChange(zoom) {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
+  padding: var(--space-3) var(--space-4);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  gap: 10px;
+  gap: var(--space-3);
 }
 .toolbar .left,
 .toolbar .center,
 .toolbar .right,
 .mode-toolbar {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -1721,10 +1721,10 @@ function handleZoomChange(zoom) {
 }
 .image-info > span {
   font-size: 9px;
-  margin-left: 8px;
+  margin-left: var(--space-2);
 }
 .mode-toolbar {
-  gap: 10px;
+  gap: var(--space-3);
 }
 .mode-btn {
   display: inline-flex;
@@ -1741,7 +1741,7 @@ function handleZoomChange(zoom) {
   min-height: 32px;
   font-size: 11px;
   line-height: 18px;
-  padding: 6px 9px;
+  padding: 6px var(--space-3);
 }
 .toolbar .ui-button--icon {
   width: 32px;
@@ -1760,7 +1760,7 @@ function handleZoomChange(zoom) {
   min-height: 26px;
   font-size: 11px;
   line-height: 16px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
 }
 .toolbar .shape-mode-group {
   flex-shrink: 0;
@@ -1771,18 +1771,18 @@ function handleZoomChange(zoom) {
 }
 .source-bar {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
   flex-wrap: wrap;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 9px 15px;
+  padding: var(--space-3) var(--space-4);
   font-size: 10px;
 }
 .source-control {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .source-control > span {
   color: var(--muted);
@@ -1796,7 +1796,7 @@ function handleZoomChange(zoom) {
 .source-bar .ui-select {
   font-size: 10px;
   min-height: 30px;
-  padding: 6px 9px;
+  padding: 6px var(--space-3);
 }
 .source-bar .task-link {
   margin-left: auto;
@@ -1832,12 +1832,12 @@ function handleZoomChange(zoom) {
 }
 .category-panel,
 .progress-panel {
-  padding: 19px 17px;
+  padding: var(--space-5) var(--space-4);
 }
 .category-panel h3,
 .progress-panel h3 {
   font-size: 12px;
-  margin-bottom: 15px;
+  margin-bottom: var(--space-4);
 }
 .progress-panel {
   border-top: 1px solid var(--border);
@@ -1850,7 +1850,7 @@ function handleZoomChange(zoom) {
   color: var(--muted);
 }
 .mode-hint {
-  margin: 0 0 14px;
+  margin: 0 0 var(--space-4);
 }
 .category-list {
   display: flex;
@@ -1860,8 +1860,8 @@ function handleZoomChange(zoom) {
 .category-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px;
+  gap: var(--space-2);
+  padding: var(--space-3);
   background: var(--surface-muted);
   border: 1px solid transparent;
   border-radius: 6px;
@@ -1901,13 +1901,13 @@ function handleZoomChange(zoom) {
   border-radius: 4px;
 }
 .annotations-list {
-  margin-top: 24px;
+  margin-top: var(--space-5);
 }
 .annotation-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 0;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
   font-size: 11px;
   border: 0;
   border-bottom: 1px solid var(--border);
@@ -1939,7 +1939,7 @@ function handleZoomChange(zoom) {
 }
 .panel-note {
   display: block;
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 .formal-list {
   opacity: 0.65;
@@ -1947,8 +1947,8 @@ function handleZoomChange(zoom) {
 .review-layers {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 24px 0;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
 }
 .review-layers h4 {
   font-size: 11px;
@@ -1957,10 +1957,10 @@ function handleZoomChange(zoom) {
   font-size: 10px;
 }
 .review-guidance {
-  padding: 12px;
+  padding: var(--space-3);
   background: var(--surface-muted);
   border-radius: 6px;
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 .review-guidance strong {
   font-size: 11px;
@@ -1973,14 +1973,14 @@ function handleZoomChange(zoom) {
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-top: 9px;
+  margin-top: var(--space-3);
   font-size: 10px;
 }
 .stats {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 16px;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
   font-size: 11px;
 }
 .stat-row {
@@ -2001,7 +2001,7 @@ function handleZoomChange(zoom) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 24px;
+  margin-top: var(--space-5);
   font-size: 11px;
 }
 .queue-status h4 {
@@ -2012,11 +2012,11 @@ function handleZoomChange(zoom) {
   color: #8da9ff;
 }
 .editor-filmstrip {
-  height: 91px;
+  height: 82px;
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-  padding: 9px 15px;
+  padding: var(--space-3) var(--space-4);
   background: var(--surface);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
@@ -2054,15 +2054,15 @@ function handleZoomChange(zoom) {
 .filmstrip-note {
   font-size: 10px;
   color: var(--muted);
-  margin-left: 12px;
+  margin-left: var(--space-3);
   white-space: nowrap;
 }
 .editor-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 15px;
-  padding: 13px 17px;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-4);
   background: var(--surface);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
@@ -2070,7 +2070,7 @@ function handleZoomChange(zoom) {
 .editor-action-buttons {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -2108,7 +2108,7 @@ function handleZoomChange(zoom) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: var(--space-5);
 }
 .prefetch-content h2 {
   font-size: 20px;
@@ -2137,8 +2137,8 @@ function handleZoomChange(zoom) {
 .prefetch-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 20px;
+  gap: var(--space-3);
+  padding: 6px var(--space-5);
   background: var(--surface);
   font-size: 10px;
   color: var(--muted);
@@ -2147,10 +2147,10 @@ function handleZoomChange(zoom) {
   font-size: 11px;
 }
 .help-tip {
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 .settings-footer {
-  margin-top: 20px;
+  margin-top: var(--space-5);
   display: flex;
   justify-content: flex-end;
 }
@@ -2184,7 +2184,7 @@ function handleZoomChange(zoom) {
     width: 240px;
   }
   .source-bar {
-    gap: 8px;
+    gap: var(--space-2);
   }
   .source-bar .batch-select {
     width: 185px;
@@ -2199,7 +2199,7 @@ function handleZoomChange(zoom) {
     font-size: 9px;
   }
   .editor-actions {
-    gap: 8px;
+    gap: var(--space-2);
   }
   .save-indicator {
     display: none;
@@ -2211,7 +2211,7 @@ function handleZoomChange(zoom) {
     height: calc(100dvh - 45px);
   }
   .toolbar {
-    padding: 8px;
+    padding: var(--space-2);
     gap: 7px;
   }
   .toolbar .left .image-info > span {
@@ -2226,7 +2226,7 @@ function handleZoomChange(zoom) {
     display: none;
   }
   .source-bar {
-    padding: 8px;
+    padding: var(--space-2);
     max-height: 132px;
     overflow: auto;
   }
@@ -2263,7 +2263,7 @@ function handleZoomChange(zoom) {
   }
   .editor-filmstrip {
     height: 79px;
-    padding: 6px 10px;
+    padding: 6px var(--space-3);
   }
   .frame-thumbnail img {
     height: 39px;
@@ -2276,7 +2276,7 @@ function handleZoomChange(zoom) {
     display: none;
   }
   .editor-actions {
-    padding: 8px;
+    padding: var(--space-2);
   }
   .editor-action-buttons {
     width: 100%;
@@ -2285,7 +2285,7 @@ function handleZoomChange(zoom) {
   .editor-actions .ui-button {
     font-size: 10px;
     min-height: 32px;
-    padding: 6px 8px;
+    padding: 6px var(--space-2);
   }
   .source-bar :deep(.ui-segment) {
     font-size: 10px;

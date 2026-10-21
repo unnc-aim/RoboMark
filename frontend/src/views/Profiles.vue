@@ -146,10 +146,10 @@ onMounted(() => load());
 .profiles-layout {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
-  gap: 24px;
+  gap: var(--space-5);
 }
 .profiles-list {
-  padding: 22px 15px;
+  padding: var(--space-5) var(--space-4);
   align-self: start;
 }
 .profiles-list .section-heading {
@@ -158,8 +158,8 @@ onMounted(() => load());
 .profiles-list > .ui-button {
   width: 100%;
   justify-content: flex-start;
-  padding: 14px 10px;
-  gap: 12px;
+  padding: var(--space-4) var(--space-3);
+  gap: var(--space-3);
   text-align: left;
   margin-bottom: 6px;
 }
@@ -196,8 +196,8 @@ onMounted(() => load());
 .profile-details {
   display: grid;
   grid-template-columns: 130px 1fr;
-  gap: 22px;
-  margin: 30px 0 40px;
+  gap: var(--space-5);
+  margin: var(--space-6) 0 var(--space-7);
   font-size: 12px;
 }
 .profile-details dt {
@@ -209,7 +209,7 @@ onMounted(() => load());
 }
 .profile-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   justify-content: flex-end;
 }
 @media (max-width: 1000px) {
@@ -219,7 +219,7 @@ onMounted(() => load());
   .profiles-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--space-2);
   }
   .profiles-list > .section-heading {
     width: 100%;
@@ -233,7 +233,7 @@ onMounted(() => load());
 @media (max-width: 450px) {
   .profile-details {
     grid-template-columns: 100px 1fr;
-    gap: 18px;
+    gap: var(--space-4);
   }
 }
 </style>

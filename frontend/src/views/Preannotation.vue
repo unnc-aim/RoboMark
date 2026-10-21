@@ -877,15 +877,15 @@ section {
   background: white;
   border: 1px solid #e6eaf0;
   border-radius: 12px;
-  padding: 22px;
-  margin-top: 20px;
+  padding: var(--space-5);
+  margin-top: var(--space-5);
 }
 .section-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 18px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 .section-title h2 {
   font-size: 18px;
@@ -902,13 +902,13 @@ section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
 }
 .prompt-fill-feedback {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
   width: 100%;
   color: #72869e;
   font-size: 12px;
@@ -917,7 +917,7 @@ section {
 .batch-prompt-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
 }
 .batch-prompt-cell > span {
@@ -933,7 +933,7 @@ section {
 .config-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.7fr) minmax(0, 1fr);
-  gap: 22px;
+  gap: var(--space-5);
 }
 .config-grid :deep(.ui-select) {
   width: 100%;
@@ -956,7 +956,7 @@ section {
 }
 .generation-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -965,10 +965,10 @@ section {
 }
 .filters {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 22px;
+  margin-bottom: var(--space-5);
 }
 .filters .ui-select {
   width: 170px;
@@ -983,7 +983,7 @@ section {
 .image-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  gap: var(--space-4);
 }
 .image-card-wrap {
   border: 1px solid #e3e8ee;
@@ -995,8 +995,8 @@ section {
 .image-card-actions {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  padding: 0 13px 13px;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
 }
 .image-card {
   width: 100%;
@@ -1017,14 +1017,14 @@ section {
   box-shadow: none;
 }
 .image-card-body {
-  padding: 13px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .image-card-body > .candidate-summary {
   align-items: center;
-  gap: 6px 12px;
+  gap: 6px var(--space-3);
 }
 .token-metrics {
   font-size: 11px;
@@ -1058,7 +1058,7 @@ section {
 }
 .ui-pagination {
   justify-content: center;
-  margin-top: 24px;
+  margin-top: var(--space-5);
 }
 .tasks-panel :deep(.ui-table__row) {
   cursor: pointer;
@@ -1080,7 +1080,7 @@ section {
   }
   .image-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: var(--space-3);
   }
   .config-grid {
     grid-template-columns: 1fr;
@@ -1089,7 +1089,7 @@ section {
     grid-column: auto;
   }
   section {
-    padding: 14px;
+    padding: var(--space-4);
   }
   .filters .ui-select,
   .filters .ui-select:first-child {
@@ -1102,7 +1102,7 @@ section {
 .preannotation-layout {
   display: grid;
   grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
-  gap: 24px;
+  gap: var(--space-5);
   align-items: start;
 }
 .generation-rail {
@@ -1113,8 +1113,8 @@ section {
 }
 .preannotation-layout section {
   margin-top: 0;
-  margin-bottom: 22px;
-  padding: 21px;
+  margin-bottom: var(--space-5);
+  padding: var(--space-5);
 }
 .generation-rail .config-grid {
   grid-template-columns: 1fr;
@@ -1124,7 +1124,7 @@ section {
   grid-column: auto;
 }
 .generation-rail .generation-actions {
-  gap: 10px;
+  gap: var(--space-3);
 }
 .generation-rail .generation-actions > small {
   font-size: 10px;
@@ -1149,7 +1149,7 @@ section {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .preannotation-results .filters {
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: nowrap;
   overflow-x: auto;
 }
@@ -1167,14 +1167,14 @@ section {
 .results-display {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 .preannotation-results .image-card strong {
   font-size: 11px;
 }
 .preannotation-results .image-card-body {
-  padding: 11px;
+  padding: var(--space-3);
 }
 .preannotation-results .image-card small {
   font-size: 10px;
@@ -1193,13 +1193,13 @@ section {
 }
 .tasks-panel :deep(th),
 .tasks-panel :deep(td) {
-  padding: 11px;
+  padding: var(--space-3);
   font-size: 10px;
 }
 @media (max-width: 1300px) {
   .preannotation-layout {
     grid-template-columns: minmax(250px, 290px) minmax(0, 1fr);
-    gap: 18px;
+    gap: var(--space-4);
   }
   .preannotation-results .image-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1211,7 +1211,7 @@ section {
   }
   .generation-rail .config-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 0 18px;
+    gap: 0 var(--space-4);
   }
   .generation-rail .config-grid > div:first-child {
     grid-column: 1/-1;

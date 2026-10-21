@@ -363,7 +363,7 @@ async function remove() {
 .two-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 20px;
+  gap: 0 var(--space-5);
 }
 .profile-form :deep(.ui-select) {
   width: 100%;
@@ -378,7 +378,7 @@ async function remove() {
   font-family: monospace;
 }
 .profile-form > .ui-checkbox {
-  margin-bottom: 18px;
+  margin-bottom: var(--space-4);
 }
 @media (max-width: 600px) {
   .two-cols {
