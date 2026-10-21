@@ -65,14 +65,19 @@ async function handleDownload() {
   try {
     // 使用 axios 下载（带认证）
     const response = await api.get(exportResult.value.download_url, {
+      // download_url is already rooted at /api; keep the authenticated interceptor.
+      baseURL: '',
       responseType: 'blob'
     })
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
     link.download = `${form.value.output_name || 'dataset'}.zip`
+    document.body.appendChild(link)
     link.click()
-    window.URL.revokeObjectURL(url)
+    link.remove()
+    // Allow the browser to consume the Blob before revoking it.
+    window.setTimeout(() => window.URL.revokeObjectURL(url), 1000)
   } catch (error) {
     ElMessage.error('下载失败')
   }

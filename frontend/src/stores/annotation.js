@@ -62,10 +62,8 @@ export const useAnnotationStore = defineStore('annotation', () => {
     const response = await api.get(`/categories/dataset/${datasetId}`)
     categories.value = response.data
 
-    // 如果只有一个类别且不是画后选类别模式，自动选中
-    if (categories.value.length === 1 && !isPostDrawCategoryMode.value) {
-      selectedCategory.value = categories.value[0]
-    }
+    // Only an explicit selection, or a single available category, may skip the picker.
+    selectedCategory.value = categories.value.length === 1 ? categories.value[0] : null
 
     return categories.value
   }

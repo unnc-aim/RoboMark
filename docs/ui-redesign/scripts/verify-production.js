@@ -1,0 +1,41 @@
+async page => {
+ const requests=[],passed=[],errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ const check=(condition,name)=>{if(!condition)throw new Error(name);passed.push(name)};
+ await page.addInitScript(()=>{localStorage.setItem('robomark-token','local-test-token');localStorage.setItem('robomark-user',JSON.stringify({id:1,username:'local-test',is_admin:true,is_active:true}))});
+ const cats=[{id:1,name:'blue',color:'#4088ee',shortcut_key:'1'},{id:2,name:'red',color:'#ee7766',shortcut_key:'2'}];
+ const task={id:24,dataset_id:1,prompt:'test robots',status:'completed',is_sample:false,counts:{succeeded:4},approved:0,rejected:0,total_images:4};
+ const image=id=>({id,dataset_id:1,filename:`frame_${id}.jpg`,width:640,height:480,annotation_revision:0});
+ await page.route('**/api/**',async route=>{
+  const req=route.request(),url=new URL(req.url());requests.push({path:url.pathname,search:url.search,authorization:req.headers().authorization});
+  let data;
+  if(url.pathname.endsWith('/auth/me'))data={id:1,username:'local-test',is_admin:true,is_active:true};
+  else if(url.pathname==='/api/datasets')data=[{id:1,name:'local test dataset',total_images:4,labeled_images:1}];
+  else if(url.pathname==='/api/export/formats')data=[{id:'yolov8',name:'YOLOv8'}];
+  else if(url.pathname==='/api/export'&&req.method()==='POST')data={format:'yolov8',total_images:1,categories:2,train_images:1,val_images:0,test_images:0,total_annotations:1,download_url:'/api/export/download/test-artifact'};
+  else if(url.pathname==='/api/export/download/test-artifact')return route.fulfill({status:200,contentType:'application/zip',body:Buffer.from('PK regression fixture')});
+  else if(url.pathname==='/api/dataset-configs/1')data={format_type:'yolo'};
+  else if(url.pathname==='/api/categories/dataset/1')data=cats;
+  else if(url.pathname==='/api/datasets/1/preannotation-tasks')data={items:[task],total:1};
+  else if(url.pathname==='/api/preannotation/tasks/24')data=task;
+  else if(/^\/api\/preannotation\/tasks\/24\/images\/\d+$/.test(url.pathname))data={task_image:{execution_status:'succeeded',review_status:'unreviewed',revision:0,original_count:0},image:image(1),candidates:[],annotations:[]};
+  else if(url.pathname==='/api/datasets/1/images')data={items:url.searchParams.has('before_id')?[]:url.searchParams.has('after_id')?[image(2),image(3),image(4)].slice(0,+url.searchParams.get('page_size')):[image(1)],total:4};
+  else if(url.pathname==='/api/images/dataset/1/progress')data={total:4,labeled:1,pending:3,skipped:0};
+  else if(/^\/api\/images\/\d+\/file$/.test(url.pathname))return route.fulfill({path:'docs/ui-redesign/assets/arena-3591.jpg',contentType:'image/jpeg'});
+  else return route.fulfill({status:404,json:{detail:'Unexpected test request '+url.pathname}});
+  return route.fulfill({status:200,json:data});
+ });
+ await page.setViewportSize({width:1600,height:1100});await page.goto('http://127.0.0.1:5173/admin/export');
+ await page.locator('.el-select__wrapper').first().click();await page.getByRole('option').first().click();await page.getByRole('button',{name:'开始导出',exact:true}).click();
+ await page.getByRole('heading',{name:'导出完成',exact:true}).waitFor();const download=page.waitForEvent('download');await page.getByRole('button',{name:'下载 ZIP',exact:false}).click();await download;
+ check(requests.some(r=>r.path==='/api/export/download/test-artifact'&&r.authorization==='Bearer local-test-token'),'生产下载路径正确且保留认证');
+ check(!requests.some(r=>r.path.startsWith('/api/api/')),'生产下载没有重复 API 前缀');
+ await page.goto('http://127.0.0.1:5173/annotate/1?source=preannotation&task=24&image=1&review_status=all');
+ await page.locator('.canvas-container canvas').waitFor();
+ await page.waitForFunction(()=>document.querySelector('.canvas-container canvas')?.width>0);
+ await page.waitForTimeout(500);
+ check(requests.some(r=>r.path==='/api/datasets/1/images'&&new URLSearchParams(r.search).get('page_size')==='3'),'生产审核工作台请求后续3张');
+ await page.waitForFunction(()=>document.querySelector('.canvas-container canvas')?.height>0);
+ const box=await page.locator('.canvas-container canvas').boundingBox();await page.mouse.move(box.x+box.width*.45,box.y+box.height*.45);await page.mouse.down();await page.mouse.move(box.x+box.width*.55,box.y+box.height*.55,{steps:4});await page.mouse.up();await page.locator('.popup-container').waitFor();check(true,'生产多类别未主动选择时画后弹窗');
+ check(errors.length===0,'生产页面无 JavaScript 异常');return {passed,errors,requests:requests.filter(r=>r.path.includes('download')||r.path.includes('/file'))};
+}

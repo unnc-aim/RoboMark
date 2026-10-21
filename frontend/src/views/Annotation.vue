@@ -8,7 +8,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import AnnotationCanvas from '../components/AnnotationCanvas.vue'
 import CategorySelectionPopup from '../components/CategorySelectionPopup.vue'
 import api from '../utils/api'
+import { createImagePrefetcher } from '../utils/imagePrefetch'
 
+const upcomingImages = createImagePrefetcher()
 const route = useRoute()
 const router = useRouter()
 const store = useAnnotationStore()
@@ -159,6 +161,24 @@ async function refreshResults() {
 onBeforeRouteLeave(() => actionBusy.value || review.busy ? false : ensureCanLeave())
 onBeforeRouteUpdate(async to => contextKey(to) === loadedContextKey ? true : await ensureCanLeave())
 watch(() => contextKey(route), key => { if (key !== loadedContextKey && !disposed) loadData(route) })
+// Fetch only the next few records in the active review queue, without assigning them.
+watch(() => JSON.stringify([currentImage.value?.id, datasetId.value, source.value, review.task?.id, review.queue]), async (_, __, onCleanup) => {
+  const imageId = currentImage.value?.id
+  if (!imageId) { upcomingImages.clear(); return }
+  let cancelled = false
+  onCleanup(() => { cancelled = true })
+  const params = { after_id:imageId, page_size:3 }
+  if (isReviewMode.value) {
+    params.task_id = review.task?.id
+    params.execution_status = review.queue.execution_status
+    if (review.queue.review_status !== 'all') params.review_status = review.queue.review_status
+    if (review.queue.has_candidates !== '') params.has_candidates = review.queue.has_candidates
+  }
+  try {
+    const response = await api.get(`/datasets/${datasetId.value}/images`, { params })
+    if (!cancelled && !disposed) upcomingImages.preload(response.data.items.map(image => image.id))
+  } catch { /* Prefetch failure must not block the current image. */ }
+})
 function beforeUnload(event) { if (dirty.value) { event.preventDefault(); event.returnValue='' } }
 onMounted(async () => {
   window.addEventListener('keydown',handleKeydown)
@@ -166,7 +186,7 @@ onMounted(async () => {
   await loadData()
 })
 onUnmounted(() => {
-  disposed=true; contextGeneration++
+  disposed=true; contextGeneration++; upcomingImages.clear()
   window.removeEventListener('keydown',handleKeydown)
   window.removeEventListener('beforeunload',beforeUnload)
   review.reset(); store.reset()
@@ -407,14 +427,14 @@ function handleKeydown(e) {
 // 处理标注添加事件
 function handleAnnotationAdd(annotation) {
   if (!editable.value) return
-  if (!annotation.category_id) {
+  const category = store.selectedCategory || (store.categories.length === 1 ? store.categories[0] : null)
+  if (!category) {
     // 未选择类别：暂存标注，弹出类别选择弹窗
     pendingAnnotation.value = annotation
     showCategoryPopup.value = true
   } else {
     // 已选择类别：直接添加
-    if (isReviewMode.value) review.add(annotation,annotation.category_id)
-    else store.addAnnotation(annotation)
+    addWithCategory(annotation, category.id)
   }
 }
 

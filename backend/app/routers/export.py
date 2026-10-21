@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
-from typing import Optional, Literal
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional
 from enum import Enum
 import os
 import tempfile
@@ -9,6 +9,10 @@ import shutil
 import zipfile
 import json
 from datetime import datetime
+from pathlib import Path
+import re
+import time
+import uuid
 from app.core import get_db_dependency, get_current_admin
 
 router = APIRouter(prefix="/api/export", tags=["导出"])
@@ -24,10 +28,18 @@ class ExportRequest(BaseModel):
     dataset_id: int
     format: ExportFormat = ExportFormat.YOLOV8
     output_name: Optional[str] = None
-    train_ratio: float = 0.8
-    val_ratio: float = 0.1
-    test_ratio: float = 0.1
+    train_ratio: float = Field(default=0.8, ge=0, le=1, allow_inf_nan=False)
+    val_ratio: float = Field(default=0.1, ge=0, le=1, allow_inf_nan=False)
+    test_ratio: float = Field(default=0.1, ge=0, le=1, allow_inf_nan=False)
     include_unlabeled: bool = False
+
+    @field_validator("output_name")
+    @classmethod
+    def valid_output_name(cls, value):
+        if value and (value in {".", ".."} or any(c in value for c in '/\\\x00')):
+            raise ValueError("输出名称不能包含路径分隔符")
+        return value
+
 
 
 class ExportResponse(BaseModel):
@@ -41,8 +53,22 @@ class ExportResponse(BaseModel):
     download_url: str
 
 
-# 存储导出任务状态
-export_tasks = {}
+# Shared filesystem storage works across API workers and survives process restarts.
+EXPORT_ROOT = Path(tempfile.gettempdir()) / "robomark-exports"
+EXPORT_TTL_SECONDS = 3600
+
+
+def cleanup_expired_exports():
+    if not EXPORT_ROOT.exists():
+        return
+    for directory in EXPORT_ROOT.iterdir():
+        if re.fullmatch(r"[0-9a-f]{32}", directory.name) and directory.is_dir() and not directory.is_symlink():
+            try:
+                if time.time() - directory.stat().st_mtime > EXPORT_TTL_SECONDS:
+                    shutil.rmtree(directory, ignore_errors=True)
+            except FileNotFoundError:
+                pass  # Another worker already expired this artifact.
+
 
 
 def get_export_formats():
@@ -99,7 +125,11 @@ async def export_dataset(
             raise HTTPException(status_code=400, detail="没有可导出的图片")
 
         # 创建临时目录
-        export_dir = tempfile.mkdtemp(prefix=f"{request.format.value}_export_")
+        EXPORT_ROOT.mkdir(parents=True, exist_ok=True)
+        cleanup_expired_exports()
+        task_id = uuid.uuid4().hex
+        export_dir = str(EXPORT_ROOT / task_id)
+        os.makedirs(export_dir)
         output_name = request.output_name or f"dataset_{request.dataset_id}"
         output_path = os.path.join(export_dir, output_name)
         os.makedirs(output_path, exist_ok=True)
@@ -128,12 +158,7 @@ async def export_dataset(
                     arcname = os.path.relpath(file_path, export_dir)
                     zipf.write(file_path, arcname)
 
-        # 存储导出任务信息
-        task_id = f"export_{request.dataset_id}_{os.path.basename(export_dir)}"
-        export_tasks[task_id] = {
-            "zip_path": zip_path,
-            "export_dir": export_dir
-        }
+
 
     return ExportResponse(
         total_images=total,
@@ -425,28 +450,19 @@ async def export_yolo_legacy(
 @router.get("/download/{task_id}")
 async def download_export(
     task_id: str,
-    background_tasks: BackgroundTasks,
     current_admin = Depends(get_current_admin)
 ):
     """下载导出的文件"""
-    if task_id not in export_tasks:
+    if not re.fullmatch(r"[0-9a-f]{32}", task_id):
         raise HTTPException(status_code=404, detail="导出任务不存在或已过期")
-
-    task = export_tasks[task_id]
-    zip_path = task["zip_path"]
-
-    if not os.path.exists(zip_path):
+    directory = EXPORT_ROOT / task_id
+    if not directory.is_dir() or directory.is_symlink():
+        raise HTTPException(status_code=404, detail="导出任务不存在或已过期")
+    if time.time() - directory.stat().st_mtime > EXPORT_TTL_SECONDS:
+        shutil.rmtree(directory, ignore_errors=True)
+        raise HTTPException(status_code=404, detail="导出任务已过期，请重新导出")
+    archives = list(directory.glob("*.zip"))
+    if len(archives) != 1 or not archives[0].is_file() or archives[0].is_symlink():
         raise HTTPException(status_code=404, detail="文件不存在")
-
-    # 下载后清理
-    def cleanup():
-        shutil.rmtree(task["export_dir"], ignore_errors=True)
-        export_tasks.pop(task_id, None)
-
-    background_tasks.add_task(cleanup)
-
-    return FileResponse(
-        zip_path,
-        media_type="application/zip",
-        filename=os.path.basename(zip_path)
-    )
+    # Keep the archive until expiry so interrupted or repeated downloads can retry.
+    return FileResponse(archives[0], media_type="application/zip", filename=archives[0].name)

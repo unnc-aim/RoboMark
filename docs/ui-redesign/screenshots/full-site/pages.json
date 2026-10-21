@@ -1,0 +1,149 @@
+[
+  {
+    "id": "home",
+    "title": "标注首页",
+    "path": "/",
+    "group": "开始"
+  },
+  {
+    "id": "dashboard",
+    "title": "管理概览",
+    "path": "/admin",
+    "group": "工作空间"
+  },
+  {
+    "id": "datasets",
+    "title": "数据集工作区",
+    "path": "/admin/datasets",
+    "group": "数据集"
+  },
+  {
+    "id": "dataset-detail",
+    "title": "数据集详情",
+    "path": "数据集 / 概览（新增）",
+    "group": "数据集"
+  },
+  {
+    "id": "preannotation",
+    "title": "预标注与审核",
+    "path": "/datasets/:id/preannotation",
+    "group": "推理与审核"
+  },
+  {
+    "id": "annotate",
+    "title": "审核工作台",
+    "path": "/annotate/:id?source=preannotation",
+    "group": "推理与审核"
+  },
+  {
+    "id": "manual",
+    "title": "人工标注工作台",
+    "path": "/annotate/:id",
+    "group": "标注"
+  },
+  {
+    "id": "categories",
+    "title": "类别管理",
+    "path": "/admin/categories/:id",
+    "group": "数据集"
+  },
+  {
+    "id": "members",
+    "title": "用户管理",
+    "path": "/admin/users",
+    "group": "管理"
+  },
+  {
+    "id": "statistics",
+    "title": "工作量统计",
+    "path": "/admin/statistics",
+    "group": "管理"
+  },
+  {
+    "id": "export",
+    "title": "数据导出",
+    "path": "/admin/export",
+    "group": "数据集"
+  },
+  {
+    "id": "profiles",
+    "title": "推理接口",
+    "path": "原接口配置弹窗 → 独立页面",
+    "group": "推理与审核"
+  },
+  {
+    "id": "settings",
+    "title": "数据集设置",
+    "path": "原数据集配置弹窗 → 独立页面",
+    "group": "数据集"
+  },
+  {
+    "id": "workspace-settings",
+    "title": "工作空间设置",
+    "path": "工作空间 / 设置（新增）",
+    "group": "管理"
+  },
+  {
+    "id": "tutorial",
+    "title": "使用教程与快捷键",
+    "path": "/tutorial",
+    "group": "帮助"
+  },
+  {
+    "id": "login",
+    "title": "登录",
+    "path": "/login",
+    "group": "账号"
+  },
+  {
+    "id": "register",
+    "title": "注册",
+    "path": "/register",
+    "group": "账号"
+  },
+  {
+    "id": "history-dialog",
+    "title": "数据集历史 Prompt · 弹窗",
+    "host": "preannotation",
+    "path": "当前数据集 / 历史记录",
+    "group": "弹窗与状态",
+    "action": "prompt",
+    "target": "preannotation"
+  },
+  {
+    "id": "trace-dialog",
+    "title": "图像推理详情 · 弹窗",
+    "host": "preannotation",
+    "path": "批次结果 / 推理详情",
+    "group": "弹窗与状态",
+    "action": "trace",
+    "target": "preannotation"
+  },
+  {
+    "id": "category-dialog",
+    "title": "多快捷键与图片模板 · 弹窗",
+    "host": "categories",
+    "path": "类别 / 编辑与模板导入",
+    "group": "弹窗与状态",
+    "action": "category",
+    "target": "categories"
+  },
+  {
+    "id": "quick-category-dialog",
+    "title": "画后快捷选类别 · 弹窗",
+    "host": "annotate",
+    "path": "工作台 / 绘制后选择类别",
+    "group": "弹窗与状态",
+    "action": "quick",
+    "target": "annotate"
+  },
+  {
+    "id": "export-ready",
+    "title": "导出预览 · 生成后",
+    "host": "export",
+    "path": "数据导出 / 提交配置后",
+    "group": "弹窗与状态",
+    "action": "export",
+    "target": "export"
+  }
+]

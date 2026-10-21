@@ -1,0 +1,180 @@
+{
+  "status": "user-approved",
+  "approved_date": "2026-10-21",
+  "pages": 17,
+  "additional_states": 5,
+  "files": [
+    {
+      "path": "assets/MVM3D-LICENSE.txt",
+      "sha256": "57fd6323089e25aa313f305d876243255836f7fda4632c7f98ab8cb8068f92a6"
+    },
+    {
+      "path": "assets/arena-1024.jpg",
+      "sha256": "ffb9a7dca4b3c660aff04f9c005e95ea87afa3396395091d013ee691e3bfed33"
+    },
+    {
+      "path": "assets/arena-1655.jpg",
+      "sha256": "565ef27ca24c307a0b61ceea31197bfcc777e3643ec86beaa5fb78b66ca294dc"
+    },
+    {
+      "path": "assets/arena-3591.jpg",
+      "sha256": "ff3da815b6b449db640f4d4ea31b00aa0f04a55024fb0ed334a4f5f443fd04c0"
+    },
+    {
+      "path": "assets/arena-3757.jpg",
+      "sha256": "95aa267efc268cea4ed658f99619c4c62d6c0614b0d8519bb50c73ced8e277e1"
+    },
+    {
+      "path": "assets/arena-4186.jpg",
+      "sha256": "a842271213b39147b95e3f45de69ff0c80335e9a2bd2b0d44f119e12dfb48929"
+    },
+    {
+      "path": "assets/arena-549.jpg",
+      "sha256": "33b8761d096833637c750a58b60a0f60154844bd91819646904c443ec9be9bbf"
+    },
+    {
+      "path": "gallery.html",
+      "sha256": "0795e4d68a681b2831a51491ba13ba138f67a0ae75f4b84da3ac17bd87d178cc"
+    },
+    {
+      "path": "index.html",
+      "sha256": "e5618d04a9f1a2fb0e564195fd2a6d8c1cb8da3852e311ba59030affaafe3b7c"
+    },
+    {
+      "path": "mock.css",
+      "sha256": "349c8adcf2596f156ab8bb2ef6059a0412e04b2c2dbd3c5bd73c776f8c069861"
+    },
+    {
+      "path": "mock.js",
+      "sha256": "872db7e1e6f724e74bf3050be81d9f7dd2f02beea5ae3556faf253567acbafa2"
+    },
+    {
+      "path": "pages.css",
+      "sha256": "359984751b4e97ae04d26be2ada5a898b400b7d2f11867d6eae92cb98fcd62ad"
+    },
+    {
+      "path": "pages.js",
+      "sha256": "915aca0ccc998320573e4635f7436f38636c78e4e191387d7c46f302063f2173"
+    },
+    {
+      "path": "prototype-controls.js",
+      "sha256": "8aa33d80cffaf3af45a24f7c047a4d68542837b05b7749f88b888f047b2f006e"
+    },
+    {
+      "path": "revisions.css",
+      "sha256": "6b8fa0b550345d96cc1900d5b3c47055bb35317f49a2b37fd76b43ba38a49b76"
+    },
+    {
+      "path": "screenshots/full-site/annotate.jpg",
+      "sha256": "0adb096732661f531dd3df2a0b2416e19d375280935b10fac463c59d7bbcc54f"
+    },
+    {
+      "path": "screenshots/full-site/categories.jpg",
+      "sha256": "d2a87baad0122b78be609868b20fe6778446261fbb68420aed2456eb7d58b59f"
+    },
+    {
+      "path": "screenshots/full-site/category-dialog.jpg",
+      "sha256": "99212c09dad44ea72b3d6b8dbf975bd938cad77260970763aa8c45a72aa765a2"
+    },
+    {
+      "path": "screenshots/full-site/dashboard.jpg",
+      "sha256": "fc369652cf50263a6c99e77857a4a2eb6e21bf96044832127bf818e6010413c5"
+    },
+    {
+      "path": "screenshots/full-site/dataset-detail.jpg",
+      "sha256": "3c9dd567d132c28a71456796805027f39833d40a6697b6a0d732061a25de8263"
+    },
+    {
+      "path": "screenshots/full-site/datasets.jpg",
+      "sha256": "9122482290a3616ecff16f1c0c8fe20363cde760cfde681f70c2530a37b9ec8a"
+    },
+    {
+      "path": "screenshots/full-site/export-ready.jpg",
+      "sha256": "bfcdce1c7953ad02f96fda97bf3b6c6c43394e16d7e248d6b4f8e0fd2c902993"
+    },
+    {
+      "path": "screenshots/full-site/export.jpg",
+      "sha256": "38e93914ed0fcf69526d9939d10a313d045158d85ee40b1ab09ccce2ab5e8f8f"
+    },
+    {
+      "path": "screenshots/full-site/history-dialog.jpg",
+      "sha256": "acfbd55a82ca224b4626c5217bc3ca56cafd84fe6766a98f254268c59f7f4e3b"
+    },
+    {
+      "path": "screenshots/full-site/home.jpg",
+      "sha256": "e8fa124b8a68c12d9070a8604d0e6d19d59b6512bba7fcf778c8377917f73ac7"
+    },
+    {
+      "path": "screenshots/full-site/login.jpg",
+      "sha256": "1c6bca977fdceed718e0382c2dbedaff2362ef1ea83040457743b9c306bb31f7"
+    },
+    {
+      "path": "screenshots/full-site/manual.jpg",
+      "sha256": "155a6ee239b082ceed5d30db4d3827cd871ab04ea20a7454eae01aa75e7b9bbb"
+    },
+    {
+      "path": "screenshots/full-site/members.jpg",
+      "sha256": "c9a036c9bc01d7cd4d22490125bb1685936ff8755051c57902429bbc3fd2772a"
+    },
+    {
+      "path": "screenshots/full-site/pages.json",
+      "sha256": "69cdaebd68554cd7398a3318d23b0addef80a3a6a47b413b1012133250de4ccc"
+    },
+    {
+      "path": "screenshots/full-site/preannotation.jpg",
+      "sha256": "7fbb57d6f9ac074f01d1741e03728b68a76f1cb7055ebb059e0f1a72ee330503"
+    },
+    {
+      "path": "screenshots/full-site/profiles.jpg",
+      "sha256": "34ce9ff3f334200a9a25ccca8aa2fb223f067ead48845979c79e71a08538793b"
+    },
+    {
+      "path": "screenshots/full-site/quick-category-dialog.jpg",
+      "sha256": "a17d9995f79c96a4fec661a152428c2306b18f51ebbaac621f2e3288fe479296"
+    },
+    {
+      "path": "screenshots/full-site/register.jpg",
+      "sha256": "eec9208b74539a51761608847ef77d700555c16910d70b5dadcd06431c9b4783"
+    },
+    {
+      "path": "screenshots/full-site/settings.jpg",
+      "sha256": "8c52bac648caa0fcc82e8f16b3c8fda2e2964e238a35bfa812201f12ab681a2e"
+    },
+    {
+      "path": "screenshots/full-site/statistics.jpg",
+      "sha256": "50eda87782c3b50b28668006dc4c06ef7b42cde4c3ccd3257007d74a300ed9af"
+    },
+    {
+      "path": "screenshots/full-site/trace-dialog.jpg",
+      "sha256": "d8b46e84702902344b23789f5208a237efb2a766b4e80d5c98ce38f2204d67ee"
+    },
+    {
+      "path": "screenshots/full-site/tutorial.jpg",
+      "sha256": "8c48aa7bf0a2de5089b4b3105ea8ae260b6b5dd7b3370816f38264b56251232d"
+    },
+    {
+      "path": "screenshots/full-site/workspace-settings.jpg",
+      "sha256": "8b4dd9fd43a38ff29dc4f1347b2375908370cf85fb0455ccb85ea9b58963c861"
+    },
+    {
+      "path": "scripts/build-gallery.py",
+      "sha256": "8b89396042f1d8842959b53ea2653a79bacdc27d43f9df04c2d77d5cb0310d76"
+    },
+    {
+      "path": "scripts/capture-pages.js",
+      "sha256": "cc9b792fd0eed2f4d62caf20887ca17ea2cf8f2f7c42fe94f3ec1ebee55b608c"
+    },
+    {
+      "path": "scripts/verify-production.js",
+      "sha256": "aeeebab3c1ee307518daffb31b22febb21b887de54e6bb596f8b9d9df4848802"
+    },
+    {
+      "path": "scripts/verify-revisions.js",
+      "sha256": "48aef7d3a6f452568132f684db5e50009e6067dacb0cf6afa45ce1bd5fec7a68"
+    },
+    {
+      "path": "workbench.js",
+      "sha256": "87224e9a6a1064ec2cfb1d30f83cdd53d52434e585ce7b653d5949993556dae3"
+    }
+  ]
+}
