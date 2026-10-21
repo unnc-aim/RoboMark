@@ -1,0 +1,92 @@
+[
+  {
+    "image_id": 1,
+    "original_bytes": 506783,
+    "preview_bytes": 14408,
+    "original_dimensions": [
+      1440,
+      1080
+    ],
+    "preview_dimensions": [
+      640,
+      480
+    ],
+    "saving_percent": 97.2,
+    "cache_status": 304
+  },
+  {
+    "image_id": 2,
+    "original_bytes": 529839,
+    "preview_bytes": 15318,
+    "original_dimensions": [
+      1440,
+      1080
+    ],
+    "preview_dimensions": [
+      640,
+      480
+    ],
+    "saving_percent": 97.1,
+    "cache_status": 304
+  },
+  {
+    "image_id": 3,
+    "original_bytes": 533492,
+    "preview_bytes": 15976,
+    "original_dimensions": [
+      1440,
+      1080
+    ],
+    "preview_dimensions": [
+      640,
+      480
+    ],
+    "saving_percent": 97.0,
+    "cache_status": 304
+  },
+  {
+    "image_id": 4,
+    "original_bytes": 524292,
+    "preview_bytes": 15738,
+    "original_dimensions": [
+      1440,
+      1080
+    ],
+    "preview_dimensions": [
+      640,
+      480
+    ],
+    "saving_percent": 97.0,
+    "cache_status": 304
+  },
+  {
+    "image_id": 5,
+    "original_bytes": 544461,
+    "preview_bytes": 16386,
+    "original_dimensions": [
+      1440,
+      1080
+    ],
+    "preview_dimensions": [
+      640,
+      480
+    ],
+    "saving_percent": 97.0,
+    "cache_status": 304
+  },
+  {
+    "image_id": 6,
+    "original_bytes": 533692,
+    "preview_bytes": 15774,
+    "original_dimensions": [
+      1440,
+      1080
+    ],
+    "preview_dimensions": [
+      640,
+      480
+    ],
+    "saving_percent": 97.0,
+    "cache_status": 304
+  }
+]
