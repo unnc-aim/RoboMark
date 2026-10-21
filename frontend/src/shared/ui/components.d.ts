@@ -30,7 +30,6 @@ declare module "vue" {
     UiTabs: (typeof import("./index"))["UiTabs"];
     UiTabPane: (typeof import("./index"))["UiTabPane"];
     UiPagination: (typeof import("./index"))["UiPagination"];
-    UiDatePicker: (typeof import("./index"))["UiDatePicker"];
     UiUpload: (typeof import("./index"))["UiUpload"];
     UiCard: (typeof import("./index"))["UiCard"];
     UiLink: (typeof import("./index"))["UiLink"];

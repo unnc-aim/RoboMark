@@ -60,9 +60,6 @@ const largest = computed(() =>
             <h2>标注趋势</h2>
             <p>最近 7 天的图片标注量</p>
           </div>
-          <ui-button variant="ghost" @click="router.push('/admin/statistics')"
-            >查看统计 <ui-icon name="ArrowRight"
-          /></ui-button>
         </div>
         <div v-loading="daily.isPending.value" class="dashboard-chart">
           <div

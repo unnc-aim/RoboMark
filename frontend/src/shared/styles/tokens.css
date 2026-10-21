@@ -634,13 +634,6 @@ svg {
 .ui-pagination .muted {
   margin-right: auto;
 }
-.ui-date-range {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 290px;
-  max-width: 100%;
-}
 .ui-file {
   display: flex;
   justify-content: space-between;
@@ -693,9 +686,6 @@ svg {
   }
   .ui-button {
     white-space: normal;
-  }
-  .ui-date-range {
-    width: 100%;
   }
 }
 @media (prefers-reduced-motion: reduce) {

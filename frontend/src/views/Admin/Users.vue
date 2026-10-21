@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { message, messageBox } from "../../shared/ui/feedback";
-import { ChevronDown as ArrowDown } from "@lucide/vue";
 import api from "../../utils/api";
 
 const users = ref([]),
@@ -123,14 +122,6 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleString("zh-CN");
 }
 
-function handleCommand(command, user) {
-  if (command === "toggleAdmin") {
-    toggleAdminStatus(user);
-  } else if (command === "delete") {
-    handleDeleteUser(user);
-  }
-}
-
 function showCreateDialog() {
   newUser.value = {
     username: "",
@@ -220,7 +211,7 @@ async function handleCreateUser() {
           {{ formatDate(row.created_at) }}
         </template>
       </ui-table-column>
-      <ui-table-column label="操作" min-width="240">
+      <ui-table-column label="操作" min-width="360">
         <template #default="{ row }">
           <div class="action-buttons">
             <ui-button
@@ -233,28 +224,12 @@ async function handleCreateUser() {
             <ui-button size="small" @click="showResetDialog(row)"
               >重置密码</ui-button
             >
-            <ui-dropdown
-              trigger="click"
-              @command="(cmd) => handleCommand(cmd, row)"
-            >
-              <ui-button size="small">
-                更多<ui-icon class="el-icon--right"><arrow-down /></ui-icon>
-              </ui-button>
-              <template #dropdown>
-                <ui-dropdown-menu>
-                  <ui-dropdown-item command="toggleAdmin">
-                    {{ row.is_admin ? "取消管理员" : "设为管理员" }}
-                  </ui-dropdown-item>
-                  <ui-dropdown-item
-                    command="delete"
-                    divided
-                    style="color: #f56c6c"
-                  >
-                    删除用户
-                  </ui-dropdown-item>
-                </ui-dropdown-menu>
-              </template>
-            </ui-dropdown>
+            <ui-button size="small" @click="toggleAdminStatus(row)">
+              {{ row.is_admin ? "取消管理员" : "设为管理员" }}
+            </ui-button>
+            <ui-button size="small" type="danger" @click="handleDeleteUser(row)">
+              删除用户
+            </ui-button>
           </div>
         </template>
       </ui-table-column>
@@ -331,6 +306,13 @@ async function handleCreateUser() {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
+}
+.action-buttons > .ui-button {
+  height: 29px;
+  min-height: 29px;
+  flex: none;
+  white-space: nowrap;
 }
 
 .form-tip {

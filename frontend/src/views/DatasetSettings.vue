@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useQueryClient } from "@tanstack/vue-query";
 import api from "../utils/api";
 import { message } from "../shared/ui/feedback";
-import DatasetTabs from "../components/DatasetTabs.vue";
+import DatasetHeader from "../components/DatasetHeader.vue";
 import DirectoryPicker from "../components/DirectoryPicker.vue";
 const route = useRoute(),
   router = useRouter(),
@@ -50,7 +50,8 @@ async function save() {
     return message.warning("请填写数据集名称和图片目录");
   busy.value = true;
   try {
-    await api.put(`/datasets/${id}`, form.value);
+    const response = await api.put(`/datasets/${id}`, form.value);
+    dataset.value = response.data;
     await api.post("/dataset-configs/", { dataset_id: id, ...config.value });
     await client.invalidateQueries({ queryKey: ["datasets"] });
     client.invalidateQueries({ queryKey: ["categories", id] });
@@ -74,16 +75,8 @@ onMounted(load);
 </script>
 <template>
   <div v-loading="loading">
-    <header class="page-heading">
-      <div>
-        <h1>数据集设置</h1>
-        <p>{{ dataset?.name }} · 配置数据目录与标注格式。</p>
-      </div>
-    </header>
-    <DatasetTabs :dataset-id="id" /><ui-alert
-      v-if="error"
-      type="error"
-      title="设置加载失败"
+    <DatasetHeader :dataset-id="id" :dataset="dataset" :loading="loading" />
+    <ui-alert v-if="error" type="error" title="设置加载失败"
       ><ui-button @click="load">重新加载</ui-button></ui-alert
     >
     <div v-if="dataset" class="two-column">

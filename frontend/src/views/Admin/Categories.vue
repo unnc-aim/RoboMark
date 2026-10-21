@@ -5,13 +5,14 @@ import { message, messageBox } from "../../shared/ui/feedback";
 import api from "../../utils/api";
 import { useQueryClient } from "@tanstack/vue-query";
 const queryClient = useQueryClient();
-import DatasetTabs from "../../components/DatasetTabs.vue";
+import DatasetHeader from "../../components/DatasetHeader.vue";
 import {
   parseCategoryKeys,
   eventShortcut,
   categoryShortcutConflict,
   reservedCategoryKeys,
 } from "../../features/annotation/domain/shortcuts";
+import { Upload } from "@lucide/vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -312,17 +313,20 @@ async function handleBatchImageImport() {
 
 <template>
   <div class="categories-page" v-loading="loading">
-    <div class="page-header">
-      <div class="header-left">
-        <ui-button @click="router.push('/admin/datasets')" :icon="'ArrowLeft'"
-          >返回</ui-button
-        >
-        <h2 v-if="dataset">{{ dataset.name }} - 类别管理</h2>
+    <DatasetHeader
+      :dataset-id="datasetId"
+      :dataset="dataset"
+      :loading="loading"
+    />
+    <div class="section-heading category-toolbar">
+      <div>
+        <h2>类别与模板</h2>
+        <p>管理目标类别、颜色、快捷键与图片模板。</p>
       </div>
-      <div class="header-buttons">
+      <div class="category-actions">
         <ui-dropdown @command="handleImportCommand" trigger="click">
           <ui-button>
-            导入类别 <ui-icon class="el-icon--right"><ArrowDown /></ui-icon>
+            导入类别 <ui-icon name="ArrowDown" :size="14" />
           </ui-button>
           <template #dropdown>
             <ui-dropdown-menu>
@@ -343,29 +347,25 @@ async function handleBatchImageImport() {
       </div>
     </div>
 
-    <DatasetTabs :dataset-id="datasetId" /><ui-alert
-      v-if="loadError"
-      type="error"
-      title="类别加载失败"
+    <ui-alert v-if="loadError" type="error" title="类别加载失败"
       ><ui-button @click="loadData">重新加载</ui-button></ui-alert
     >
     <div class="categories-grid">
-      <div
+      <ui-card
+        as="article"
         v-for="category in categories"
         :key="category.id"
         class="category-card"
       >
         <div class="color-bar" :style="{ background: category.color }"></div>
         <div class="card-content">
-          <h3>{{ category.name }}</h3>
-          <div class="template-section">
-            <div v-if="category.template_image_path" class="template-preview">
-              <img
-                :src="`/api/categories/${category.id}/template-image`"
-                alt="模板图片"
-              />
-            </div>
-            <div class="template-actions">
+          <div class="category-card-header">
+            <h3 :title="category.name">{{ category.name }}</h3>
+            <div
+              class="category-card-actions"
+              role="group"
+              :aria-label="`${category.name} 的操作`"
+            >
               <ui-upload
                 :action="`/api/categories/${category.id}/template-image`"
                 :headers="uploadHeaders"
@@ -374,38 +374,73 @@ async function handleBatchImageImport() {
                 :on-error="handleUploadError"
                 accept="image/*"
               >
-                <ui-button size="small">
-                  {{ category.template_image_path ? "更换模板" : "上传模板" }}
-                </ui-button>
+                <ui-button
+                  class="category-action"
+                  variant="ghost"
+                  circle
+                  :icon="Upload"
+                  :title="
+                    category.template_image_path ? '更换模板' : '上传模板'
+                  "
+                  :aria-label="`${category.template_image_path ? '更换' : '上传'}${category.name}的模板`"
+                />
               </ui-upload>
               <ui-button
-                v-if="category.template_image_path"
-                size="small"
-                type="danger"
+                class="category-action"
+                variant="ghost"
+                circle
+                icon="ImageOff"
+                title="删除模板"
+                :aria-label="`删除${category.name}的模板`"
+                :disabled="!category.template_image_path"
                 @click="handleDeleteTemplateImage(category)"
-                >删除模板</ui-button
-              >
+              />
+              <ui-button
+                class="category-action"
+                variant="ghost"
+                circle
+                icon="Pencil"
+                title="编辑类别"
+                :aria-label="`编辑类别${category.name}`"
+                @click="showEditDialog(category)"
+              />
+              <ui-button
+                class="category-action"
+                type="danger"
+                circle
+                icon="Delete"
+                title="删除类别"
+                :aria-label="`删除类别${category.name}`"
+                @click="handleDelete(category)"
+              />
             </div>
           </div>
-          <div class="meta">
-            <span v-if="category.shortcut_key" class="shortcut">
-              快捷键: <ui-kbd>{{ category.shortcut_key }}</ui-kbd>
-            </span>
-            <span class="order">排序: {{ category.sort_order }}</span>
+          <div class="template-preview">
+            <img
+              v-if="category.template_image_path"
+              :src="`/api/categories/${category.id}/template-image`"
+              :alt="`${category.name}的模板图片`"
+              loading="lazy"
+              decoding="async"
+            />
+            <div v-else class="template-placeholder">
+              <ui-icon name="Image" :size="22" /><span>未设置模板</span>
+            </div>
           </div>
-          <div class="actions">
-            <ui-button size="small" @click="showEditDialog(category)"
-              >编辑</ui-button
+          <div class="category-meta">
+            <span class="order">排序 {{ category.sort_order }}</span>
+            <span v-if="category.shortcut_key" class="category-shortcuts"
+              ><span>快捷键</span
+              ><ui-kbd
+                v-for="key in parseCategoryKeys(category.shortcut_key)"
+                :key="key"
+                >{{ key }}</ui-kbd
+              ></span
             >
-            <ui-button
-              size="small"
-              type="danger"
-              @click="handleDelete(category)"
-              >删除</ui-button
-            >
+            <span v-else class="shortcut-empty">未设置快捷键</span>
           </div>
         </div>
-      </div>
+      </ui-card>
 
       <ui-button
         v-if="categories.length === 0"
@@ -573,100 +608,113 @@ async function handleBatchImageImport() {
 </template>
 
 <style scoped>
+.category-toolbar {
+  flex-wrap: wrap;
+}
+.category-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .categories-page {
   min-width: 0;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.header-left h2 {
-  margin: 0;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 12px;
-}
-
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
 }
-
 .category-card {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
+  min-width: 0;
 }
-
 .color-bar {
-  height: 8px;
+  height: 3px;
 }
-
 .card-content {
-  padding: 16px;
+  padding: 14px;
 }
-
-.card-content h3 {
-  margin: 0 0 12px 0;
-}
-
-.template-section {
+.category-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 12px;
 }
-
-.template-preview {
-  margin-bottom: 8px;
-  border-radius: 4px;
+.category-card-header h3 {
+  margin: 0;
+  font-size: 14px;
+  min-width: 0;
   overflow: hidden;
-  background: #f5f5f5;
-  max-width: 200px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-.template-preview img {
-  width: 100%;
-  max-height: 120px;
-  object-fit: contain;
-  display: block;
-}
-
-.template-actions {
+.category-card-actions {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.category-card-actions :deep(.ui-upload),
+.category-card-actions :deep(.ui-upload > div) {
+  display: flex;
   align-items: center;
 }
-
-.meta {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 12px;
-  color: #666;
-  font-size: 13px;
+.category-card-actions :deep(.category-action) {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 6px;
 }
-
-.meta kbd {
-  padding: 2px 6px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 12px;
+.template-preview {
+  display: grid;
+  place-items: center;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-muted);
 }
-
-.actions {
+.template-preview img {
+  display: block;
+  width: 100%;
+  height: 100px;
+  object-fit: contain;
+}
+.template-placeholder {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.template-placeholder :deep(svg) {
+  color: #a2abba;
+}
+.category-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  min-height: 20px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.order {
+  white-space: nowrap;
+}
+.category-shortcuts {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.shortcut-empty {
+  color: #9ba3b1;
 }
 
 .empty-card {
@@ -743,9 +791,5 @@ async function handleBatchImageImport() {
   display: flex;
   flex-direction: column;
   min-height: 170px;
-}
-.page-header .left {
-  flex-wrap: wrap;
-  gap: 12px;
 }
 </style>

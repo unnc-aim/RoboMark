@@ -62,6 +62,8 @@ import {
   X,
   LoaderCircle,
   Plus,
+  Pencil,
+  FlaskConical,
   Trash2,
   Undo2,
   Redo2,
@@ -71,10 +73,11 @@ import {
   Users,
   Folder,
   Image,
-  ChartPie,
+  ImagePlus,
+  ImageOff,
+  RefreshCw,
   Crosshair,
   Clock,
-  ScanLine,
   House,
   Server,
   BookOpen,
@@ -106,6 +109,8 @@ const icons: Record<string, any> = {
   ArrowRight,
   ArrowDown: ChevronDown,
   Plus,
+  Pencil,
+  FlaskConical,
   Delete: Trash2,
   RefreshLeft: Undo2,
   RefreshRight: Redo2,
@@ -117,14 +122,15 @@ const icons: Record<string, any> = {
   Folder,
   Picture: Image,
   Image,
-  PieChart: ChartPie,
+  ImagePlus,
+  ImageOff,
+  RefreshCw,
   DataAnalysis: Activity,
   Aim: Crosshair,
   Clock,
   Select: Check,
   Back: ArrowLeft,
   Loading: LoaderCircle,
-  ScanLine,
   House,
   Server,
   BookOpen,
@@ -979,40 +985,6 @@ export const UiPagination = defineComponent({
     };
   },
 });
-export const UiDatePicker = defineComponent({
-  props: {
-    modelValue: Array,
-    type: String,
-    startPlaceholder: String,
-    endPlaceholder: String,
-    valueFormat: String,
-  },
-  emits: ["update:modelValue", "change"],
-  setup(p, { emit }) {
-    const change = (i: number, v: string) => {
-      const next = [...(p.modelValue || ["", ""])];
-      next[i] = v;
-      emit("update:modelValue", next);
-      if (next.every(Boolean)) emit("change", next);
-    };
-    return () =>
-      h("div", { class: "ui-date-range" }, [
-        h(UiInput, {
-          type: "date",
-          modelValue: String(p.modelValue?.[0] || ""),
-          "aria-label": p.startPlaceholder || "开始日期",
-          "onUpdate:modelValue": (v: string) => change(0, v),
-        }),
-        h("span", {}, "—"),
-        h(UiInput, {
-          type: "date",
-          modelValue: String(p.modelValue?.[1] || ""),
-          "aria-label": p.endPlaceholder || "结束日期",
-          "onUpdate:modelValue": (v: string) => change(1, v),
-        }),
-      ]);
-  },
-});
 export const UiUpload = defineComponent({
   props: {
     action: String,
@@ -1203,7 +1175,6 @@ export const uiComponents = {
   UiTabs,
   UiTabPane,
   UiPagination,
-  UiDatePicker,
   UiUpload,
   UiCard,
   UiLink,

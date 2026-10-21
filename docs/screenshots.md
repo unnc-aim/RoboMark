@@ -22,7 +22,6 @@
 | 数据集管理 | `/admin/datasets` | [datasets.png](images/screenshots/datasets.png) |
 | 类别管理 | `/admin/categories/1` | [categories.png](images/screenshots/categories.png) |
 | 用户管理 | `/admin/users` | [users.png](images/screenshots/users.png) |
-| 工作量统计 | `/admin/statistics` | [statistics.png](images/screenshots/statistics.png) |
 | 数据集导出 | `/admin/export` | [export.png](images/screenshots/export.png) |
 | 人工标注工作台 | `/annotate/1?source=manual&image=3` | [annotation.png](images/screenshots/annotation.png) |
 | 四点标注 | `/annotate/1?source=manual&image=11` | [annotation-points.png](images/screenshots/annotation-points.png) |
@@ -58,9 +57,9 @@
 |:---:|:---:|
 | ![类别管理](images/screenshots/categories.png) | ![用户管理](images/screenshots/users.png) |
 
-| 工作量统计 | 数据集导出 |
-|:---:|:---:|
-| ![工作量统计](images/screenshots/statistics.png) | ![数据集导出](images/screenshots/export.png) |
+| 数据集导出 |
+|:---:|
+| ![数据集导出](images/screenshots/export.png) |
 
 | 人工标注工作台 | 四点标注 |
 |:---:|:---:|

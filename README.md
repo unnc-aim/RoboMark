@@ -25,9 +25,9 @@
 |:---:|:---:|
 | ![人工标注工作台](docs/images/screenshots/annotation.png) | ![数据集管理](docs/images/screenshots/datasets.png) |
 
-| 管理仪表盘 | 工作量统计 |
+| 管理仪表盘 | 数据集导出 |
 |:---:|:---:|
-| ![管理仪表盘](docs/images/screenshots/dashboard.png) | ![工作量统计](docs/images/screenshots/statistics.png) |
+| ![管理仪表盘](docs/images/screenshots/dashboard.png) | ![数据集导出](docs/images/screenshots/export.png) |
 
 查看 [对话式推理详情截图](docs/images/screenshots/inference-trace.png) 与 [卡片 Token / TPS 指标示例](docs/images/screenshots/preannotation-metrics.png)。
 
@@ -51,7 +51,7 @@
 | 推理指标 | 图片卡片在候选框数量旁显示输入 / 输出 Token 和 TPS；旧记录缺少用量或耗时时显示 `—`，不伪造数据 |
 | 人工审核 | 缩略图批量叠加、按执行 / 审核状态与有无候选框筛选；统一 annotate 工作台编辑、保存草稿、通过、驳回与空结果确认 |
 | 导出 | YOLOv5/v7/v8、YOLO Darknet、COCO JSON，训练 / 验证 / 测试比例、可选包含未标注图片、ZIP 下载 |
-| 工作量 | 总览、近 30 天每日记录、按数据集 / 日期筛选、用户工作量统计、CSV / JSON 导出 |
+| 管理概览 | 工作空间总览、近期标注趋势、数据集进度与成员贡献 |
 
 预标注候选框经过审核后才追加到正式标注；已有正式框会保留。YOLO / Darknet / COCO 导出读取正式标注，未审核候选与草稿不会进入训练标签。
 
@@ -215,7 +215,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | 每张图的对话式推理记录 | `/datasets/:datasetId/preannotation/:taskId/images/:imageId/trace` |
 | 管理仪表盘 / 数据集 | `/admin`、`/admin/datasets` |
 | 类别 / 用户 | `/admin/categories/:datasetId`、`/admin/users` |
-| 工作量 / 导出 | `/admin/statistics`、`/admin/export` |
+| 数据集导出 | `/admin/export` |
 
 预标注管理位于原管理布局的主内容区；审核复用 annotate 画布。普通用户可使用预标注管理与审核，用户管理等 `/admin` 功能要求管理员身份。
 

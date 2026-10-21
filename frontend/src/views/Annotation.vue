@@ -645,6 +645,11 @@ async function handleSaveAndNext() {
 
 function handleKeydown(e) {
   if (
+    e.target.closest('[role="radiogroup"]') &&
+    ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
+  )
+    return;
+  if (
     e.target.closest(
       '[role="dialog"],[role="alertdialog"],[role="listbox"],[role="menu"],[data-reka-popper-content-wrapper]',
     )
@@ -919,7 +924,11 @@ function handleZoomChange(zoom) {
         </ui-button-group>
 
         <div class="mode-toolbar">
-          <ui-radio-group v-model="canvasMode" size="small">
+          <ui-radio-group
+            v-model="canvasMode"
+            size="small"
+            aria-label="画布操作模式"
+          >
             <ui-radio-button value="annotate">
               <span class="mode-btn"
                 ><ui-icon name="MousePointer2" /> 标注 (V)</span
@@ -935,14 +944,46 @@ function handleZoomChange(zoom) {
             v-model="shapeMode"
             size="small"
             class="shape-mode-group"
+            aria-label="标注形状"
+            @change="canvasMode = 'annotate'"
           >
-            <ui-radio-button value="bbox">矩形</ui-radio-button>
-            <ui-radio-button value="4point">4点</ui-radio-button>
-            <ui-radio-button value="8point">8点</ui-radio-button>
+            <ui-radio-button value="bbox" aria-label="矩形工具"
+              >矩形</ui-radio-button
+            >
+            <ui-radio-button value="4point" aria-label="四点工具"
+              >四点</ui-radio-button
+            >
+            <ui-radio-button value="8point" aria-label="八点工具"
+              >八点</ui-radio-button
+            >
           </ui-radio-group>
 
-          <span class="zoom-info">{{ Math.round(zoomLevel * 100) }}%</span>
-          <ui-button size="small" @click="fitToView">适应</ui-button>
+          <ui-button-group class="zoom-controls" aria-label="视图缩放">
+            <ui-button
+              size="small"
+              circle
+              variant="ghost"
+              aria-label="缩小"
+              @click="canvasRef?.zoomBy(0.9)"
+              ><ui-icon name="ZoomOut"
+            /></ui-button>
+            <span class="zoom-info">{{ Math.round(zoomLevel * 100) }}%</span>
+            <ui-button
+              size="small"
+              circle
+              variant="ghost"
+              aria-label="放大"
+              @click="canvasRef?.zoomBy(1.1)"
+              ><ui-icon name="ZoomIn"
+            /></ui-button>
+            <ui-button
+              size="small"
+              icon="Maximize"
+              aria-label="适应画布"
+              @click="fitToView"
+              >适应</ui-button
+            >
+          </ui-button-group>
         </div>
       </div>
       <div class="right">
@@ -975,6 +1016,17 @@ function handleZoomChange(zoom) {
         <ui-button @click="showHelp = true" :icon="'QuestionFilled'"
           >帮助</ui-button
         >
+        <ui-button
+          class="inspector-toggle"
+          size="small"
+          circle
+          variant="ghost"
+          aria-label="对象与图层"
+          :aria-expanded="inspectorOpen"
+          aria-controls="annotation-inspector"
+          @click="inspectorOpen = !inspectorOpen"
+          ><ui-icon name="PanelLeft"
+        /></ui-button>
       </div>
     </header>
 
@@ -1059,78 +1111,6 @@ function handleZoomChange(zoom) {
       class="main-content"
       v-show="isReviewMode || !store.isInitialLoad || !store.isPrefetching"
     >
-      <nav class="editor-tools" aria-label="画布工具">
-        <ui-button
-          circle
-          variant="ghost"
-          :class="{ active: canvasMode === 'annotate' }"
-          aria-label="选择与绘制 V"
-          @click="canvasMode = 'annotate'"
-          ><ui-icon name="MousePointer2" /></ui-button
-        ><ui-button
-          circle
-          variant="ghost"
-          :class="{ active: canvasMode === 'pan' }"
-          aria-label="平移 H"
-          @click="canvasMode = 'pan'"
-          ><ui-icon name="Hand" /></ui-button
-        ><ui-divider /><ui-button
-          circle
-          variant="ghost"
-          :class="{ active: shapeMode === 'bbox' }"
-          aria-label="矩形工具"
-          @click="
-            shapeMode = 'bbox';
-            canvasMode = 'annotate';
-          "
-          ><ui-icon name="Square" /></ui-button
-        ><ui-button
-          circle
-          variant="ghost"
-          :class="{ active: shapeMode === '4point' }"
-          aria-label="四点工具"
-          @click="
-            shapeMode = '4point';
-            canvasMode = 'annotate';
-          "
-          ><ui-icon name="Pentagon" /></ui-button
-        ><ui-button
-          circle
-          variant="ghost"
-          :class="{ active: shapeMode === '8point' }"
-          aria-label="八点工具"
-          @click="
-            shapeMode = '8point';
-            canvasMode = 'annotate';
-          "
-          ><ui-icon name="Layers" /></ui-button
-        ><ui-divider /><ui-button
-          circle
-          variant="ghost"
-          aria-label="放大"
-          @click="canvasRef?.zoomBy(1.1)"
-          ><ui-icon name="ZoomIn" /></ui-button
-        ><ui-button
-          circle
-          variant="ghost"
-          aria-label="缩小"
-          @click="canvasRef?.zoomBy(0.9)"
-          ><ui-icon name="ZoomOut" /></ui-button
-        ><ui-button
-          circle
-          variant="ghost"
-          aria-label="适应画布"
-          @click="fitToView"
-          ><ui-icon name="Maximize" /></ui-button
-        ><ui-button
-          class="inspector-toggle"
-          circle
-          variant="ghost"
-          aria-label="对象与图层"
-          @click="inspectorOpen = !inspectorOpen"
-          ><ui-icon name="PanelLeft"
-        /></ui-button>
-      </nav>
       <!-- 画布区域 -->
       <div class="canvas-container">
         <div v-if="imageLoading" class="loading-overlay">
@@ -1172,7 +1152,7 @@ function handleZoomChange(zoom) {
         />
       </div>
 
-      <div class="editor-inspector">
+      <div id="annotation-inspector" class="editor-inspector">
         <!-- 左侧类别面板 -->
         <aside class="category-panel">
           <h3>类别选择</h3>
@@ -1757,16 +1737,33 @@ function handleZoomChange(zoom) {
   min-width: 32px;
 }
 .toolbar .ui-button {
+  height: 32px;
+  min-height: 32px;
   font-size: 11px;
-  min-height: 30px;
+  line-height: 18px;
   padding: 6px 9px;
 }
+.toolbar .ui-button--icon {
+  width: 32px;
+  padding: 0;
+}
+.toolbar :deep(.ui-segmented) {
+  height: 32px;
+  align-items: center;
+  padding: 3px;
+}
 .toolbar :deep(.ui-segment) {
-  font-size: 10px;
-  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  min-height: 26px;
+  font-size: 11px;
+  line-height: 16px;
+  padding: 0 8px;
 }
 .toolbar .shape-mode-group {
-  display: none;
+  flex-shrink: 0;
 }
 .history-indicator {
   font-size: 10px;
@@ -1825,30 +1822,6 @@ function handleZoomChange(zoom) {
   position: relative;
   background: #15191f;
   overflow: hidden;
-}
-.editor-tools {
-  width: 49px;
-  flex-shrink: 0;
-  padding: 12px 6px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  overflow: auto;
-}
-.editor-tools > .ui-button {
-  min-height: 33px;
-  padding: 6px;
-}
-.editor-tools .active {
-  background: #3a61ed33;
-  color: #8da9ff;
-}
-.editor-tools > .ui-divider {
-  width: 23px;
-  margin: 4px;
 }
 .editor-inspector {
   width: 280px;
@@ -2287,15 +2260,6 @@ function handleZoomChange(zoom) {
   }
   .inspector-toggle {
     display: inline-flex;
-  }
-  .editor-tools {
-    width: 41px;
-    padding: 8px 3px;
-    gap: 6px;
-  }
-  .editor-tools > .ui-button {
-    width: 31px;
-    min-height: 30px;
   }
   .editor-filmstrip {
     height: 79px;

@@ -8,7 +8,7 @@ import PreannotationProfileDialog from "../components/PreannotationProfileDialog
 import PreannotationThumbnail from "../components/PreannotationThumbnail.vue";
 import ConnectionTestResult from "../components/ConnectionTestResult.vue";
 import PreannotationPromptHistory from "../components/PreannotationPromptHistory.vue";
-import DatasetTabs from "../components/DatasetTabs.vue";
+import DatasetHeader from "../components/DatasetHeader.vue";
 import PreannotationTrace from "./PreannotationTrace.vue";
 
 const route = useRoute(),
@@ -420,24 +420,11 @@ onUnmounted(() => {
 
 <template>
   <div class="preannotation-page" v-loading="loading">
-    <header class="page-header">
-      <div>
-        <ui-button
-          link
-          @click="router.push(user.isAdmin ? '/admin/datasets' : '/')"
-          >← {{ user.isAdmin ? "数据集管理" : "数据集" }}</ui-button
-        >
-        <h1>{{ dataset?.name || "数据集" }} · 预标注</h1>
-        <p>输入识别要求，后台批量生成候选框，再由你审核。</p>
-      </div>
-      <div class="page-actions">
-        <ui-button icon="Server" @click="router.push('/profiles')"
-          >管理推理接口</ui-button
-        ><ui-button @click="router.push(`/annotate/${datasetId}`)"
-          >打开标注工作台</ui-button
-        >
-      </div>
-    </header>
+    <DatasetHeader
+      :dataset-id="datasetId"
+      :dataset="dataset"
+      :loading="loading"
+    />
     <ui-alert
       v-if="!polling"
       title="自动刷新已暂停，请检查服务后点击刷新。"
@@ -445,13 +432,19 @@ onUnmounted(() => {
       :closable="false"
       show-icon
     />
-    <DatasetTabs :dataset-id="datasetId" />
     <div class="preannotation-layout">
       <aside class="generation-rail">
         <section class="generation-panel">
           <div class="section-title">
             <h2>创建预标注任务</h2>
-            <span>关闭页面不影响后台任务</span>
+            <ui-button
+              variant="ghost"
+              circle
+              icon="Server"
+              aria-label="管理推理接口"
+              title="管理推理接口"
+              @click="router.push('/profiles')"
+            />
           </div>
           <ui-form label-position="top" @submit.prevent>
             <div class="config-grid">
@@ -463,19 +456,32 @@ onUnmounted(() => {
                       :key="p.id"
                       :value="p.id"
                       :label="`${p.name}${p.is_shared ? '（共享）' : ''}`" /></ui-select
-                  ><ui-button @click="configure()">添加</ui-button
                   ><ui-button
+                    class="interface-action"
+                    icon="Plus"
+                    circle
+                    aria-label="添加接口"
+                    title="添加接口"
+                    @click="configure()"
+                  /><ui-button
+                    class="interface-action"
+                    icon="Pencil"
+                    circle
+                    aria-label="编辑接口"
+                    title="编辑接口"
                     :disabled="!canEditProfile"
                     @click="configure(selectedProfile)"
-                    >编辑</ui-button
-                  ><ui-button
+                  /><ui-button
+                    class="interface-action"
+                    icon="FlaskConical"
+                    circle
+                    aria-label="测试连接"
+                    title="测试连接"
                     :disabled="!profileId"
                     :loading="testingConnection"
                     @click="testConnection"
-                    >测试连接</ui-button
-                  >
-                </div></ui-form-item
-              >
+                  /></div
+              ></ui-form-item>
               <ui-form-item label="输出形状"
                 ><ui-select v-model="shape"
                   ><ui-option value="bbox" label="矩形框" /><ui-option
@@ -867,20 +873,6 @@ onUnmounted(() => {
   min-width: 0;
   color: #263445;
 }
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-.page-header h1 {
-  font-size: 26px;
-  margin: 12px 0 8px;
-}
-.page-header p {
-  color: #64748b;
-  margin: 0;
-}
 section {
   background: white;
   border: 1px solid #e6eaf0;
@@ -947,17 +939,20 @@ section {
   width: 100%;
 }
 .interface-picker {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, 35px);
+  align-items: center;
   width: 100%;
-  gap: 8px;
+  gap: 6px;
 }
 .interface-picker .ui-select {
-  flex: 1 1 150px;
   min-width: 0;
 }
-.interface-picker .ui-button + .ui-button {
-  margin-left: 0;
+.interface-picker > .interface-action {
+  width: 35px;
+  height: 35px;
+  min-height: 35px;
+  padding: 0;
 }
 .generation-actions {
   display: flex;
@@ -1003,11 +998,6 @@ section {
   gap: 10px;
   padding: 0 13px 13px;
 }
-.page-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 .image-card {
   width: 100%;
   display: block;
@@ -1019,11 +1009,12 @@ section {
   background: white;
   cursor: pointer;
   color: inherit;
-  transition: box-shadow 0.15s;
+  transition: none;
 }
 .image-card:hover {
-  box-shadow: 0 3px 16px #21354718;
-  border-color: #8cb4e8;
+  background: white;
+  color: inherit;
+  box-shadow: none;
 }
 .image-card-body {
   padding: 13px;
@@ -1104,12 +1095,6 @@ section {
   .filters .ui-select:first-child {
     width: calc(50% - 6px);
   }
-  .page-header h1 {
-    font-size: 20px;
-  }
-  .page-header {
-    gap: 10px;
-  }
   .section-title > span {
     display: none;
   }
@@ -1138,9 +1123,6 @@ section {
 .generation-rail .config-grid > div:first-child {
   grid-column: auto;
 }
-.generation-rail .interface-picker .ui-select {
-  flex-basis: 100%;
-}
 .generation-rail .generation-actions {
   gap: 10px;
 }
@@ -1168,9 +1150,19 @@ section {
 }
 .preannotation-results .filters {
   gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 .preannotation-results .filters .ui-select {
-  width: calc(50% - 5px);
+  width: auto;
+  flex: 1 0 120px;
+}
+.preannotation-results .filters .ui-select:first-child {
+  flex: 1.5 0 180px;
+}
+.preannotation-results .filters > span {
+  flex: none;
+  white-space: nowrap;
 }
 .results-display {
   display: flex;
@@ -1224,9 +1216,6 @@ section {
   .generation-rail .config-grid > div:first-child {
     grid-column: 1/-1;
   }
-  .generation-rail .interface-picker .ui-select {
-    flex-basis: 150px;
-  }
   .generation-rail .generation-actions > .ui-button--primary {
     flex-basis: auto;
   }
@@ -1249,9 +1238,6 @@ section {
   }
   .results-display {
     width: 100%;
-  }
-  .page-header {
-    flex-wrap: wrap;
   }
 }
 </style>

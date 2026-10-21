@@ -8,7 +8,7 @@ watch(editor, value => document.documentElement.classList.toggle('dark', value),
 </script>
 <template>
   <router-view />
-  <footer class="footer-records" :class="{ 'editor-footer': editor }"><div><ui-link href="https://beian.mps.gov.cn/#/query/webSearch?code=33021202003929" target="_blank" rel="noopener noreferrer"><img alt="浙公网安备图标" width="13" height="13" src="/beian.png" />浙公网安备33021202003929号</ui-link><ui-link href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2024118372号-1</ui-link></div><p>By <ui-link href="https://github.com/Gentle-Lijie">Gentle-Lijie</ui-link> · <ui-link href="https://github.com/unnc-aim">UNNC RoboMaster AIM Team</ui-link></p></footer>
+  <footer class="footer-records" :class="{ 'editor-footer': editor }"><div><ui-link href="https://beian.mps.gov.cn/#/query/webSearch?code=33021202003929" target="_blank" rel="noopener noreferrer"><img alt="浙公网安备图标" width="13" height="13" src="/beian.png" />浙公网安备33021202003929号</ui-link><ui-link href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备2024118372号-1</ui-link></div><p><ui-link href="https://github.com/Gentle-Lijie">Gentle-Lijie</ui-link> · <ui-link href="https://github.com/unnc-aim">AIM Robotics @ UNNC</ui-link></p></footer>
   <FeedbackHost />
 </template>
 <style scoped>

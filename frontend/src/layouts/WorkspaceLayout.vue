@@ -2,22 +2,10 @@
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
+import BrandLogo from "../components/BrandLogo.vue";
 const route = useRoute(),
   router = useRouter(),
   user = useUserStore();
-function preference() {
-  try {
-    return JSON.parse(
-      localStorage.getItem("robomark-workspace-preferences") || "{}",
-    );
-  } catch {
-    return {};
-  }
-}
-const workspacePreference = ref(preference());
-function preferencesChanged() {
-  workspacePreference.value = preference();
-}
 const navigationOpen = ref(false),
   searchOpen = ref(false),
   search = ref("");
@@ -32,12 +20,10 @@ const links = computed(() => [
   ...(user.isAdmin
     ? [
         { path: "/admin/users", title: "工作空间成员", icon: "Users" },
-        { path: "/admin/statistics", title: "标注统计", icon: "PieChart" },
         { path: "/admin/export", title: "数据导出", icon: "Download" },
       ]
     : []),
   { path: "/profiles", title: "推理接口", icon: "Server" },
-  { path: "/settings", title: "工作空间设置", icon: "Setting" },
   { path: "/tutorial", title: "使用教程与快捷键", icon: "BookOpen" },
 ]);
 const active = computed(() =>
@@ -48,11 +34,17 @@ const active = computed(() =>
       : "/"
     : route.path,
 );
-const title = computed(
-  () =>
-    route.meta.title ||
-    links.value.find((l) => l.path === active.value)?.title ||
-    "工作空间",
+const title = computed(() =>
+  [
+    "DatasetDetail",
+    "Preannotation",
+    "AdminCategories",
+    "DatasetSettings",
+  ].includes(String(route.name))
+    ? "数据集"
+    : route.meta.title ||
+      links.value.find((l) => l.path === active.value)?.title ||
+      "工作空间",
 );
 function navigate(path) {
   navigationOpen.value = false;
@@ -71,31 +63,21 @@ function keydown(e) {
 }
 onMounted(() => {
   window.addEventListener("keydown", keydown);
-  window.addEventListener("workspace-preferences", preferencesChanged);
 });
 onUnmounted(() => {
   window.removeEventListener("keydown", keydown);
-  window.removeEventListener("workspace-preferences", preferencesChanged);
 });
 </script>
 <template>
   <div class="workspace-shell" :class="{ 'navigation-open': navigationOpen }">
     <aside class="workspace-sidebar">
-      <ui-button variant="ghost" class="workspace-brand" aria-label="返回标注首页" @click="navigate('/')"
-        ><span class="brand-mark"><ui-icon name="ScanLine" :size="21" /></span
-        ><strong>RoboMark<span>.</span></strong></ui-button
+      <ui-button
+        variant="ghost"
+        class="workspace-brand"
+        aria-label="返回标注首页"
+        @click="navigate('/')"
+        ><BrandLogo /><strong>RoboMark<span>.</span></strong></ui-button
       >
-      <div class="workspace-team">
-        <span class="team-mark">AIM</span>
-        <div>
-          <strong>{{ workspacePreference.name || "AIM 视觉工作空间" }}</strong
-          ><small>{{
-            workspacePreference.description || "机器人视觉 · 标注与审核"
-          }}</small>
-        </div>
-        <ui-icon name="ArrowDown" />
-      </div>
-      <p class="navigation-caption">工作空间</p>
       <nav class="workspace-nav" aria-label="工作空间导航">
         <ui-button
           v-for="(link, index) in links"
@@ -103,6 +85,7 @@ onUnmounted(() => {
           variant="ghost"
           :class="{
             active: active === link.path && (link.path !== '/' || index === 0),
+            'navigation-section-start': link.path === '/profiles',
           }"
           :aria-current="active === link.path ? 'page' : undefined"
           @click="navigate(link.path)"
@@ -193,37 +176,23 @@ onUnmounted(() => {
 }
 .workspace-brand {
   justify-content: flex-start;
+  gap: 8px;
+  min-height: 39px;
   padding: 4px 8px;
   margin: -4px 0 21px;
-  font-size: 22px;
   color: var(--foreground);
 }
+.workspace-brand :deep(.brand-logo) {
+  width: 52px;
+}
 .workspace-brand strong {
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -1px;
 }
 .workspace-brand strong > span {
   color: var(--primary);
 }
-.brand-mark {
-  width: 31px;
-  height: 31px;
-  background: var(--primary);
-  color: white;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-}
-.workspace-team {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 13px 7px;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 27px;
-}
-.team-mark,
 .account-avatar {
   display: grid;
   place-items: center;
@@ -236,31 +205,6 @@ onUnmounted(() => {
   font-size: 10px;
   font-weight: 650;
   flex-shrink: 0;
-}
-.workspace-team strong {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-}
-.workspace-team small {
-  display: block;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 9px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-.workspace-team > svg {
-  margin-left: auto;
-  width: 12px;
-  color: var(--muted);
-}
-.navigation-caption {
-  color: #9aa1af;
-  font-size: 10px;
-  margin: 0 12px 11px;
 }
 .workspace-nav {
   display: flex;
@@ -281,7 +225,7 @@ onUnmounted(() => {
   color: var(--primary);
   font-weight: 600;
 }
-.workspace-nav .ui-button:nth-last-child(3) {
+.workspace-nav .navigation-section-start {
   margin-top: 22px;
 }
 .sidebar-note {
@@ -394,9 +338,6 @@ onUnmounted(() => {
   }
   .workspace-main {
     padding: 25px;
-  }
-  .workspace-team strong {
-    font-size: 9px;
   }
   .workspace-topbar {
     padding: 0 24px;

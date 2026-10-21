@@ -1,6 +1,7 @@
 <script setup>
 import UiCarousel from "../shared/ui/Carousel.vue";
 import { cards } from "../assets/aim-cards";
+import BrandLogo from "../components/BrandLogo.vue";
 defineProps({ register: Boolean });
 </script>
 <template>
@@ -16,7 +17,7 @@ defineProps({ register: Boolean });
         >
       </p>
       <div class="auth-form-content">
-        <div class="auth-mini-brand"><ui-icon name="ScanLine" />RoboMark</div>
+        <div class="auth-mini-brand"><BrandLogo /></div>
         <h2>{{ register ? "加入工作空间" : "欢迎回来。" }}</h2>
         <p>
           {{
@@ -65,15 +66,7 @@ defineProps({ register: Boolean });
   padding: 45px 0;
 }
 .auth-mini-brand {
-  display: flex;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  align-items: center;
   margin-bottom: 28px;
-}
-.auth-mini-brand > svg {
-  color: var(--primary);
 }
 .auth-form-content h2 {
   font-size: 29px;

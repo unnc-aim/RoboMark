@@ -6,7 +6,7 @@ import { datasetApi, datasetKeys } from "../shared/api/datasets";
 import { useUserStore } from "../stores/user";
 import api from "../utils/api";
 import { message, messageBox } from "../shared/ui/feedback";
-import DatasetTabs from "../components/DatasetTabs.vue";
+import DatasetHeader from "../components/DatasetHeader.vue";
 const route = useRoute(),
   router = useRouter(),
   user = useUserStore(),
@@ -59,44 +59,18 @@ async function remove() {
 </script>
 <template>
   <div v-loading="dataset.isPending.value">
+    <DatasetHeader
+      :dataset-id="id"
+      :dataset="dataset.data.value"
+      :loading="dataset.isPending.value"
+    />
     <ui-alert
       v-if="dataset.isError.value"
       type="error"
       title="无法加载数据集，请检查权限与服务状态"
       ><ui-button @click="dataset.refetch()">重新加载</ui-button></ui-alert
     >
-    <template v-if="dataset.data.value"
-      ><header class="page-heading">
-        <div>
-          <ui-button
-            variant="ghost"
-            icon="ArrowLeft"
-            @click="router.push(user.isAdmin ? '/admin/datasets' : '/')"
-            >全部数据集</ui-button
-          >
-          <h1>{{ dataset.data.value.name }}</h1>
-          <p>
-            {{
-              dataset.data.value.description || "查看图片、管理类别并开始标注。"
-            }}
-          </p>
-        </div>
-        <div class="page-heading-actions">
-          <ui-button
-            v-if="user.isAdmin"
-            :loading="scanning"
-            icon="Folder"
-            @click="scan"
-            >扫描图片</ui-button
-          ><ui-button
-            type="primary"
-            icon="Play"
-            @click="router.push(`/annotate/${id}`)"
-            >开始标注</ui-button
-          >
-        </div>
-      </header>
-      <DatasetTabs :dataset-id="id" />
+    <template v-if="dataset.data.value">
       <div class="summary-strip">
         <span
           ><strong>{{ dataset.data.value.total_images }}</strong> 张图片</span
@@ -126,14 +100,23 @@ async function remove() {
             <h2>图片浏览</h2>
             <p>选择图片进入人工标注工作台</p>
           </div>
-          <ui-select
-            v-model="pageSize"
-            aria-label="每页图片数量"
-            style="width: 120px"
-            ><ui-option :value="6" label="每页 6 张" /><ui-option
-              :value="12"
-              label="每页 12 张"
-          /></ui-select>
+          <div class="image-browser-actions">
+            <ui-button
+              v-if="user.isAdmin"
+              :loading="scanning"
+              icon="Folder"
+              @click="scan"
+              >扫描图片</ui-button
+            >
+            <ui-select
+              v-model="pageSize"
+              aria-label="每页图片数量"
+              style="width: 120px"
+              ><ui-option :value="6" label="每页 6 张" /><ui-option
+                :value="12"
+                label="每页 12 张"
+            /></ui-select>
+          </div>
         </div>
         <ui-alert v-if="images.isError.value" type="error" title="图片加载失败"
           ><ui-button @click="images.refetch()">重试</ui-button></ui-alert
@@ -192,6 +175,12 @@ async function remove() {
   </div>
 </template>
 <style scoped>
+.image-browser-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .detail-images {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -238,13 +227,6 @@ async function remove() {
   gap: 15px;
   margin-top: 22px;
   overflow-wrap: anywhere;
-}
-.page-heading h1 {
-  margin-top: 10px;
-}
-.page-heading .ui-button--ghost {
-  padding-left: 0;
-  font-size: 11px;
 }
 @media (max-width: 1000px) {
   .detail-images {

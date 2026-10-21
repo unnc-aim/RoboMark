@@ -65,10 +65,6 @@ const routes = [
     children: [{ path: '', name: 'Profiles', component: () => import('../views/Profiles.vue'), meta: { title: '推理接口' } }]
   },
   {
-    path: '/settings', component: () => import('../views/Admin/Layout.vue'), meta: { requiresAuth: true },
-    children: [{ path: '', name: 'WorkspaceSettings', component: () => import('../views/WorkspaceSettings.vue'), meta: { title: '工作空间设置' } }]
-  },
-  {
     path: '/tutorial',
     name: 'Tutorial',
     component: () => import('../views/Tutorial.vue'),
@@ -101,16 +97,19 @@ const routes = [
         component: () => import('../views/Admin/Users.vue')
       },
       {
-        path: 'statistics',
-        name: 'AdminStatistics',
-        component: () => import('../views/Admin/Statistics.vue')
-      },
-      {
         path: 'export',
         name: 'AdminExport',
         component: () => import('../views/Admin/Export.vue')
+      },
+      {
+        path: ':pathMatch(.*)*',
+        redirect: '/admin'
       }
     ]
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
   }
 ]
 

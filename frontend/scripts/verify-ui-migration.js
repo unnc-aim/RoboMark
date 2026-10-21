@@ -759,8 +759,7 @@ async (page) => {
         .getByRole("textbox", { name: "搜索成员姓名或邮箱" })
         .fill("视觉组");
       check((await page.getByRole("row").count()) === 2, "成员搜索");
-      await page.getByRole("button", { name: "更多", exact: true }).click();
-      await page.getByRole("menuitem").first().click();
+      await page.getByRole("button", { name: "设为管理员", exact: true }).click();
       await page.getByRole("alertdialog").waitFor();
       await page
         .getByRole("alertdialog")
@@ -813,7 +812,7 @@ async (page) => {
       await page.waitForFunction(
         () => document.querySelector(".canvas-container canvas")?.height > 0,
       );
-      await page.getByRole("button", { name: "矩形工具", exact: true }).click();
+      await page.getByRole("radio", { name: "矩形工具", exact: true }).click();
       const box = await page.locator(".canvas-container canvas").boundingBox();
       const draw = async () => {
         await page.mouse.move(
@@ -1058,9 +1057,9 @@ async (page) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto("http://127.0.0.1:5173/admin/datasets");
       await page.getByRole("button", { name: "打开导航", exact: true }).click();
-      await page.getByRole("button", { name: "标注统计", exact: true }).click();
+      await page.getByRole("button", { name: "推理接口", exact: true }).click();
       await page
-        .getByRole("heading", { name: "工作量统计", exact: true })
+        .getByRole("heading", { name: "推理接口", exact: true })
         .waitFor();
       check(true, "移动导航切换页面");
       return {
@@ -1088,7 +1087,7 @@ async (page) => {
       const box = await page.locator(".canvas-container canvas").boundingBox();
       const at = async (x, y) =>
         page.mouse.click(box.x + box.width * x, box.y + box.height * y);
-      await page.getByRole("button", { name: "四点工具", exact: true }).click();
+      await page.getByRole("radio", { name: "四点工具", exact: true }).click();
       for (const [x, y] of [
         [0.3, 0.4],
         [0.4, 0.4],
@@ -1103,7 +1102,7 @@ async (page) => {
         (await page.locator(".annotation-item").count()) === 1,
         "四点绘制接入原画布",
       );
-      await page.getByRole("button", { name: "八点工具", exact: true }).click();
+      await page.getByRole("radio", { name: "八点工具", exact: true }).click();
       for (const [x, y] of [
         [0.5, 0.4],
         [0.65, 0.4],
@@ -1298,11 +1297,9 @@ async (page) => {
         ["manual", "/annotate/1?source=manual&image=7"],
         ["categories", "/admin/categories/1"],
         ["members", "/admin/users"],
-        ["statistics", "/admin/statistics"],
         ["export", "/admin/export"],
         ["profiles", "/profiles"],
         ["settings", "/datasets/1/settings"],
-        ["workspace-settings", "/settings"],
         ["tutorial", "/tutorial"],
         ["login", "/login"],
         ["register", "/register"],

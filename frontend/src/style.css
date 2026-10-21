@@ -29,6 +29,8 @@
 }
 .page-heading-actions {
   display: flex;
+  align-items: center;
+  flex-shrink: 0;
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -145,7 +147,6 @@
   flex-wrap: wrap;
 }
 .workspace-main .users-page,
-.workspace-main .statistics-page,
 .workspace-main .categories-page,
 .workspace-main .datasets-page,
 .workspace-main .export-page {
@@ -159,19 +160,6 @@
 .workspace-main .page-header h2 {
   font-size: 27px;
   color: var(--foreground);
-}
-.workspace-main .chart-section,
-.workspace-main .user-stats-section {
-  padding: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-.workspace-main .mini-bar {
-  height: 5px;
-}
-.workspace-main .mini-bar .bar {
-  background: var(--primary);
 }
 .workspace-main .value {
   color: var(--primary);

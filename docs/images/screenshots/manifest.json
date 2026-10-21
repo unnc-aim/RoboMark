@@ -64,13 +64,6 @@
       "sha256": "122cc237064a6328c61611fb55a8d509f143cea17cbff8db28397c62a0f35e70"
     },
     {
-      "file": "statistics.png",
-      "title": "工作量统计",
-      "route": "/admin/statistics",
-      "state": "每日记录、用户贡献与筛选",
-      "sha256": "c27f2ea8ec88e23d34039178f9eadd0f87f13876e2229f194ce7d5aeecb8f7dd"
-    },
-    {
       "file": "export.png",
       "title": "数据集导出",
       "route": "/admin/export",
@@ -201,5 +194,5 @@
       "sha256": "6955357010561829550bed220cb5f38544a91a44a7bf0002c35b2db99e98838a"
     }
   ],
-  "updated_on": "2026-10-20"
+  "updated_on": "2026-10-21"
 }
