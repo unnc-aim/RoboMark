@@ -3,7 +3,7 @@
 <p>做视觉的同学应该都不陌生：收了一批图，先找目录、建类别；标到一半想用模型跑个粗标，又去改脚本、处理输出格式；跑完发现有漏框和错框，还得换回标注软件逐张修；最后再写脚本分训练集、验证集。一圈下来，模型还没开始训，时间先花在搬数据上了。</p>
 <p>RoboMark 想解决的就是这些中间环节。<strong>把数据集导入、人工标注、模型批量预标注、结果审核和导出放在同一个网页里</strong>，队里部署一份，其他人打开浏览器就能用。</p>
 <p>先放仓库，代码和使用文档都在这里：</p>
-<p><strong>GitHub：https://github.com/unnc-aim/RoboMark</strong></p>
+<p><strong><a href="https://github.com/unnc-aim/RoboMark">GitHub：unnc-aim/RoboMark</a></strong></p>
 <p>项目采用 MIT 协议，欢迎直接用，也欢迎按自己队伍的习惯改。</p>
 <p><img alt="线上已有的装甲板批量预标注结果" src="images/04-results-grid.png" /></p>
 <p><em>图 1：线上 DJI-Armor-QDU 数据集的一轮真实预标注结果。候选框、处理状态、审核状态和推理用量在同一张卡片里，点进去就能继续审核。</em></p>
@@ -252,5 +252,5 @@ cp backend/.env.example backend/.env
 </ol>
 <p>后续还想补框的复制粘贴、键盘微调、自动保存和更完整的协作流程。当前人工标注记得主动保存；审核里则注意“存草稿”和“通过”的区别。</p>
 <p>做这套工具的出发点其实很简单：队里标图的人已经够辛苦了，找图、切软件、拷结果、改格式这些事，能少折腾一点就少折腾一点。常用功能尽量放全，常走的流程尽量短，让负责视觉的人把时间用在数据和模型本身上。</p>
-<p>仓库再放一次：<strong>https://github.com/unnc-aim/RoboMark</strong></p>
+<p>仓库再放一次：<strong><a href="https://github.com/unnc-aim/RoboMark">https://github.com/unnc-aim/RoboMark</a></strong></p>
 <p>欢迎各位试用、提 Issue。遇到问题的话，带上操作步骤、接口返回或报错截图会更方便定位；有自己队里用顺手的标注流程，也欢迎交流，我们再慢慢把它补好。</p></article></html>

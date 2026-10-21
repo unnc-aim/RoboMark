@@ -8,7 +8,7 @@ RoboMark 想解决的就是这些中间环节。**把数据集导入、人工标
 
 先放仓库，代码和使用文档都在这里：
 
-**GitHub：https://github.com/unnc-aim/RoboMark**
+**[GitHub：unnc-aim/RoboMark](https://github.com/unnc-aim/RoboMark)**
 
 项目采用 MIT 协议，欢迎直接用，也欢迎按自己队伍的习惯改。
 
@@ -279,6 +279,6 @@ cp backend/.env.example backend/.env
 
 做这套工具的出发点其实很简单：队里标图的人已经够辛苦了，找图、切软件、拷结果、改格式这些事，能少折腾一点就少折腾一点。常用功能尽量放全，常走的流程尽量短，让负责视觉的人把时间用在数据和模型本身上。
 
-仓库再放一次：**https://github.com/unnc-aim/RoboMark**
+仓库再放一次：**[https://github.com/unnc-aim/RoboMark](https://github.com/unnc-aim/RoboMark)**
 
 欢迎各位试用、提 Issue。遇到问题的话，带上操作步骤、接口返回或报错截图会更方便定位；有自己队里用顺手的标注流程，也欢迎交流，我们再慢慢把它补好。
