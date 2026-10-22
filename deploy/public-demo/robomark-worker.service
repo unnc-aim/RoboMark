@@ -5,15 +5,15 @@ After=network.target robomark-api.service
 [Service]
 User=robomark
 Group=robomark
-WorkingDirectory=/opt/robomark/app/backend
-EnvironmentFile=/opt/robomark/shared/backend.env
+WorkingDirectory=/root/robomark/app/backend
+EnvironmentFile=/root/robomark/shared/backend.env
 Environment=PYTHONDONTWRITEBYTECODE=1
-ExecStart=/opt/robomark/venv/bin/python -m app.preannotation_worker
+ExecStart=/root/robomark/venv/bin/python -m app.preannotation_worker
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectHome=true
+ProtectHome=read-only
 ProtectSystem=strict
-ReadWritePaths=/opt/robomark/data /opt/robomark/run
+ReadWritePaths=/root/robomark/data /root/robomark/run
 UMask=0027

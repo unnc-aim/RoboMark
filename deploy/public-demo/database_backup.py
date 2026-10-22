@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'backend'))
 from dotenv import load_dotenv
-load_dotenv('/opt/robomark/shared/backend.env')
+load_dotenv('/root/robomark/shared/backend.env')
 from app.core.database import db_config
 
 output = Path(sys.argv[1])

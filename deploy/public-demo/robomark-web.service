@@ -6,15 +6,15 @@ Wants=robomark-api.service
 [Service]
 User=robomark
 Group=robomark
-ExecStartPre=/www/server/nginx/sbin/nginx -p /opt/robomark/run/ -c /opt/robomark/app/deploy/public-demo/nginx.conf -t
-ExecStart=/www/server/nginx/sbin/nginx -p /opt/robomark/run/ -c /opt/robomark/app/deploy/public-demo/nginx.conf -g "daemon off;"
+ExecStartPre=/www/server/nginx/sbin/nginx -p /root/robomark/run/ -c /root/robomark/app/deploy/public-demo/nginx.conf -t
+ExecStart=/www/server/nginx/sbin/nginx -p /root/robomark/run/ -c /root/robomark/app/deploy/public-demo/nginx.conf -g "daemon off;"
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=5
 NoNewPrivileges=true
-ProtectHome=true
+ProtectHome=read-only
 ProtectSystem=strict
-ReadWritePaths=/opt/robomark/run
+ReadWritePaths=/root/robomark/run
 
 [Install]
 WantedBy=multi-user.target

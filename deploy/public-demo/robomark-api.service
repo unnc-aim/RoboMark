@@ -5,17 +5,17 @@ After=network.target
 [Service]
 User=robomark
 Group=robomark
-WorkingDirectory=/opt/robomark/app/backend
-EnvironmentFile=/opt/robomark/shared/backend.env
+WorkingDirectory=/root/robomark/app/backend
+EnvironmentFile=/root/robomark/shared/backend.env
 Environment=PYTHONDONTWRITEBYTECODE=1
-ExecStart=/opt/robomark/venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 18000 --proxy-headers --forwarded-allow-ips 127.0.0.1
+ExecStart=/root/robomark/venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 18000 --proxy-headers --forwarded-allow-ips 127.0.0.1
 Restart=always
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectHome=true
+ProtectHome=read-only
 ProtectSystem=strict
-ReadWritePaths=/opt/robomark/data /opt/robomark/run
+ReadWritePaths=/root/robomark/data /root/robomark/run
 UMask=0027
 
 [Install]

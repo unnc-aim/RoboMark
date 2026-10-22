@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
-secrets = json.loads(Path('/opt/robomark/shared/deployment-secrets.json').read_text())
+secrets = json.loads(Path('/root/robomark/shared/deployment-secrets.json').read_text())
 with httpx.Client(base_url='http://127.0.0.1:12345', timeout=60, trust_env=False) as c:
     assert c.get('/api/health').json()['status'] == 'healthy'
     login = c.post('/api/auth/login', data={'username':'demo','password':secrets['demo_password']})

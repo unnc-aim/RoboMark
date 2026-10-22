@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-ROOT = Path('/opt/robomark')
+ROOT = Path('/root/robomark')
 sys.path.insert(0, str(ROOT / 'app/backend'))
 load_dotenv(ROOT / 'shared/backend.env')
 from app.core.database import get_db
