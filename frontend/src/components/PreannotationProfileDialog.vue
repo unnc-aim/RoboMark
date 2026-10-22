@@ -2,7 +2,7 @@
 import { ref, watch, computed, nextTick } from "vue";
 import { message, messageBox } from "../shared/ui/feedback";
 import { useUserStore } from "../stores/user";
-import api from "../utils/api";
+import api, { reportError } from "../utils/api";
 import ConnectionTestResult from "./ConnectionTestResult.vue";
 
 const props = defineProps({ modelValue: Boolean, profile: Object });
@@ -159,6 +159,8 @@ async function save() {
     message.success("接口配置已保存");
     emit("saved", response.data);
     visible.value = false;
+  } catch (error) {
+    await reportError(error);
   } finally {
     busy.value = false;
   }
@@ -179,6 +181,8 @@ async function remove() {
     await api.delete(`/preannotation/profiles/${props.profile.id}`);
     emit("saved", null);
     visible.value = false;
+  } catch (error) {
+    await reportError(error);
   } finally {
     busy.value = false;
   }

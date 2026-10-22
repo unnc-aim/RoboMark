@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { message } from "../shared/ui/feedback";
 import {
   lineIntersection,
   pointInPolygon,
@@ -31,6 +32,8 @@ const canvasRef = ref(null);
 const containerRef = ref(null);
 const ctx = ref(null);
 const image = ref(null);
+const imageFailed = ref(false);
+let imageGeneration = 0;
 let resizeObserver;
 
 // 画布状态
@@ -80,6 +83,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  imageGeneration++;
   resizeObserver?.disconnect();
   window.removeEventListener("keydown", handleKeyDown);
   window.removeEventListener("keyup", handleKeyUp);
@@ -130,14 +134,25 @@ watch(
 );
 
 function loadImage() {
+  const generation = ++imageGeneration;
+  image.value = null;
+  imageFailed.value = false;
+  draw();
   if (!props.imageId) return;
 
   const img = new Image();
   img.crossOrigin = "anonymous";
   img.onload = () => {
+    if (generation !== imageGeneration) return;
     image.value = img;
     fitToContainer();
     draw();
+  };
+  img.onerror = () => {
+    if (generation === imageGeneration) {
+      imageFailed.value = true;
+      message.error("图片加载失败，请检查网络或图片文件", { id: `image-error:${props.imageId}` });
+    }
   };
   img.src = imageUrl.value;
 }
@@ -189,6 +204,8 @@ function draw() {
     ctx.value.drawImage(image.value, 0, 0);
     ctx.value.restore();
   }
+
+  if (!image.value) return;
 
   // 绘制已有标注
   props.annotations.forEach((ann, index) => {
@@ -445,6 +462,7 @@ function screenToImage(screenX, screenY) {
 
 function handleMouseDown(e) {
   e.preventDefault();
+  if (!image.value) return;
 
   const rect = canvasRef.value.getBoundingClientRect();
   const screenX = e.clientX - rect.left;
@@ -884,6 +902,7 @@ function completePointAnnotation() {
 // 计算两条直线的交点（归一化坐标）
 function handleWheel(e) {
   e.preventDefault();
+  if (!image.value) return;
 
   const rect = canvasRef.value.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
@@ -1145,6 +1164,9 @@ defineExpose({
 
 <template>
   <div ref="containerRef" class="canvas-wrapper">
+    <ui-alert v-if="imageFailed" class="image-error" type="error" title="图片加载失败，请检查网络或图片文件" role="alert">
+      <ui-button @click="loadImage">重新加载图片</ui-button>
+    </ui-alert>
     <canvas
       ref="canvasRef"
       @mousedown="handleMouseDown"
@@ -1158,9 +1180,18 @@ defineExpose({
 
 <style scoped>
 .canvas-wrapper {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+.image-error {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 1;
 }
 
 canvas {

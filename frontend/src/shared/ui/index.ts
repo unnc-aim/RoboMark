@@ -104,6 +104,8 @@ import {
   Activity,
 } from "@lucide/vue";
 
+import { apiFetch, reportError } from "../../utils/api";
+
 const icons: Record<string, any> = {
   ArrowLeft,
   ArrowRight,
@@ -631,7 +633,9 @@ export const UiDialog = defineComponent({
               class: ["ui-dialog", attrs.class],
               style: [{ width: p.width || "560px" }, attrs.style],
               onPointerDownOutside: (e: Event) => {
-                if (!p.closeOnClickModal) e.preventDefault();
+                const target = (e as CustomEvent).detail?.originalEvent?.target;
+                if (!p.closeOnClickModal || (target instanceof Element && target.closest("[data-sonner-toaster]")))
+                  e.preventDefault();
               },
               onEscapeKeyDown: (e: Event) => {
                 if (!p.closeOnPressEscape) e.preventDefault();
@@ -1018,14 +1022,14 @@ export const UiUpload = defineComponent({
           const body = new FormData();
           body.append("file", file.raw);
           try {
-            const res = await fetch(p.action, {
+            const res = await apiFetch(p.action, {
               method: "POST",
               headers: p.headers as HeadersInit,
               body,
             });
-            if (!res.ok) throw new Error("上传失败");
             p.onSuccess?.(await res.json(), file);
           } catch (e) {
+            await reportError(e, "上传失败");
             p.onError?.(e);
           }
         }

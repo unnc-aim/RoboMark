@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message, messageBox } from "../../shared/ui/feedback";
-import api from "../../utils/api";
+import api, { reportError } from "../../utils/api";
 import { useQueryClient } from "@tanstack/vue-query";
 const queryClient = useQueryClient();
 import DatasetHeader from "../../components/DatasetHeader.vue";
@@ -202,7 +202,7 @@ async function handleImportFromDataset() {
     importDialogVisible.value = false;
     loadData();
   } catch (error) {
-    message.error(error.response?.data?.detail || "导入失败");
+    await reportError(error, "导入失败");
   }
 }
 
@@ -214,7 +214,7 @@ async function handleImportFromConfig() {
     message.success(response.data.message);
     loadData();
   } catch (error) {
-    message.error(error.response?.data?.detail || "导入失败");
+    await reportError(error, "导入失败");
   }
 }
 
@@ -249,7 +249,7 @@ async function handleBatchTextImport() {
     batchText.value = "";
     loadData();
   } catch (error) {
-    message.error(error.response?.data?.detail || "导入失败");
+    await reportError(error, "导入失败");
   }
 }
 
@@ -258,8 +258,8 @@ function handleUploadSuccess() {
   loadData();
 }
 
-function handleUploadError() {
-  message.error("模板图片上传失败");
+function handleUploadError(error) {
+  void reportError(error, "模板图片上传失败");
 }
 
 async function handleDeleteTemplateImage(category) {
@@ -268,7 +268,7 @@ async function handleDeleteTemplateImage(category) {
     message.success("模板图片已删除");
     loadData();
   } catch (error) {
-    message.error(error.response?.data?.detail || "删除失败");
+    await reportError(error, "删除失败");
   }
 }
 
@@ -304,7 +304,7 @@ async function handleBatchImageImport() {
     batchImageFiles.value = [];
     loadData();
   } catch (error) {
-    message.error(error.response?.data?.detail || "导入失败");
+    await reportError(error, "导入失败");
   } finally {
     batchImageUploading.value = false;
   }

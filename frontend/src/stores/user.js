@@ -8,8 +8,10 @@ const USER_STORAGE_KEY = 'robomark-user'
 
 export const useUserStore = defineStore('user', () => {
   // 尝试从 localStorage 恢复用户信息
-  const savedUser = localStorage.getItem(USER_STORAGE_KEY)
-  const user = ref(savedUser ? JSON.parse(savedUser) : null)
+  let savedUser = null
+  try { savedUser = JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null') }
+  catch { localStorage.removeItem(USER_STORAGE_KEY) }
+  const user = ref(savedUser)
   const token = ref(localStorage.getItem(STORAGE_KEY) || null)
   const initialized = ref(!token.value) // 没有 token 时视为已初始化
 
@@ -44,20 +46,30 @@ export const useUserStore = defineStore('user', () => {
     return response.data
   }
 
-  async function fetchUser() {
+  let userRequest = null
+  function fetchUser() {
+    if (userRequest) return userRequest
+    userRequest = refreshUser().finally(() => { userRequest = null })
+    return userRequest
+  }
+
+  async function refreshUser() {
     if (!token.value) {
       initialized.value = true
       return null
     }
 
+    const requestToken = token.value
     try {
       const response = await api.get('/auth/me')
+      if (token.value !== requestToken) return null
       user.value = response.data
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.data))
       initialized.value = true
       return response.data
     } catch (error) {
-      logout()
+      // Network/server failures do not invalidate credentials. The interceptor handles 401.
+      if (token.value === requestToken) initialized.value = true
       throw error
     }
   }

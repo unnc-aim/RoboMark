@@ -4,6 +4,7 @@ import AuthLayout from "../layouts/AuthLayout.vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "../stores/user";
 import { message } from "../shared/ui/feedback";
+import { getErrorMessage } from "../utils/apiErrors";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -15,8 +16,11 @@ const form = ref({
   email: "",
 });
 const loading = ref(false);
+const errorMessage = ref("");
 
 async function handleRegister() {
+  if (loading.value) return;
+  errorMessage.value = "";
   if (!form.value.username || !form.value.password) {
     message.warning("请填写用户名和密码");
     return;
@@ -42,7 +46,7 @@ async function handleRegister() {
     message.success("注册成功，请登录");
     router.push("/login");
   } catch (error) {
-    // 错误已在拦截器中处理
+    errorMessage.value = await getErrorMessage(error);
   } finally {
     loading.value = false;
   }
@@ -51,7 +55,8 @@ async function handleRegister() {
 
 <template>
   <AuthLayout register
-    ><ui-form @submit.prevent="handleRegister"
+    ><ui-alert v-if="errorMessage" type="error" :title="errorMessage" role="alert" />
+    <ui-form @submit.prevent="handleRegister"
       ><ui-form-item label="用户名"
         ><ui-input
           v-model="form.username"

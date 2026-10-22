@@ -2,7 +2,7 @@
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useQueryClient } from "@tanstack/vue-query";
-import api from "../utils/api";
+import api, { reportError } from "../utils/api";
 import { message } from "../shared/ui/feedback";
 import DatasetHeader from "../components/DatasetHeader.vue";
 import DirectoryPicker from "../components/DirectoryPicker.vue";
@@ -56,6 +56,8 @@ async function save() {
     await client.invalidateQueries({ queryKey: ["datasets"] });
     client.invalidateQueries({ queryKey: ["categories", id] });
     message.success("数据集设置已保存");
+  } catch (error) {
+    await reportError(error);
   } finally {
     busy.value = false;
   }
@@ -67,6 +69,8 @@ async function importData(kind: string) {
     message.success(r.data.message);
     client.invalidateQueries({ queryKey: ["datasets"] });
     client.invalidateQueries({ queryKey: ["categories", id] });
+  } catch (error) {
+    await reportError(error);
   } finally {
     busy.value = false;
   }

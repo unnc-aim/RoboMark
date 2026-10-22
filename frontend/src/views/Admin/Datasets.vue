@@ -2,8 +2,9 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { message } from "../../shared/ui/feedback";
-import api from "../../utils/api";
-import { useUserStore } from "../../stores/user";
+import api, { apiFetch, reportError } from "../../utils/api";
+import { getErrorMessage } from "../../utils/apiErrors";
+import { readImportProgress } from "../../utils/importProgress";
 import DatasetCard from "../../components/DatasetCard.vue";
 import DirectoryPicker from "../../components/DirectoryPicker.vue";
 import { useQueryClient } from "@tanstack/vue-query";
@@ -25,7 +26,6 @@ const filtered = computed(() =>
 );
 
 const router = useRouter();
-const userStore = useUserStore();
 
 const datasets = ref([]);
 const loading = ref(true);
@@ -129,6 +129,7 @@ function showBatchImportDialog() {
 }
 
 async function startBatchImport() {
+  if (isImporting.value) return;
   if (!batchImportForm.value.root_path) {
     message.warning("请填写根目录路径");
     return;
@@ -146,54 +147,20 @@ async function startBatchImport() {
   };
 
   try {
-    const token = userStore.token;
-    const response = await fetch("/api/datasets/batch-import", {
+    const response = await apiFetch("/api/datasets/batch-import", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(batchImportForm.value),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || "导入失败");
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const text = decoder.decode(value);
-      const lines = text.split("\n");
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            batchImportProgress.value = {
-              ...batchImportProgress.value,
-              ...data,
-            };
-
-            if (data.status === "done") {
-              message.success(data.message);
-              loadDatasets();
-            } else if (data.status === "error") {
-              message.error(data.message);
-            }
-          } catch (e) {
-            // 忽略解析错误
-          }
-        }
-      }
-    }
+    await readImportProgress(response.body, (data) => {
+      batchImportProgress.value = { ...batchImportProgress.value, ...data };
+    });
+    message.success(batchImportProgress.value.message);
+    await loadDatasets();
   } catch (error) {
-    message.error(error.message || "批量导入失败");
+    batchImportProgress.value.status = "error";
+    batchImportProgress.value.message = await getErrorMessage(error, "批量导入失败");
+    await reportError(error, "批量导入失败");
   } finally {
     isImporting.value = false;
   }

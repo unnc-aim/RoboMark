@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from "vue";
 import { message } from "../../shared/ui/feedback";
-import api from "../../utils/api";
+import api, { reportError } from "../../utils/api";
 
 const loading = ref(false);
 const datasets = ref([]);
@@ -96,7 +96,7 @@ async function handleDownload() {
     // Allow the browser to consume the Blob before revoking it.
     window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
   } catch (error) {
-    message.error("下载失败");
+    await reportError(error, "下载失败");
   }
 }
 

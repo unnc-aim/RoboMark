@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useUserStore } from "../stores/user";
-import api from "../utils/api";
+import api, { reportError } from "../utils/api";
 import PreannotationProfileDialog from "../components/PreannotationProfileDialog.vue";
 import ConnectionTestResult from "../components/ConnectionTestResult.vue";
 const user = useUserStore(),
@@ -42,6 +42,8 @@ async function test() {
   try {
     const r = await api.post(`/preannotation/profiles/${id}/test`);
     if (selected.value?.id === id) result.value = r.data;
+  } catch (error) {
+    await reportError(error);
   } finally {
     testing.value = false;
   }

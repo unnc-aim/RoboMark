@@ -4,6 +4,7 @@ import AuthLayout from "../layouts/AuthLayout.vue";
 import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "../stores/user";
 import { message } from "../shared/ui/feedback";
+import { getErrorMessage } from "../utils/apiErrors";
 
 const router = useRouter();
 const route = useRoute();
@@ -14,8 +15,11 @@ const form = ref({
   password: "",
 });
 const loading = ref(false);
+const errorMessage = ref("");
 
 async function handleLogin() {
+  if (loading.value) return;
+  errorMessage.value = "";
   if (!form.value.username || !form.value.password) {
     message.warning("请填写用户名和密码");
     return;
@@ -25,10 +29,11 @@ async function handleLogin() {
   try {
     await userStore.login(form.value.username, form.value.password);
     message.success("登录成功");
-    const redirect = route.query.redirect || "/";
+    const target = route.query.redirect;
+    const redirect = typeof target === "string" && target.startsWith("/") && !target.startsWith("//") ? target : "/";
     router.push(redirect);
   } catch (error) {
-    // 错误已在拦截器中处理
+    errorMessage.value = await getErrorMessage(error);
   } finally {
     loading.value = false;
   }
@@ -37,7 +42,8 @@ async function handleLogin() {
 
 <template>
   <AuthLayout
-    ><ui-form @submit.prevent="handleLogin"
+    ><ui-alert v-if="errorMessage" type="error" :title="errorMessage" role="alert" />
+    <ui-form @submit.prevent="handleLogin"
       ><ui-form-item label="用户名"
         ><ui-input
           v-model="form.username"

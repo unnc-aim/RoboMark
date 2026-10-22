@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import api from '../utils/api'
+import api, { apiFetch } from '../utils/api'
 import { parseCategoryKeys } from '../features/annotation/domain/shortcuts'
 
 const PREFETCH_SIZE = 20       // 预加载数量
@@ -54,6 +54,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     } catch (error) {
       console.error('加载配置失败', error)
       datasetConfig.value = null
+      throw error
     }
     return datasetConfig.value
   }
@@ -70,14 +71,14 @@ export const useAnnotationStore = defineStore('annotation', () => {
   }
 
   // 批量获取图片列表（用于预加载）
-  async function fetchImageBatch(datasetId, count = PREFETCH_SIZE) {
+  async function fetchImageBatch(datasetId, count = PREFETCH_SIZE, background = false) {
     try {
       const response = await api.get(`/images/next/${datasetId}/batch`, {
         params: { count }
       })
       return response.data || []
     } catch (error) {
-      console.error('Failed to fetch image batch', error)
+      if (!background) throw error
       return []
     }
   }
@@ -87,7 +88,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     if (prefetchedImages.value.has(imageData.id)) return
 
     try {
-      const response = await fetch(`/api/images/${imageData.id}/file`)
+      const response = await apiFetch(`/api/images/${imageData.id}/file`)
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       prefetchedImages.value.set(imageData.id, url)
@@ -102,7 +103,13 @@ export const useAnnotationStore = defineStore('annotation', () => {
     isPrefetching.value = true
     prefetchProgress.value = 0
 
-    const images = await fetchImageBatch(datasetId, PREFETCH_SIZE)
+    let images
+    try { images = await fetchImageBatch(datasetId, PREFETCH_SIZE) }
+    catch (error) {
+      isPrefetching.value = false
+      isInitialLoad.value = false
+      throw error
+    }
     if (images.length === 0) {
       isPrefetching.value = false
       isInitialLoad.value = false
@@ -145,7 +152,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
     isPrefetching.value = true
     prefetchProgress.value = 0
 
-    const images = await fetchImageBatch(datasetId, PREFETCH_SIZE)
+    const images = await fetchImageBatch(datasetId, PREFETCH_SIZE, true)
 
     // 过滤已在队列中的图片
     const existingIds = new Set(imageQueue.value.map(img => img.id))
@@ -403,7 +410,7 @@ export const useAnnotationStore = defineStore('annotation', () => {
 
   // 保存标注
   async function saveAnnotations(skip = false) {
-    if (!currentImage.value) return
+    if (!currentImage.value) throw new Error('当前没有可保存的图片')
 
     const annotationsData = annotations.value.map(a => {
       const data = {

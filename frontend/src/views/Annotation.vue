@@ -13,7 +13,8 @@ import { message, messageBox } from "../shared/ui/feedback";
 import AnnotationCanvas from "../components/AnnotationCanvas.vue";
 import CategorySelectionPopup from "../components/CategorySelectionPopup.vue";
 import PreannotationTrace from "./PreannotationTrace.vue";
-import api from "../utils/api";
+import api, { reportError } from "../utils/api";
+import { useUserStore } from "../stores/user";
 import { createImagePrefetcher } from "../utils/imagePrefetch";
 import {
   eventShortcut,
@@ -31,6 +32,7 @@ const router = useRouter();
 const store = useAnnotationStore();
 const shortcutsStore = useShortcutsStore();
 const review = usePreannotationReviewStore();
+const user = useUserStore();
 
 const datasetId = computed(() => parseInt(route.params.datasetId));
 const progress = ref(null);
@@ -275,7 +277,7 @@ async function loadData(to = route) {
   } catch (error) {
     if (!disposed && token === contextGeneration) {
       contextError.value = true;
-      message.error(error.response?.data?.detail || "加载标注工作台失败");
+      await reportError(error, "加载标注工作台失败");
     }
   } finally {
     if (token === contextGeneration) workspaceLoading.value = false;
@@ -311,9 +313,10 @@ async function ensureCanLeave() {
 async function refreshResults() {
   if (await ensureCanLeave()) await loadData();
 }
-onBeforeRouteLeave(() =>
-  actionBusy.value || review.busy ? false : ensureCanLeave(),
-);
+onBeforeRouteLeave((to) => {
+  if (to.name === "Login" && !user.isLoggedIn) return true;
+  return actionBusy.value || review.busy ? false : ensureCanLeave();
+});
 onBeforeRouteUpdate(async (to) =>
   contextKey(to) === loadedContextKey ? true : await ensureCanLeave(),
 );
@@ -542,6 +545,7 @@ async function loadProgress() {
 }
 
 async function handleSave() {
+  if (actionBusy.value || imageLoading.value || !currentImage.value) return;
   if (isReviewMode.value) {
     if (!editable.value) return;
     try {
@@ -550,8 +554,10 @@ async function handleSave() {
     } catch {}
     return;
   }
+  actionBusy.value = true;
   try {
     const savedCount = await store.saveAnnotations(false);
+    manualSnapshot.value = JSON.stringify(store.annotations);
     message.success(`保存成功 (${savedCount} 个标注)`);
     // 如果在历史模式，不自动跳转下一张
     if (!store.isInHistory) {
@@ -564,16 +570,19 @@ async function handleSave() {
     await loadProgress();
   } catch (error) {
     console.error("Save failed:", error);
-    message.error(
-      "保存失败: " + (error.response?.data?.detail || error.message),
-    );
+    await reportError(error, "保存失败");
+  } finally {
+    actionBusy.value = false;
   }
 }
 
 async function handleSkip() {
+  if (actionBusy.value || imageLoading.value || !currentImage.value) return;
   if (isReviewMode.value) return approveReview("empty");
+  actionBusy.value = true;
   try {
     await store.saveAnnotations(true);
+    manualSnapshot.value = JSON.stringify(store.annotations);
     message.info("已标记为未见");
     await store.fetchNextImage(datasetId.value);
     await loadProgress();
@@ -582,16 +591,21 @@ async function handleSkip() {
     manualSnapshot.value = JSON.stringify(store.annotations);
     await syncLocation();
   } catch (error) {
-    message.error("操作失败");
+    await reportError(error, "操作失败");
+  } finally {
+    actionBusy.value = false;
   }
 }
 
 async function handlePrevious() {
+  if (actionBusy.value || imageLoading.value || !currentImage.value) return;
   if (isReviewMode.value) return reviewNavigate("previous");
+  actionBusy.value = true;
   try {
     // 如果已经在历史模式中，先保存当前标注再返回
     if (store.isInHistory) {
       const savedCount = await store.saveAnnotations(false);
+      manualSnapshot.value = JSON.stringify(store.annotations);
       message.success(`保存成功 (${savedCount} 个标注)`);
     }
     await store.goToPreviousImage();
@@ -599,27 +613,30 @@ async function handlePrevious() {
     await syncLocation();
   } catch (error) {
     console.error("Save or navigate failed:", error);
-    message.error(
-      "操作失败: " + (error.response?.data?.detail || error.message),
-    );
+    await reportError(error, "操作失败");
+  } finally {
+    actionBusy.value = false;
   }
 }
 
 async function handleNext() {
+  if (actionBusy.value || imageLoading.value || !currentImage.value) return;
   if (isReviewMode.value) return reviewNavigate("next");
   if (store.isInHistory) {
     // 在历史模式中，先保存当前标注，再前往下一张
+    actionBusy.value = true;
     try {
       const savedCount = await store.saveAnnotations(false);
+      manualSnapshot.value = JSON.stringify(store.annotations);
       message.success(`保存成功 (${savedCount} 个标注)`);
       await store.goToNextImage();
       manualSnapshot.value = JSON.stringify(store.annotations);
       await syncLocation();
     } catch (error) {
       console.error("Save or navigate failed:", error);
-      message.error(
-        "操作失败: " + (error.response?.data?.detail || error.message),
-      );
+      await reportError(error, "操作失败");
+    } finally {
+      actionBusy.value = false;
     }
   } else {
     // 正常流程，继续获取新图片
@@ -628,8 +645,11 @@ async function handleNext() {
 }
 
 async function handleSaveAndNext() {
+  if (actionBusy.value || imageLoading.value || !currentImage.value) return;
+  actionBusy.value = true;
   try {
     await store.saveAnnotations(false);
+    manualSnapshot.value = JSON.stringify(store.annotations);
     message.success("保存成功");
     store.exitHistoryMode();
     await store.fetchNextImage(datasetId.value);
@@ -639,7 +659,9 @@ async function handleSaveAndNext() {
     manualSnapshot.value = JSON.stringify(store.annotations);
     await syncLocation();
   } catch (error) {
-    message.error("保存失败");
+    await reportError(error, "保存失败");
+  } finally {
+    actionBusy.value = false;
   }
 }
 
@@ -848,7 +870,7 @@ async function updateCategoryShortcut(categoryId, shortcutKey) {
     }
     message.success("快捷键已更新");
   } catch (error) {
-    message.error("更新快捷键失败");
+    await reportError(error, "更新快捷键失败");
   }
   editingCategoryShortcut.value = null;
 }

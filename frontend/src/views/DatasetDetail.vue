@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { datasetApi, datasetKeys } from "../shared/api/datasets";
 import { useUserStore } from "../stores/user";
-import api from "../utils/api";
+import api, { reportError } from "../utils/api";
 import { message, messageBox } from "../shared/ui/feedback";
 import DatasetHeader from "../components/DatasetHeader.vue";
 const route = useRoute(),
@@ -41,6 +41,8 @@ async function scan() {
       `扫描完成：导入 ${r.data.imported_images} 张，跳过 ${r.data.skipped_images} 张`,
     );
     client.invalidateQueries({ queryKey: datasetKeys.all });
+  } catch (error) {
+    await reportError(error);
   } finally {
     scanning.value = false;
   }

@@ -52,3 +52,10 @@ import { confirmation, settleConfirmation } from "./feedback";
     >
   </AlertDialogRoot>
 </template>
+
+<style>
+/* Modal dialogs lock body pointer events; notifications must remain interactive. */
+[data-sonner-toast]:not([data-visible="false"]) {
+  pointer-events: auto;
+}
+</style>

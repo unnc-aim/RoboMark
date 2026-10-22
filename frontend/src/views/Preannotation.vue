@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message, messageBox } from "../shared/ui/feedback";
 import { useUserStore } from "../stores/user";
-import api from "../utils/api";
+import api, { reportError } from "../utils/api";
 import PreannotationProfileDialog from "../components/PreannotationProfileDialog.vue";
 import PreannotationThumbnail from "../components/PreannotationThumbnail.vue";
 import ConnectionTestResult from "../components/ConnectionTestResult.vue";
@@ -283,6 +283,8 @@ async function createTask(sample) {
         ? "抽样任务已提交，可查看叠加效果"
         : "全量后台任务已提交，关闭页面后继续执行",
     );
+  } catch (error) {
+    await reportError(error);
   } finally {
     creating.value = false;
   }
