@@ -11,7 +11,7 @@ if systemctl is-active --quiet robomark-worker; then
 fi
 release_path="$base/releases/$release_id"
 mkdir "$release_path"
-tar -xzf "$release_path.tar.gz" -C "$release_path"
+tar --no-same-owner -xzf "$release_path.tar.gz" -C "$release_path"
 ln -s "$base/data/uploads" "$release_path/backend/uploads"
 cd "$release_path/backend"
 backup_path="$base/backups/before-$release_id.sql"
