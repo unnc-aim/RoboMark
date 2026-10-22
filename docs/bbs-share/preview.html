@@ -1,15 +1,19 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RoboMark · RoboMaster BBS 分享稿</title><style>*{box-sizing:border-box}html{background:#f2f3f5;color:#222b38}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.9}nav{max-width:1040px;margin:24px auto 12px;padding:0 28px;font-size:13px;color:#667085}nav a{color:#315bd6}article{max-width:1040px;margin:0 auto 60px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:48px 64px}h1{font-size:30px;line-height:1.5;letter-spacing:-.5px;margin:0 0 28px}h2{font-size:24px;margin:52px 0 20px;padding-top:12px;border-top:1px solid #e7eaf0}h3{font-size:19px;margin-top:28px}p,li{font-size:16px}strong{font-weight:650}a{color:#315bd6;overflow-wrap:anywhere}img{display:block;width:calc(100% + 56px);max-width:calc(100% + 56px);height:auto;margin:28px -28px 14px;border:1px solid #dfe3eb;border-radius:5px}p:has(>em:only-child){font-size:13px;color:#6a7483;line-height:1.8;margin-top:12px}table{border-collapse:collapse;width:100%;font-size:14px;margin:24px 0}td,th{border:1px solid #dde2ea;padding:10px 14px;text-align:left;vertical-align:top}th{background:#f5f7fb}pre{overflow:auto;padding:20px;background:#182331;color:#e9eff7;border-radius:6px;line-height:1.7}code{font-family:ui-monospace,SFMono-Regular,monospace;font-size:.88em}p code,li code,td code{padding:2px 5px;background:#f0f3f7;border-radius:3px}blockquote{border-left:3px solid #5577db;margin:24px 0;padding:8px 20px;background:#f7f9fd;color:#46536a}@media(max-width:700px){article{padding:26px 22px;border:0;border-radius:0}h1{font-size:25px}h2{font-size:21px}img{width:100%;max-width:100%;margin:24px 0 12px}table{display:block;overflow:auto}nav{padding:0 22px}}@media print{nav{display:none}html{background:#fff}article{border:0;padding:0}img{break-inside:avoid}h2,h3{break-after:avoid}}</style><nav>RoboMark · BBS 分享稿 / 2026-10-21　<a href="robomark-bbs.md">Markdown 正文</a>　<a href="README.md">图片顺序与发布说明</a></nav><article><h1>【工具开源】RoboMark：数据管理、AI 预标注、人工审核到训练集导出，一套网页搞定</h1>
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RoboMark · RoboMaster BBS 分享稿</title><style>*{box-sizing:border-box}html{background:#f2f3f5;color:#222b38}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.9}nav{max-width:1040px;margin:24px auto 12px;padding:0 28px;font-size:13px;color:#667085}nav a{color:#315bd6}article{max-width:1040px;margin:0 auto 60px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:48px 64px}h1{font-size:30px;line-height:1.5;letter-spacing:-.5px;margin:0 0 28px}h2{font-size:24px;margin:52px 0 20px;padding-top:12px;border-top:1px solid #e7eaf0}h3{font-size:19px;margin-top:28px}p,li{font-size:16px}strong{font-weight:650}a{color:#315bd6;overflow-wrap:anywhere}img{display:block;width:calc(100% + 56px);max-width:calc(100% + 56px);height:auto;margin:28px -28px 14px;border:1px solid #dfe3eb;border-radius:5px}p:has(>em:only-child){font-size:13px;color:#6a7483;line-height:1.8;margin-top:12px}table{border-collapse:collapse;width:100%;font-size:14px;margin:24px 0}td,th{border:1px solid #dde2ea;padding:10px 14px;text-align:left;vertical-align:top}th{background:#f5f7fb}pre{overflow:auto;padding:20px;background:#182331;color:#e9eff7;border-radius:6px;line-height:1.7}code{font-family:ui-monospace,SFMono-Regular,monospace;font-size:.88em}p code,li code,td code{padding:2px 5px;background:#f0f3f7;border-radius:3px}blockquote{border-left:3px solid #5577db;margin:24px 0;padding:8px 20px;background:#f7f9fd;color:#46536a}@media(max-width:700px){article{padding:26px 22px;border:0;border-radius:0}h1{font-size:25px}h2{font-size:21px}img{width:100%;max-width:100%;margin:24px 0 12px}table{display:block;overflow:auto}nav{padding:0 22px}}@media print{nav{display:none}html{background:#fff}article{border:0;padding:0}img{break-inside:avoid}h2,h3{break-after:avoid}}</style><nav>RoboMark · BBS 分享稿 / 2026-10-22　<a href="robomark-bbs.md">Markdown 正文</a>　<a href="README.md">图片顺序与发布说明</a></nav><article><h1>【工具开源】RoboMark：一种充分利用 VLM 能力的数据集标注工具</h1>
 <p>各位 RMer 大家好，这里是宁波诺丁汉大学 AIM 战队。最近把我们做的一套图像标注工具整理了一下，叫 <strong>RoboMark</strong>，分享出来给有需要的队伍。</p>
-<p>做视觉的同学应该都不陌生：收了一批图，先找目录、建类别；标到一半想用模型跑个粗标，又去改脚本、处理输出格式；跑完发现有漏框和错框，还得换回标注软件逐张修；最后再写脚本分训练集、验证集。一圈下来，模型还没开始训，时间先花在搬数据上了。</p>
-<p>RoboMark 想解决的就是这些中间环节。<strong>把数据集导入、人工标注、模型批量预标注、结果审核和导出放在同一个网页里</strong>，队里部署一份，其他人打开浏览器就能用。</p>
-<p>先放仓库，代码和使用文档都在这里：</p>
+<h2>写在前面</h2>
+<p>去年我开始准备视觉组的工作的时候，我们是一个雷达停留在 GitHub 上的项目。As far as I know 我们队伍里并没有明确的视觉处理方案。济喵是对的，让我们感谢 TJU。</p>
+<p>去年一月份是 Claude Code 刚开始大显神威的时候，借着实习的时候有无限的当时最强的 Opus 4.5 和 4.6 能用，我在思考如何让打标变得更容易一点。</p>
+<p>第一次尝试是分类，一个很简单的 Python 脚本，读取目录下所有的图片，然后一个 GitHub 上找的开源的无人机识别 YOLO 粗略的扫一遍，然后弹个窗给我看标的准不准，用快捷键去选定。</p>
+<p>然后开始需要拉框了。一开始是一个很简单的 Tkinter 和 OpenCV 的桌面 UI，只能拉框标注，不能（或者说不方便）修改或者标记类别。</p>
+<p>然后发现，fine，那我们上 web 吧。</p>
+<p>第一版的原型是一个很标准的 ElementPlus，丑之，但是能用，（我也是在打算把这玩意开出去以后才决定重构的 UI，shadcn至少没那么丑了）然后如果打开 GitHub 的更新记录就是一连串的 feature，一点一点尝试把这个功能做的足够人性化（虽然我还没学 HCI 这门课）。甚至那个时候因为我还是梯队所以我都没有仓库的 DIRECT Push 权限，所以还得 fork 下来 sync。</p>
+<p>但是 anyways 现在 RoboMark 已经进化成了一个我自己愿意去用的工具了，除了需要忍受极其慢的网以外没什么不好的，而且不出意外的话这玩意还得再陪我大二大三大四三年，那他不好也得好了。</p>
 <p><strong><a href="https://github.com/unnc-aim/RoboMark">GitHub：unnc-aim/RoboMark</a></strong></p>
-<p>项目采用 MIT 协议，欢迎直接用，也欢迎按自己队伍的习惯改。</p>
 <p><img alt="线上已有的装甲板批量预标注结果" src="images/04-results-grid.png" /></p>
 <p><em>图 1：线上 DJI-Armor-QDU 数据集的一轮真实预标注结果。候选框、处理状态、审核状态和推理用量在同一张卡片里，点进去就能继续审核。</em></p>
-<h2>一、先说它能做什么</h2>
+<h2>功能介绍</h2>
 <p>RoboMark 是一套可以自己部署的 Web 标注平台。一个数据集从进来到导出，大致是下面这个流程：</p>
-<p><strong>图片目录 → 扫描导入 → 配置类别 → 人工标注 / 模型预标注 → 人工审核 → 导出训练数据。</strong></p>
+<p><strong>导入图片目录 → 配置类别 → 人工标注 / 模型预标注 → 人工审核 → 导出训练数据。</strong></p>
 <p>如果只想手工标图，不需要先配模型，也不需要 GPU。建好数据集和类别，直接进工作台就能开始。</p>
 <p>如果已经有视觉推理服务，可以接上来批量生成候选框。接下来检查和修框仍然在原来的工作台里完成，不用先把模型输出下载下来，再导入另一套软件。</p>
 <p>目前主要功能如下：</p>
@@ -56,37 +60,30 @@
 </tbody>
 </table>
 <p>功能列得比较多，下面挑实际用起来比较有感的部分展开。</p>
-<h2>二、先放实际结果：已有数据，直接跑一轮看看</h2>
-<p>本文截图来自我们部署在服务器上的版本，使用的是线上已有的 <code>DJI-Armor-QDU</code> 数据集，共 <strong>404 张图片</strong>。不是为了截图临时填进去的空壳数据，也没有用页面里的 Mock 示例冒充识别效果。</p>
+<h2>运行效果</h2>
+<p>本文截图来自我们部署在服务器上的版本，使用的是美国知名开源社区抱抱脸平台上开源的，来自青岛大学初音未来战队的  <code>DJI-Armor-QDU</code> 数据集，共 <strong>404 张图片</strong>。<a href="https://huggingface.co/datasets/rmcv/armor">[1]</a></p>
 <p>截图展示的全量批次是 <code>#4</code>，调用的模型为 <code>glm-5.3-flash</code>，任务是找出图中的 RoboMaster 装甲模块，并区分小装甲和大装甲。</p>
-<p>这一轮的执行情况是：</p>
-<ul>
-<li>404 张图片全部走完处理流程；</li>
-<li>385 张成功产出候选结果；</li>
-<li>19 张处理失败，单独保留在失败队列中；</li>
-<li>成功结果继续等待人工审核。</li>
-</ul>
 <p><img alt="任务批次、执行进度与结果数量" src="images/03-preannotation-overview.png" /></p>
 <p><em>图 2：预标注任务页。左边配置接口、目标类别和 Prompt，右边查看抽样 / 全量批次，下面直接看图片结果。</em></p>
 <p>这里的“成功”指请求、结果转换和校验成功，<strong>不代表框一定标对，更不是识别准确率</strong>。404 / 404 也只表示处理流程已结束，其中仍然可以包含失败图片。</p>
-<p>从图 1 能看到，不同图片返回的候选框数量并不一样。模型可以先帮我们把一批图跑出来，但框得是否贴合、类别是否合理、有没有漏掉侧面的装甲，最终还是要人看。我们没有做“几倍提效”的对照计时，所以这里也不给一个拍脑袋的效率数字，直接展示已有结果和后续怎么处理。</p>
-<h2>三、数据集和类别先管好，后面少返工</h2>
-<h3>图片在服务器上，成员在浏览器里干活</h3>
+<p>从图 1 能看到，不同图片返回的候选框数量并不一样。模型可以先帮我们把一批图跑出来，但框得是否贴合、类别是否合理、有没有漏掉侧面的装甲，最终还是要人看。</p>
+<p>在这里我们尝试了常用的几款拥有视觉识别模式的大模型，抛开成本不谈运行效果最好的是 Claude Sonnet 5.5, 但是这很显然太贵了。综合性价比最高的是 GLM-5.3-flash，而 Deepseek V4.1 Flash 完全没有遵循 System 中声明的输出格式，我们在考虑后期调整一下此处 LLM 调用的架构，改为强制 Schemas 的 OpenAI Response 格式。</p>
+<h2>数据集和类别</h2>
 <p>RoboMark 的数据集基于后端能读取的图片目录。把图片放到服务器或挂载盘上，创建数据集时选择对应目录，再扫描导入，就可以在页面中浏览。</p>
 <p>这里选的是<strong>服务器上的目录</strong>，不是浏览器自动读取每位队员的本地硬盘。对队内共用的标注机来说，这样比较直接：图片存一份，大家访问同一个工作空间，不用每个人再下载一遍数据集。</p>
-<p><img alt="数据集工作空间" src="images/02-workspace.png" /></p>
-<p><em>图 3：首页展示已有数据集、图片数量和正式标注进度，可以直接进入预标注或标注工作台。</em></p>
 <p>首页和数据集页面能看到进度，也能查看图片。数据集多起来之后，可以搜索、切换网格和列表视图；数据集暂时不用时也可以停用。</p>
-<h3>类别、颜色、快捷键和参考图放在一起</h3>
 <p>类别管理支持逐个添加，也支持从文本批量导入，或者从其他数据集导入已有类别。类别可以设置颜色、快捷键和顺序，也能上传参考图片模板。数据集导入方式提供 YOLO、DJI ROCO 和 RC2026-wulin 等选项，具体配置见仓库文档。</p>
 <p><img alt="线上数据集的类别管理" src="images/09-categories.png" /></p>
-<p><em>图 4：线上数据集使用的小装甲 / 大装甲类别。颜色、快捷键和模板入口都在同一页。</em></p>
 <p>参考模板这个功能比较朴素，但带新人标图时很有用。比如装甲板到底按什么边界框、某一类目标长什么样，可以给一个共同的参照。比起群里发完一张图之后再往上翻，直接在类别里找会省事一些。</p>
-<p>当然，类别名字和模板只是辅助，标注规范还是要先说清楚。尤其是准备合并不同来源的数据时，类别含义、编号和框的范围最好先统一。</p>
-<h2>四、人工标注这部分，常用操作尽量做顺手</h2>
+<p>同时，这也很适合当你在尝试给 RoboCon 26 武林打标的时候，虽然到了后期我们每个负责标注的同学都娴熟的掌握了甲骨文的阅读技巧。</p>
+<p>这个模板我们还提供了非常人性化的快速标注功能，任何一个没有预选选择的拉框，都会直接跳出类别选择的弹窗，让你再也不用浪费时间去背出来哪个甲骨文都是哪个了。</p>
+<p><img alt="image-20261022103801288" src="images/image-20261022103801288.png" /></p>
+<h2>人工标注</h2>
 <p>不接模型时，RoboMark 就是一套普通的图像标注工具。</p>
 <p>工作台里有矩形、四点和八点三种工具。四点 / 八点用于构造四边形，其中八点方式通过边线交点确定顶点。画完可以选类别，也能移动、调整和删除已有框；滚轮缩放，空格拖动画面，撤销和重做也都有。</p>
-<p><img alt="人工标注工作台" src="images/08-manual-annotation.png" /></p>
+<p>这里最常用的功能其实是矩形和八点，八点能够提供更大的标注容错，只要在边框上随便点两个点就行，不需要严格的对准角点。</p>
+<p>所有已经打好的框都是 canva 中一个可以被选中的对象，可以移动位置或者调整大小，或者删除。</p>
+<p><img alt="image-20261022103946005" src="images/image-20261022103946005.png" /></p>
 <p><em>图 5：人工标注模式。画布、类别、已有标注和图片队列在同一屏，常用操作不用来回翻页面。</em></p>
 <p>几个高频操作有默认快捷键，也能在工作台里调整：</p>
 <table>
@@ -123,34 +120,38 @@
 </tr>
 </tbody>
 </table>
-<p>底部有图片队列，能回看前面标过的图，后续图片会做预加载。类别快捷键也可以自己配置，不用被固定的一套按键绑住。</p>
 <p>需要说明的是，四边形标注工具不等于已经支持完整的 YOLO-Pose 训练流程。<strong>当前导出主要面向检测框数据</strong>；如果需要特定的关键点定义和 Pose 标签格式，仍然要按训练方案补对应的转换，不能看到“四点”就直接当成某一种 Pose 格式。</p>
-<h2>五、模型接入配一次，后续数据集可以复用</h2>
+<p>最后，为了解决校内 eduroam 过于烂的问题，以及标注速度上来以后尽可能优化同学们的效率，我们会预加载当前标注队列后的 n 张图片直到队列中不存在剩余的图片，这样可以让切换下一张的时候不需要额外等待，虽然如果你的网仍旧过于烂的话这并不会解决多少问题。更多的可以参阅部署的部分。</p>
+<h2>模型接入</h2>
 <p>预标注并不绑定某一家模型服务。现在支持两类接法：</p>
 <ul>
 <li><strong>vLLM / OpenAI 兼容接口</strong>：配置完整 Endpoint、模型名和认证等参数；</li>
 <li><strong>自定义 HTTP JSON</strong>：按自己的服务定义请求模板、响应提取路径、字段映射和坐标规则。</li>
 </ul>
-<p><img alt="已保存的视觉推理接口" src="images/11-inference-profiles.png" /></p>
+<p><img alt="image-20261022105543421" src="images/image-20261022105543421.png" /></p>
 <p><em>图 6：线上已保存的推理接口配置。接口配置可以跨数据集复用，认证凭据不会在概览中直接展示。</em></p>
-<p>如果队里已经有自己的推理服务，可以按它的返回结构做适配；如果是自己封装的检测模型，也可以接成 HTTP 服务。这里需要对齐请求与输出格式，<strong>不是直接拖一个 <code>.pt</code> 文件上来就能跑</strong>。</p>
+<p>如果队里已经有自己的推理服务（或者有大手子愿意贡献自己的 API），可以按它的返回结构做适配；如果是自己封装的检测模型，也可以接成 HTTP 服务。</p>
 <p>接口配置里可以处理像素坐标、归一化坐标等差异，避免每换一个服务就去改一份前端代码。配置支持跨数据集复用，管理员也可以维护共享配置。想让同一队伍里几个数据集用同一套服务，就不用反复填地址、模型和认证信息。</p>
 <p>保存前后都能做连接测试，页面会显示检查结果、HTTP 状态和耗时。不过，连接通了只能说明服务基本可用，不能证明它已经能正确完成装甲板标注，所以后面仍然建议先抽样。</p>
-<h2>六、先抽几张，调好 Prompt 再全量跑</h2>
+<p>选择 HTTP JSON 格式可以强行要求输出结果返回为指定的 JSON Schemas，不过后面改用 Response 后可能可以把这个扬了。</p>
+<h2>预标注</h2>
 <p>批量预标注的操作比较直接：选接口、选目标类别和输出形状、填写 Prompt，然后先跑几张样本。确认框的位置和分类大致符合需求，再对整个数据集运行。</p>
-<p>线上这一轮 Prompt 的重点是装甲板的结构和边界，大意是：</p>
+<p>用前面截图的这一段来打个比方，识别重点是装甲板的结构和边界，大意是：</p>
 <blockquote>
 <p>检测 RoboMaster 机器人的装甲模块，按小装甲和大装甲分类。框应包含左右灯条和中间数字面板，贴合面板边缘，排除地面反光、顶部灯具和细长装饰灯带，不要只框其中一根灯条。</p>
 </blockquote>
 <p>这类描述不能保证模型不会出错，但它至少把“我们想标什么”说清楚了。换到无人机、整车或其他目标时，也可以按同样的方式说明目标特征、边界和需要排除的东西。具体表现仍然取决于模型和图片。</p>
-<p>Prompt 调了几轮之后，容易出现一个问题：上一版在哪个批次里来着？为此做了历史 Prompt 搜索，可以查看当前数据集的历史，也可以复用自己其他数据集里用过的内容。</p>
+<p>所以我们选择的方法是去论坛上把那个物理描述的文件拉下来，然后扔给 GPT 去让他设计一个 Prompt，顺便给他放了两张 Demo 图。<a href="https://bbs.robomaster.com/wiki/20204847/811816">[2]</a></p>
+<p>然后 do 改 Prompt, 用三张图测一下 while 识别有问题。</p>
+<p>同时，我们也支持历史提示词的复用。</p>
 <p><img alt="历史 Prompt 搜索与预览" src="images/10-prompt-history.png" /></p>
 <p><em>图 7：历史 Prompt 可以搜索、预览后再填入。批次列表里也有直接复用入口，不用手动从任务记录中复制。</em></p>
 <p>复用之后仍然可以继续修改，填错也能撤销这次填充。历史里保留原有内容，方便回看不同批次到底用了什么要求。</p>
-<p>全量任务由独立 worker 在后台执行，<strong>关闭页面不会终止任务</strong>。队员不需要挂着浏览器等几百张图片跑完，再打开时还能看进度。</p>
-<p>任务支持取消、失败重试，也保留每张图的执行状态。某几张失败了，可以只处理失败项，不用让整批成功图片陪着重跑。任务进度存放在数据库里，并有租约恢复机制；这部分是为长任务准备的，实际部署时仍然要让 worker 正常运行。</p>
-<h2>七、粗标之后怎么修，是我们比较在意的一段</h2>
+<p>全量任务由独立 worker 在后台执行，<strong>关闭页面不会终止任务</strong>。任务支持取消、失败重试，也保留每张图的执行状态。某几张失败了，可以只处理失败项，不用让整批成功图片陪着重跑。任务进度存放在数据库里，并有租约恢复机制；这部分是为长任务准备的，实际部署时仍然要让 worker 正常运行。</p>
+<p>同时，这里的 Worker 默认是单线程的，GLM 撞 529 还是一个很恼火的事情。</p>
+<h2>预标注审核</h2>
 <p>模型跑完之后，批量结果页会把候选框直接叠在缩略图上，可以按执行状态、审核状态、是否有候选框筛选。</p>
+<p><img alt="image-20261022110217168" src="images/image-20261022110217168.png" /></p>
 <p>先在一屏里扫一眼，通常就能挑出一些需要重点看的情况：明显多框、只框到一部分、某张图突然没有候选，或者请求失败。点开图片，就是审核工作台。</p>
 <p><img alt="真实预标注结果的审核工作台" src="images/07-review-workbench.png" /></p>
 <p><em>图 8：候选框以虚线显示，正式标注以实线显示，可以分别开关图层。修改、补画和审核都在同一个工作台里完成。</em></p>
@@ -164,9 +165,10 @@
 </ul>
 <p>在审核模式下，Ctrl / ⌘ + S 只保存草稿，Ctrl / ⌘ + Enter 才是通过并到下一张。单纯切到下一张，不会顺手把上一张当作已经验收。</p>
 <p>已有正式标注也会保留，审核通过的新框是在它的基础上追加。重复通过有检查，避免同一个结果被反复导入。候选框、草稿和正式标注各有自己的状态，<strong>导出时只读取正式标注</strong>。</p>
-<p>这个区分看起来多了一步，但能避免很常见的情况：模型刚跑出一批粗框，大家还没看完，另一位队员已经把它们导出拿去训了。</p>
-<h2>八、某一张出问题，能看到它到底发生了什么</h2>
-<p>接模型最烦的情况之一，就是页面只告诉你“失败”，剩下自己去服务器翻日志。RoboMark 给每张图留了单独的推理记录，按请求历史查看：</p>
+<p>其实可以很容易的看出，正常情况下一个比较 function 的有视觉模态的大模型应该很难识别不准，如果角点出了问题，提示词稍微改改就好。</p>
+<p>在有 AI 之前人们过得什么苦日子。。。</p>
+<h2>预标注溯源</h2>
+<p>RoboMark 给每张图留了单独的推理记录，按请求历史查看：</p>
 <ul>
 <li>当时发送的 Prompt 和图片信息；</li>
 <li>实际请求内容及隐藏认证信息后的请求头；</li>
@@ -177,12 +179,13 @@
 </ul>
 <p><img alt="单张图片的推理请求记录" src="images/05-inference-trace.png" /></p>
 <p><em>图 9：线上真实请求记录，可以从输入一路看到服务返回，并对照右侧的图片预览。</em></p>
-<p><img alt="模型输出与平台标准化结果" src="images/06-inference-output.png" /></p>
+<p><img alt="image-20261022110509658" src="images/image-20261022110509658.png" /></p>
 <p><em>图 10：模型原始输出和平台转换结果分别保留。遇到“请求成功但框不对”的情况，可以分清是模型给错了，还是输出格式和坐标规则没有对齐。</em></p>
+<p>完整请求体会呈现我们的 System 的提示词，然后很显然上面这条大肥鱼一天到晚吃白饭。</p>
 <p>同一张图片重试时，会保留之前的尝试，不会把老记录覆盖掉。对于失败或等待自动重试的图片，也可以单独立即重试。</p>
-<p>图片卡片还会显示输入 / 输出 Token 和 TPS，便于对一轮任务的调用量与等待情况有个数。用量来自服务返回，缺少记录时显示 <code>—</code>。这里的 TPS 按请求阶段耗时估算，包含排队和等待首 Token 的时间，<strong>不能直接当成模型纯解码速度做性能排名</strong>。</p>
-<p>它不是一套完整的模型评测平台，但调接口、看慢请求、检查某一张为什么失败时，至少不用先离开当前页面。</p>
-<h2>九、审核完再导出，格式和数据划分一起处理</h2>
+<p>图片卡片还会显示输入 / 输出 Token 和 TPS，便于对一轮任务的调用量与等待情况有个数。用量来自服务返回，缺少记录时显示 <code>—</code>。这里的 TPS 按请求阶段耗时估算，包含排队和等待首 Token 的时间。</p>
+<p>其实真的挺便宜的。至少比人工便宜。</p>
+<h2>数据导出</h2>
 <p>目前支持三组常用导出格式：</p>
 <table>
 <thead>
@@ -209,20 +212,21 @@
 <p><img alt="数据集导出页面" src="images/12-export.png" /></p>
 <p><em>图 11：导出时选择数据集、格式和训练 / 验证 / 测试比例，生成 ZIP 下载。</em></p>
 <p>是否包含未标注图片可以自己选择。但候选结果和审核草稿不会混进正式训练标签，前面没有确认的框，不能靠“导出”这一步自动变成正确标注。</p>
-<p>训练 / 验证 / 测试划分也提醒一句：如果图片来自连续视频，相邻帧往往很像。正式做实验时，最好按采集批次、场景或视频组织数据，避免相近帧分别进入训练集和验证集，最后指标看着很好，换场地就不行。页面能帮忙打包，但数据怎么分仍然需要按任务决定。</p>
-<p>平台还提供管理员和普通用户角色，有用户管理、标注趋势、数据集进度和成员贡献统计。队里共用一套时，可以从概览里看各个数据集推进到哪了。</p>
+<p>如果图片来自连续视频，相邻帧往往很像。正式做实验时，最好按采集批次、场景或视频组织数据，避免相近帧分别进入训练集和验证集，最后指标看着很好，换场地就不行。页面能帮忙打包，但数据怎么分仍然需要按任务决定。</p>
+<p>平台还提供管理员和普通用户角色，有用户管理、标注趋势、数据集进度和成员贡献统计，方便作为梯队的 KPI 之类的。</p>
+<p><img alt="d4e77eff657f246279ffd52e60ee45bf" src="images/d4e77eff657f246279ffd52e60ee45bf.png" /></p>
 <p><img alt="管理概览与标注统计" src="images/13-dashboard.png" /></p>
 <p><em>图 12：管理概览展示正式标注进度和成员贡献。预标注产出的数量与人工审核完成的数量分开看。</em></p>
-<h2>十、怎么部署，上手需要准备什么</h2>
-<p>平台分成前端、API、数据库和预标注 worker 四部分，技术栈是 Vue 3、FastAPI 和 MySQL。</p>
+<h2>部署和注意事项</h2>
+<p>平台分成前端、API、数据库和预标注 worker 四部分。</p>
 <p>本地或队内服务器部署，需要先准备：</p>
 <ul>
 <li>Python 3.10+；</li>
 <li>Node.js 20.19+ 或 22.12+；</li>
 <li>MySQL 8.0+；</li>
-<li>后端能够访问的图片目录。</li>
+<li>充足的硬盘空间。</li>
 </ul>
-<p>新安装的大致步骤如下，完整参数在 README 里：</p>
+<p>新安装的大致步骤如下：</p>
 <pre><code class="language-bash">git clone https://github.com/unnc-aim/RoboMark.git
 cd RoboMark
 
@@ -236,21 +240,9 @@ cp backend/.env.example backend/.env
 # 启动开发环境：API、worker 和前端
 ./dev.sh
 </code></pre>
-<p>启动后访问 <code>http://localhost:5173</code>。新建数据库的默认管理员为 <code>admin / 123456</code>，自己部署时记得改密码。生产环境还需要设置自己的随机密钥、配置访问地址，并用进程管理器保持 API 和 worker 运行；前端构建后交给 Nginx 提供服务，仓库里有对应说明。</p>
-<p><strong>普通队员只需要浏览器，不需要在自己的电脑上装整套开发环境。</strong> 环境、图片存储和模型连接由负责部署的同学配置好，其他人登录后按“选数据集 → 标注 / 审核 → 保存”的流程操作即可。页面里也带了使用教程和快捷键说明。</p>
-<p>只做人工标注，平台本身不需要显卡。想使用 AI 预标注，则需要一个可访问的视觉推理服务：可以是队里的服务器，也可以是外部兼容接口。RoboMark 负责接入、任务调度和结果审核，不自带模型权重，也不负责训练模型；推理耗时和费用取决于接入的服务。</p>
-<p>列表和预览里的图片使用单独的压缩预览，减少弱网下浏览结果时的传输量。<strong>标注工作台和模型推理继续读取原图</strong>，不会为了让首页快一点把标注源图一起压糊。</p>
-<p>拿线上这批数据的前 6 张图实际检查，原图都是 1440 × 1080，列表预览使用 640 × 480 的 WebP，6 张合计的图片传输量减少了约 <strong>97%</strong>。其中一张从 506,783 字节降到 14,408 字节；重复请求可以通过缓存校验返回 304。这个数字只对应这 6 张图片的文件体积，不代表整页加载时间快了同样的倍数，但网不好的时候，少拉几 MB 原图还是很实在的。</p>
-<h2>十一、目前的边界，以及后面还想补什么</h2>
-<p>现在这版已经把数据集、人工标注、预标注、审核和导出接起来了，比较适合想在队内搭一套共用工具、又希望接自己的推理服务的场景。</p>
-<p>不过有些事情目前还没有做，提前说清楚：</p>
-<ol>
-<li><strong>不是无人值守的自动标注。</strong> 模型产出的是候选框，正式使用前仍需人工审核，平台没有自动替你判断标注质量。</li>
-<li><strong>主要面向图像检测标注。</strong> 视频抽帧、分割、完整 Pose 标注与训练流程不在当前功能范围内。</li>
-<li><strong>多人账号不等于完整的任务分派系统。</strong> 目前可以共用数据、查看贡献，也有保存时的版本检查；细到人员的任务分配和协作反馈还准备继续补。</li>
-<li><strong>新数据、新模型先抽样。</strong> 小目标、遮挡、强反光和类别边界模糊时，模型都可能出错，接通接口不等于标注规范已经对齐。</li>
-</ol>
-<p>后续还想补框的复制粘贴、键盘微调、自动保存和更完整的协作流程。当前人工标注记得主动保存；审核里则注意“存草稿”和“通过”的区别。</p>
-<p>做这套工具的出发点其实很简单：队里标图的人已经够辛苦了，找图、切软件、拷结果、改格式这些事，能少折腾一点就少折腾一点。常用功能尽量放全，常走的流程尽量短，让负责视觉的人把时间用在数据和模型本身上。</p>
-<p>仓库再放一次：<strong><a href="https://github.com/unnc-aim/RoboMark">https://github.com/unnc-aim/RoboMark</a></strong></p>
-<p>欢迎各位试用、提 Issue。遇到问题的话，带上操作步骤、接口返回或报错截图会更方便定位；有自己队里用顺手的标注流程，也欢迎交流，我们再慢慢把它补好。</p></article></html>
+<p>或者你也可以直接扔给 AI 让 AI 帮你部署。</p>
+<p>虽然但是，我们充分建议你在内网环境下直连服务器，正常的来自 Realsense 或者其他数据采集来源的图片都会非常大，哪怕在除了标注以外其他所有场景下我们都会在传输时对图片进行压缩，这仍然也改变不了这玩意会需要相当大的瞬时带宽这一缺点。这并不是 CDN 或者类似技术能解决的问题。</p>
+<p>欢迎各位试用、提 Issue 或者 PR。遇到问题的话，带上操作步骤、接口返回或报错截图会更方便定位；有自己队里用顺手的标注流程，也欢迎交流，我们再慢慢把它补好。</p>
+<h2>参考文献</h2>
+<p>[1] rmcv. RoboMaster Armor Plates[DB/OL]. [2026-10-22]. <a href="https://huggingface.co/datasets/rmcv/armor">https://huggingface.co/datasets/rmcv/armor</a>.</p>
+<p>[2] 大疆创新. RoboMaster 装甲模块 AM02&amp;AM12 2020 使用说明书[EB/OL]. (2022-02-28)[2026-10-22]. <a href="https://bbs.robomaster.com/wiki/20204847/811816">https://bbs.robomaster.com/wiki/20204847/811816</a>.</p></article></html>
