@@ -9,6 +9,32 @@
 <p>第一版的原型是一个很标准的 ElementPlus，丑之，但是能用，（我也是在打算把这玩意开出去以后才决定重构的 UI，shadcn至少没那么丑了）然后如果打开 GitHub 的更新记录就是一连串的 feature，一点一点尝试把这个功能做的足够人性化（虽然我还没学 HCI 这门课）。甚至那个时候因为我还是梯队所以我都没有仓库的 DIRECT Push 权限，所以还得 fork 下来 sync。</p>
 <p>但是 anyways 现在 RoboMark 已经进化成了一个我自己愿意去用的工具了，除了需要忍受极其慢的网以外没什么不好的，而且不出意外的话这玩意还得再陪我大二大三大四三年，那他不好也得好了。</p>
 <p><strong><a href="https://github.com/unnc-aim/RoboMark">GitHub：unnc-aim/RoboMark</a></strong></p>
+<h2>在线体验</h2>
+<p>不想先折腾部署的话，我也挂了一份公开体验版：<strong><a href="https://robomark.lijie.space">https://robomark.lijie.space</a></strong>。</p>
+<table>
+<thead>
+<tr>
+<th>账号</th>
+<th>密码</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>demo</code></td>
+<td><code>RoboMark2026!</code></td>
+<td>看图片、标注、预标注结果和推理记录，体验修改与审核</td>
+</tr>
+<tr>
+<td><code>admin</code></td>
+<td><code>RoboMark2026!</code></td>
+<td>额外体验数据集、类别、导出和管理概览</td>
+</tr>
+</tbody>
+</table>
+<p>里面准备了 40 张 QDU 装甲板图片和 13 张几何测试图，也保留了已有的 GLM 预标注结果，可以直接进去看，不用先配接口等它跑完。公开版用的是精简演示数据，下文 404 张图的批次和截图来自队内版本。</p>
+<p>体验站不开放注册、添加或修改推理接口、连接测试，以及新建或重试预标注任务；已保存的推理接口和凭据也已移除。看结果、修框、审核和导出照常体验，想接自己的模型跑新任务，可以部署完整版。</p>
+<p>两个账号共用这份演示数据，修改会影响其他正在体验的同学。</p>
 <p><img alt="线上已有的装甲板批量预标注结果" src="images/04-results-grid.png" /></p>
 <p><em>图 1：线上 DJI-Armor-QDU 数据集的一轮真实预标注结果。候选框、处理状态、审核状态和推理用量在同一张卡片里，点进去就能继续审核。</em></p>
 <h2>功能介绍</h2>
@@ -218,6 +244,7 @@
 <p><img alt="管理概览与标注统计" src="images/13-dashboard.png" /></p>
 <p><em>图 12：管理概览展示正式标注进度和成员贡献。预标注产出的数量与人工审核完成的数量分开看。</em></p>
 <h2>部署和注意事项</h2>
+<p>上面的公开体验版适合先试一下操作；队里长期标图、存自己的数据，还是建议部署一份自己的服务。</p>
 <p>平台分成前端、API、数据库和预标注 worker 四部分。</p>
 <p>本地或队内服务器部署，需要先准备：</p>
 <ul>
