@@ -1,0 +1,19 @@
+[Unit]
+Description=RoboMark demo inference worker (run only when preparing data)
+After=network.target robomark-api.service
+
+[Service]
+User=robomark
+Group=robomark
+WorkingDirectory=/opt/robomark/app/backend
+EnvironmentFile=/opt/robomark/shared/backend.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/robomark/venv/bin/python -m app.preannotation_worker
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/robomark/data /opt/robomark/run
+UMask=0027
