@@ -947,6 +947,7 @@ export const UiTabPane = defineComponent({
 });
 export const UiPagination = defineComponent({
   props: {
+    disabled: Boolean,
     currentPage: { type: Number, default: 1 },
     total: { type: Number, default: 0 },
     pageSize: { type: Number, default: 20 },
@@ -955,6 +956,7 @@ export const UiPagination = defineComponent({
   emits: ["update:currentPage", "current-change"],
   setup(p, { emit }) {
     const go = (n: number) => {
+      if (p.disabled) return;
       emit("update:currentPage", n);
       emit("current-change", n);
     };
@@ -968,7 +970,7 @@ export const UiPagination = defineComponent({
           h(
             UiButton,
             {
-              disabled: p.currentPage <= 1,
+              disabled: p.disabled || p.currentPage <= 1,
               "aria-label": "上一页",
               onClick: () => go(p.currentPage - 1),
             },
@@ -978,7 +980,7 @@ export const UiPagination = defineComponent({
           h(
             UiButton,
             {
-              disabled: p.currentPage >= last,
+              disabled: p.disabled || p.currentPage >= last,
               "aria-label": "下一页",
               onClick: () => go(p.currentPage + 1),
             },

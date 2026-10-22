@@ -146,7 +146,7 @@ onMounted(load);
         <ui-card class="panel-padding"
           ><div class="section-heading"><h2>导入与类别</h2></div>
           <p class="form-tip">
-            目录选择只读取文件信息。配置服务器路径后，可在数据集详情中扫描图片。
+            选择服务器上的数据目录，保存配置后可在数据集详情中扫描图片。
           </p>
           <div class="settings-actions">
             <ui-button @click="router.push(`/admin/categories/${id}`)"
@@ -164,7 +164,7 @@ onMounted(load);
           </div></ui-card
         ><ui-alert title="数据保存位置" :closable="false"
           >RoboMark
-          使用服务器上的图片和标签目录。选择本机目录后，请核对服务器路径。</ui-alert
+          使用服务器上的图片和标签目录。目录选择器读取服务器目录，确认后回填完整路径。</ui-alert
         >
       </div>
     </div>

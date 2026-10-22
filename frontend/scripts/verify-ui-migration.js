@@ -192,7 +192,13 @@ async (page) => {
           search: url.search,
           authorization: req.headers().authorization,
         });
-        if (path === "/api/auth/me") data = user;
+        if (path === "/api/admin/filesystem/directories") data = {
+          path: "/data/robomaster/images", parent_path: null,
+          roots: [{ name: "images", path: "/data/robomaster/images" }],
+          breadcrumbs: [{ name: "images", path: "/data/robomaster/images" }],
+          entries: [], total: 0, offset: 0, limit: 100,
+        };
+        else if (path === "/api/auth/me") data = user;
         else if (path === "/api/auth/login")
           data = { access_token: "local-test-token", user };
         else if (path === "/api/auth/register") data = user;
@@ -1047,12 +1053,10 @@ async (page) => {
         exact: true,
       });
       await dialog.waitFor();
-      await dialog
-        .locator("input[type=file]")
-        .first()
-        .setInputFiles("docs/ui-redesign/assets");
-      await dialog.getByText(/assets · 已读取/).waitFor();
-      check(true, "目录选择读取名称与文件列表");
+      await dialog.getByRole("button", { name: "选择服务器图片目录", exact: true }).click();
+      const directoryDialog = page.getByRole("dialog", { name: "选择服务器图片目录", exact: true });
+      await directoryDialog.getByRole("button", { name: "选择此目录", exact: true }).click();
+      check(await dialog.getByRole("textbox", { name: "图片目录", exact: true }).inputValue() === "/data/robomaster/images", "目录选择回填服务器完整路径");
       await dialog.getByRole("button", { name: "取消", exact: true }).click();
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto("http://127.0.0.1:5173/admin/datasets");

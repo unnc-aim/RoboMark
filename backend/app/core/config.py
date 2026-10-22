@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     ALLOWED_IMAGE_EXTENSIONS: list = [".jpg", ".jpeg", ".png", ".bmp", ".webp"]
     # 默认为 backend/uploads/image_previews；可放在独立缓存盘，可安全清理。
     IMAGE_PREVIEW_CACHE_DIR: str = ""
+    # 管理员目录选择器的可浏览根目录；空列表表示服务器文件系统根目录。
+    FILE_BROWSER_ROOTS: list[str] = []
 
     # 独立于 JWT 密钥（dev.sh 会轮换 SECRET_KEY），保护推理接口凭据
     PREANNOTATION_ENCRYPTION_KEY: str = ""

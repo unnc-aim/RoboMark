@@ -198,6 +198,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | `SECRET_KEY` | JWT 密钥；生产部署设置固定随机密钥 |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | 登录有效期，默认 `1440` 分钟 |
 | `CORS_ORIGINS` | JSON 数组，默认允许本地 5173 前端 |
+| `FILE_BROWSER_ROOTS` | 管理员目录选择器允许浏览的根目录 JSON 数组，如 `["/data/datasets","/mnt/shared"]`；默认 `[]` 可浏览服务器文件系统根目录，只列目录、不读取文件内容 |
 | `PREANNOTATION_ENCRYPTION_KEY` | 推理凭据加密密钥，独立于 JWT |
 | `PREANNOTATION_DEFAULT_PROFILE` | 可选共享默认接口 JSON，默认 `{}` |
 | `PREANNOTATION_WORKER_CONCURRENCY` | worker 并发槽位，默认 `2` |

@@ -7,6 +7,7 @@ from app.routers.export import router as export_router
 from app.routers.dataset_configs import router as dataset_configs_router
 from app.routers.preannotation import router as preannotation_router
 from app.routers.previews import router as previews_router
+from app.routers.filesystem import router as filesystem_router
 import os
 
 # 确保上传目录存在
@@ -37,6 +38,7 @@ app.include_router(export_router)
 app.include_router(dataset_configs_router)
 app.include_router(preannotation_router)
 app.include_router(previews_router)
+app.include_router(filesystem_router)
 
 
 @app.on_event("startup")

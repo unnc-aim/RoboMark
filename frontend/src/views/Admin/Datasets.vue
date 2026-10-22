@@ -292,10 +292,7 @@ function closeBatchImportDialog() {
         :disabled="isImporting"
       >
         <ui-form-item label="根目录" required>
-          <ui-input
-            v-model="batchImportForm.root_path"
-            placeholder="/path/to/datasets"
-          />
+          <DirectoryPicker v-model="batchImportForm.root_path" label="根目录" />
           <div class="form-tip">
             递归扫描所有 image/images 文件夹，labels 自动创建在同级目录
           </div>
