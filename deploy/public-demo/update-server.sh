@@ -44,7 +44,18 @@ pnpm --dir "$app/frontend" run typecheck
 pnpm --dir "$app/frontend" run test
 pnpm --dir "$app/frontend" exec vite build --outDir "$build"
 # Keep immutable assets referenced by browser tabs opened before this update.
-if [[ -d "$old_frontend/assets" ]]; then cp -an "$old_frontend/assets/." "$build/assets/"; fi
+if [[ -d "$old_frontend/assets" ]]; then
+    python3 - "$old_frontend/assets" "$build/assets" <<'ASSETS'
+import shutil, sys
+from pathlib import Path
+source, destination = map(Path, sys.argv[1:])
+for file in source.rglob('*'):
+    target = destination / file.relative_to(source)
+    if file.is_file() and not target.exists():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(file, target)
+ASSETS
+fi
 chmod -R a+rX "$build"
 "$base/venv/bin/python" -m pip install -q -r requirements.txt
 "$base/venv/bin/python" "$app/deploy/public-demo/run_with_env.py" "$base/venv/bin/python" -m app.migrate
