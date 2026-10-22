@@ -60,4 +60,4 @@ htmlcov/
 *.local
 
 # Uploads
-backend/uploads/
+backend/uploads
